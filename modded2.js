@@ -12574,8 +12574,16 @@
                 await Promise.all([eo, en, ei]),
                 this.selfPlayer = await en;
                 let ea = await eo;
-                if (await q.Z.scanGameLibrary(this.room.state.entities),
-                this.selfPlayer) {
+                if (ea || (ea = await new Promise(m=>{
+                    this.room.onStateChange.once(()=>{
+                        let R = this.room.state.players.get(this.room.sessionId);
+                        m(R)
+                    }
+                    )
+                }
+                )),
+                await q.Z.scanGameLibrary(this.room.state.entities),
+                this.selfPlayer && ea) {
                     let m = JSON.parse(JSON.stringify(this.currentPlayer));
                     (null === (ee = m.full.pet) || void 0 === ee ? void 0 : ee.avatar) || delete m.full.pet,
                     this.initPlayers(),
@@ -12596,6 +12604,12 @@
                     $.ZP.emitEventNow($.fb.PLAYER_ENERGY_CHANGE, {
                         energy: JSON.parse(JSON.stringify(this.selfPlayer.energy))
                     })
+                } else {
+                    this.room.leave(!0),
+                    $.ZP.emitEventNow($.fb.SVR_CANNOTCONNECT, {
+                        message: ["playerMissing", "Something went wrong. Please try to join again"]
+                    });
+                    return
                 }
                 return this.handleRoomUpdates(),
                 et && H && ($.ZP.emitEventNow($.Yi.CLIENT_TRIGGER, {
