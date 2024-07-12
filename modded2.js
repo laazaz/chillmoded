@@ -13107,7 +13107,7 @@
                 return q
             }
         });
-        let T = parseFloat("8.22")
+        let T = parseFloat("8.23")
           , L = 1676498533e3
           , U = "game-container"
           , B = "players"
