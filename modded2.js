@@ -21183,6 +21183,7 @@
           , k = n(11335)
           , x = n(16497);
         let N = 0;
+		window.lemonGOC = u.rV.gameObjectClicked;
         u.rV.gameObjectClicked.subscribe(e=>{
             var t, n, r, i, o, a;
             let s = Date.now();
