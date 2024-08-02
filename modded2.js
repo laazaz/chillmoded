@@ -21185,6 +21185,7 @@
         let N = 0;
 		window.lemonGOC = u.rV.gameObjectClicked;
         u.rV.gameObjectClicked.subscribe(e=>{
+		if(window.logGOC) console.log(e)
             var t, n, r, i, o, a;
             let s = Date.now();
             if (s - N < 150)
