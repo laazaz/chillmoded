@@ -13117,7 +13117,7 @@
                 return l
             }
         });
-        let r = parseFloat("8.25")
+        let r = parseFloat("8.3")
           , i = 1676498533e3
           , o = "game-container"
           , a = "players"
