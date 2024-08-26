@@ -41,6 +41,7 @@
                         r[i] = t[i]);
                 return e.concat(r || Array.prototype.slice.call(t))
             }
+            "function" == typeof SuppressedError && SuppressedError,
             e.OPERATION = void 0,
             (t = e.OPERATION || (e.OPERATION = {}))[t.ADD = 128] = "ADD",
             t[t.REPLACE = 0] = "REPLACE",
@@ -247,15 +248,15 @@
                 }
                 return t.prototype.onAdd = function(t, n) {
                     return void 0 === n && (n = !0),
-                    f(this.$callbacks || (this.$callbacks = []), e.OPERATION.ADD, t, n ? this.$items : void 0)
+                    f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.ADD, t, n ? this.$items : void 0)
                 }
                 ,
                 t.prototype.onRemove = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.DELETE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.DELETE, t)
                 }
                 ,
                 t.prototype.onChange = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.REPLACE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.REPLACE, t)
                 }
                 ,
                 t.is = function(e) {
@@ -299,12 +300,18 @@
                 }
                 ,
                 t.prototype.setAt = function(t, n) {
-                    void 0 !== n.$changes && n.$changes.setParent(this, this.$changes.root, t);
-                    var r, i, o = null !== (i = null === (r = this.$changes.indexes[t]) || void 0 === r ? void 0 : r.op) && void 0 !== i ? i : e.OPERATION.ADD;
-                    this.$changes.indexes[t] = t,
-                    this.$indexes.set(t, t),
-                    this.$items.set(t, n),
-                    this.$changes.change(t, o)
+                    if (null == n) {
+                        console.error("ArraySchema items cannot be null nor undefined; Use `deleteAt(index)` instead.");
+                        return
+                    }
+                    if (this.$items.get(t) !== n) {
+                        void 0 !== n.$changes && n.$changes.setParent(this, this.$changes.root, t);
+                        var r, i, o = null !== (i = null === (r = this.$changes.indexes[t]) || void 0 === r ? void 0 : r.op) && void 0 !== i ? i : e.OPERATION.ADD;
+                        this.$changes.indexes[t] = t,
+                        this.$indexes.set(t, t),
+                        this.$items.set(t, n),
+                        this.$changes.change(t, o)
+                    }
                 }
                 ,
                 t.prototype.deleteAt = function(e) {
@@ -377,10 +384,14 @@
                 ,
                 t.prototype.splice = function(e, t) {
                     void 0 === t && (t = this.length - e);
-                    for (var n = Array.from(this.$items.keys()), r = [], i = e; i < e + t; i++)
-                        r.push(this.$items.get(n[i])),
-                        this.$deleteAt(n[i]);
-                    return r
+                    for (var n = [], r = 2; r < arguments.length; r++)
+                        n[r - 2] = arguments[r];
+                    for (var i = Array.from(this.$items.keys()), o = [], a = e; a < e + t; a++)
+                        o.push(this.$items.get(i[a])),
+                        this.$deleteAt(i[a]);
+                    for (var a = 0; a < n.length; a++)
+                        this.setAt(e + a, n[a]);
+                    return o
                 }
                 ,
                 t.prototype.unshift = function() {
@@ -463,6 +474,13 @@
                     return Array.from(this.$items.values())[Symbol.iterator]()
                 }
                 ,
+                Object.defineProperty(t, Symbol.species, {
+                    get: function() {
+                        return t
+                    },
+                    enumerable: !1,
+                    configurable: !0
+                }),
                 t.prototype.entries = function() {
                     return this.$items.entries()
                 }
@@ -495,6 +513,25 @@
                 t.prototype.findLastIndex = function() {
                     var e = Array.from(this.$items.values());
                     return e.findLastIndex.apply(e, arguments)
+                }
+                ,
+                t.prototype.with = function(e, n) {
+                    var r = Array.from(this.$items.values());
+                    return r[e] = n,
+                    new (t.bind.apply(t, l([void 0], r, !1)))
+                }
+                ,
+                t.prototype.toReversed = function() {
+                    return Array.from(this.$items.values()).reverse()
+                }
+                ,
+                t.prototype.toSorted = function(e) {
+                    return Array.from(this.$items.values()).sort(e)
+                }
+                ,
+                t.prototype.toSpliced = function(e, t) {
+                    var n = Array.from(this.$items.values());
+                    return n.toSpliced.apply(n, arguments)
                 }
                 ,
                 t.prototype.setIndex = function(e, t) {
@@ -552,15 +589,15 @@
                 }
                 return t.prototype.onAdd = function(t, n) {
                     return void 0 === n && (n = !0),
-                    f(this.$callbacks || (this.$callbacks = []), e.OPERATION.ADD, t, n ? this.$items : void 0)
+                    f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.ADD, t, n ? this.$items : void 0)
                 }
                 ,
                 t.prototype.onRemove = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.DELETE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.DELETE, t)
                 }
                 ,
                 t.prototype.onChange = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.REPLACE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.REPLACE, t)
                 }
                 ,
                 t.is = function(e) {
@@ -578,17 +615,30 @@
                     enumerable: !1,
                     configurable: !0
                 }),
+                Object.defineProperty(t, Symbol.species, {
+                    get: function() {
+                        return t
+                    },
+                    enumerable: !1,
+                    configurable: !0
+                }),
                 t.prototype.set = function(t, n) {
                     if (null == n)
                         throw Error("MapSchema#set('".concat(t, "', ").concat(n, "): trying to set ").concat(n, " value on '").concat(t, "'."));
+                    t = t.toString();
                     var r = void 0 !== this.$changes.indexes[t]
                       , i = r ? this.$changes.indexes[t] : this.$refId++
                       , o = r ? e.OPERATION.REPLACE : e.OPERATION.ADD
                       , a = void 0 !== n.$changes;
-                    return a && n.$changes.setParent(this, this.$changes.root, i),
-                    r ? a && this.$items.get(t) !== n && (o = e.OPERATION.ADD) : (this.$changes.indexes[t] = i,
-                    this.$indexes.set(i, t)),
-                    this.$items.set(t, n),
+                    if (a && n.$changes.setParent(this, this.$changes.root, i),
+                    r) {
+                        if (!a && this.$items.get(t) === n)
+                            return;
+                        a && this.$items.get(t) !== n && (o = e.OPERATION.ADD)
+                    } else
+                        this.$changes.indexes[t] = i,
+                        this.$indexes.set(i, t);
+                    return this.$items.set(t, n),
                     this.$changes.change(t, o),
                     this
                 }
@@ -852,6 +902,9 @@
                                             deleteProperty: function(e, t) {
                                                 return "number" == typeof t ? e.deleteAt(t) : delete e[t],
                                                 !0
+                                            },
+                                            has: function(e, t) {
+                                                return "symbol" == typeof t || isNaN(Number(t)) ? Reflect.has(e, t) : e.$items.has(Number(t))
                                             }
                                         }))
                                     }
@@ -906,21 +959,21 @@
                 R(e, t >>> 0),
                 R(e, Math.floor(t / 4294967296))
             }
-            function x(e, t) {
+            function T(e, t) {
                 R(e, t >>> 0),
                 R(e, t / 4294967296 >> 0)
             }
-            var N = new Int32Array(2)
-              , T = new Float32Array(N.buffer)
-              , C = new Float64Array(N.buffer);
+            var x = new Int32Array(2)
+              , N = new Float32Array(x.buffer)
+              , C = new Float64Array(x.buffer);
             function L(e, t) {
-                T[0] = t,
-                I(e, N[0])
+                N[0] = t,
+                I(e, x[0])
             }
             function M(e, t) {
                 C[0] = t,
-                I(e, N[0]),
-                I(e, N[1])
+                I(e, x[0]),
+                I(e, x[1])
             }
             function j(e, t) {
                 t || (t = "");
@@ -962,7 +1015,7 @@
                 3) : t < 4294967296 ? (e.push(206),
                 R(e, t),
                 5) : (e.push(207),
-                x(e, t),
+                T(e, t),
                 9) : t >= -32 ? (e.push(224 | t + 32),
                 1) : t >= -128 ? (e.push(208),
                 O(e, t),
@@ -984,7 +1037,7 @@
                 int32: I,
                 uint32: R,
                 int64: k,
-                uint64: x,
+                uint64: T,
                 float32: function(e, t) {
                     L(e, t)
                 },
@@ -1025,17 +1078,17 @@
                 var n = Z(e, t);
                 return 4294967296 * Z(e, t) + n
             }
-            var H = new Int32Array(2)
-              , W = new Float32Array(H.buffer)
-              , Y = new Float64Array(H.buffer);
+            var Y = new Int32Array(2)
+              , H = new Float32Array(Y.buffer)
+              , W = new Float64Array(Y.buffer);
             function J(e, t) {
-                return H[0] = q(e, t),
-                W[0]
+                return Y[0] = q(e, t),
+                H[0]
             }
             function K(e, t) {
-                return H[0] = q(e, t),
-                H[1] = q(e, t),
-                Y[0]
+                return Y[0] = q(e, t),
+                Y[1] = q(e, t),
+                W[0]
             }
             function X(e, t) {
                 var n, r = e[t.offset++];
@@ -1441,7 +1494,16 @@
                 }
                 ,
                 e.prototype.removeRef = function(e) {
-                    this.refCounts[e] = this.refCounts[e] - 1,
+                    var t = this.refCounts[e];
+                    if (void 0 === t) {
+                        console.warn("trying to remove reference ".concat(e, " that doesn't exist"));
+                        return
+                    }
+                    if (0 === t) {
+                        console.warn("trying to remove reference ".concat(e, " with 0 refCount"));
+                        return
+                    }
+                    this.refCounts[e] = t - 1,
                     this.deletedRefs.add(e)
                 }
                 ,
@@ -1514,11 +1576,11 @@
                 }
                 ,
                 t.prototype.onChange = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.REPLACE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.REPLACE, t)
                 }
                 ,
                 t.prototype.onRemove = function(t) {
-                    return f(this.$callbacks || (this.$callbacks = []), e.OPERATION.DELETE, t)
+                    return f(this.$callbacks || (this.$callbacks = {}), e.OPERATION.DELETE, t)
                 }
                 ,
                 t.prototype.assign = function(e) {
@@ -1554,73 +1616,77 @@
                         offset: 0
                     }),
                     void 0 === i && (i = this);
-                    var o, a = [], s = this.$changes.root, u = n.length, l = 0;
-                    for (s.refs.set(l, this); r.offset < u; ) {
-                        var c, f = n[r.offset++];
-                        if (255 == f) {
-                            l = Q(n, r);
-                            var d = s.refs.get(l);
-                            if (!d)
-                                throw Error('"refId" not found: '.concat(l));
-                            i = d;
+                    var o = []
+                      , a = this.$changes.root
+                      , s = n.length
+                      , u = 0;
+                    for (a.refs.set(u, this); r.offset < s; ) {
+                        var l, c = n[r.offset++];
+                        if (255 == c) {
+                            u = Q(n, r);
+                            var f = a.refs.get(u);
+                            if (!f)
+                                throw Error('"refId" not found: '.concat(u));
+                            i = f;
                             continue
                         }
-                        var p = i.$changes
-                          , h = void 0 !== i._definition
-                          , y = h ? f >> 6 << 6 : f;
-                        if (y === e.OPERATION.CLEAR) {
-                            i.clear(a);
+                        var d = i.$changes
+                          , p = void 0 !== i._definition
+                          , h = p ? c >> 6 << 6 : c;
+                        if (h === e.OPERATION.CLEAR) {
+                            i.clear(o);
                             continue
                         }
-                        var b = h ? f % (y || 255) : Q(n, r)
-                          , E = h ? i._definition.fieldsByIndex[b] : ""
-                          , _ = p.getType(b)
+                        var y = p ? c % (h || 255) : Q(n, r)
+                          , b = p ? i._definition.fieldsByIndex[y] : ""
+                          , E = d.getType(y)
+                          , _ = void 0
                           , w = void 0
-                          , O = void 0
-                          , A = void 0;
-                        if (h ? O = i["_".concat(E)] : (O = i.getByIndex(b),
-                        (y & e.OPERATION.ADD) === e.OPERATION.ADD ? (A = i instanceof g ? X(n, r) : b,
-                        i.setIndex(b, A)) : A = i.getIndex(b)),
-                        (y & e.OPERATION.DELETE) === e.OPERATION.DELETE && (y !== e.OPERATION.DELETE_AND_ADD && i.deleteByIndex(b),
-                        O && O.$changes && s.removeRef(O.$changes.refId),
-                        w = null),
-                        void 0 === E) {
+                          , O = void 0;
+                        if (p ? w = i["_".concat(b)] : (w = i.getByIndex(y),
+                        (h & e.OPERATION.ADD) === e.OPERATION.ADD ? (O = i instanceof g ? X(n, r) : y,
+                        i.setIndex(y, O)) : O = i.getIndex(y)),
+                        (h & e.OPERATION.DELETE) === e.OPERATION.DELETE && (h !== e.OPERATION.DELETE_AND_ADD && i.deleteByIndex(y),
+                        w && w.$changes && a.removeRef(w.$changes.refId),
+                        _ = null),
+                        void 0 === b) {
                             console.warn("@colyseus/schema: definition mismatch");
-                            for (var S = {
+                            for (var A = {
                                 offset: r.offset
-                            }; r.offset < u && !(ee(n, r) && (S.offset = r.offset + 1,
-                            s.refs.has(Q(n, S)))); )
+                            }; r.offset < s && !(ee(n, r) && (A.offset = r.offset + 1,
+                            a.refs.has(Q(n, A)))); )
                                 r.offset++;
                             continue
                         }
-                        if (y === e.OPERATION.DELETE)
+                        if (h === e.OPERATION.DELETE)
                             ;
-                        else if (t.is(_)) {
-                            var P = Q(n, r);
-                            if (w = s.refs.get(P),
-                            y !== e.OPERATION.REPLACE) {
-                                var I = this.getSchemaType(n, r, _);
-                                !w && ((w = this.createTypeInstance(I)).$changes.refId = P,
-                                O && (w.$callbacks = O.$callbacks,
-                                O.$changes.refId && P !== O.$changes.refId && s.removeRef(O.$changes.refId))),
-                                s.addRef(P, w, w !== O)
+                        else if (t.is(E)) {
+                            var S = Q(n, r);
+                            if (_ = a.refs.get(S),
+                            h !== e.OPERATION.REPLACE) {
+                                var P = this.getSchemaType(n, r, E);
+                                !_ && ((_ = this.createTypeInstance(P)).$changes.refId = S,
+                                w && (_.$callbacks = w.$callbacks,
+                                w.$changes.refId && S !== w.$changes.refId && a.removeRef(w.$changes.refId))),
+                                a.addRef(S, _, _ !== w)
                             }
-                        } else if ("string" == typeof _)
-                            c = r,
-                            w = et[_](n, c);
+                        } else if ("string" == typeof E)
+                            l = r,
+                            _ = et[E](n, l);
                         else {
-                            var R = m[Object.keys(_)[0]]
-                              , k = Q(n, r)
-                              , x = s.refs.has(k) ? O || s.refs.get(k) : new R.constructor;
-                            if ((w = x.clone(!0)).$changes.refId = k,
-                            O && (w.$callbacks = O.$callbacks,
-                            O.$changes.refId && k !== O.$changes.refId)) {
-                                s.removeRef(O.$changes.refId);
-                                for (var N = O.entries(), T = void 0; (T = N.next()) && !T.done; ) {
-                                    var C = (o = T.value)[0]
-                                      , L = o[1];
-                                    a.push({
-                                        refId: k,
+                            var I = m[Object.keys(E)[0]]
+                              , R = Q(n, r)
+                              , k = a.refs.has(R) ? w || a.refs.get(R) : new I.constructor;
+                            if ((_ = k.clone(!0)).$changes.refId = R,
+                            w && (_.$callbacks = w.$callbacks,
+                            w.$changes.refId && R !== w.$changes.refId)) {
+                                a.removeRef(w.$changes.refId);
+                                for (var T = w.entries(), x = void 0; (x = T.next()) && !x.done; ) {
+                                    var N = x.value
+                                      , C = N[0]
+                                      , L = N[1];
+                                    o.push({
+                                        refId: R,
                                         op: e.OPERATION.DELETE,
                                         field: C,
                                         value: void 0,
@@ -1628,38 +1694,38 @@
                                     })
                                 }
                             }
-                            s.addRef(k, w, x !== O)
+                            a.addRef(R, _, k !== w)
                         }
-                        if (null != w) {
-                            if (w.$changes && w.$changes.setParent(p.ref, p.root, b),
+                        if (null != _) {
+                            if (_.$changes && _.$changes.setParent(d.ref, d.root, y),
                             i instanceof t)
-                                i[E] = w;
+                                i[b] = _;
                             else if (i instanceof g) {
-                                var C = A;
-                                i.$items.set(C, w),
-                                i.$changes.allChanges.add(b)
+                                var C = O;
+                                i.$items.set(C, _),
+                                i.$changes.allChanges.add(y)
                             } else if (i instanceof v)
-                                i.setAt(b, w);
+                                i.setAt(y, _);
                             else if (i instanceof en) {
-                                var M = i.add(w);
-                                i.setIndex(b, M)
+                                var M = i.add(_);
+                                i.setIndex(y, M)
                             } else if (i instanceof er) {
-                                var M = i.add(w);
-                                !1 !== M && i.setIndex(b, M)
+                                var M = i.add(_);
+                                !1 !== M && i.setIndex(y, M)
                             }
                         }
-                        O !== w && a.push({
-                            refId: l,
-                            op: y,
-                            field: E,
-                            dynamicIndex: A,
-                            value: w,
-                            previousValue: O
+                        w !== _ && o.push({
+                            refId: u,
+                            op: h,
+                            field: b,
+                            dynamicIndex: O,
+                            value: _,
+                            previousValue: w
                         })
                     }
-                    return this._triggerChanges(a),
-                    s.garbageCollectDeletedRefs(),
-                    a
+                    return this._triggerChanges(o),
+                    a.garbageCollectDeletedRefs(),
+                    o
                 }
                 ,
                 t.prototype.encode = function(n, r, i) {
@@ -1824,8 +1890,8 @@
                                             A(f, e.OPERATION.ADD),
                                             D(f, S),
                                             h instanceof g) {
-                                                var x = p.ref.$indexes.get(S);
-                                                j(f, x)
+                                                var T = p.ref.$indexes.get(S);
+                                                j(f, T)
                                             }
                                             P.$changes ? D(f, P.$changes.refId) : U[I](f, P)
                                         }
@@ -1833,8 +1899,8 @@
                                         if (A(f, e.OPERATION.ADD),
                                         D(f, S),
                                         h instanceof g) {
-                                            var x = p.ref.$indexes.get(S);
-                                            j(f, x)
+                                            var T = p.ref.$indexes.get(S);
+                                            j(f, T)
                                         }
                                         D(f, P.$changes.refId)
                                     }
@@ -1905,7 +1971,7 @@
                                     if (!d.has(g))
                                         try {
                                             null === (o = null == y ? void 0 : y[e.OPERATION.REPLACE]) || void 0 === o || o.forEach(function(e) {
-                                                return e(n)
+                                                return e()
                                             })
                                         } catch (e) {
                                             t.onError(e)
@@ -1976,17 +2042,16 @@
                 }
                 return s(t, e),
                 t.encode = function(e) {
-                    var n = e.constructor
-                      , r = new t;
-                    r.rootType = n._typeid;
-                    var i = n._context.types;
-                    for (var o in i) {
-                        var a = new ef;
-                        a.id = Number(o),
+                    var n, r = e.constructor, i = new t;
+                    i.rootType = r._typeid;
+                    var o = null === (n = r._context) || void 0 === n ? void 0 : n.types;
+                    for (var a in o) {
+                        var s = new ef;
+                        s.id = Number(a),
                         function(e, t) {
                             for (var n in t) {
-                                var i = new ec;
-                                i.name = n;
+                                var r = new ec;
+                                r.name = n;
                                 var o = void 0;
                                 if ("string" == typeof t[n])
                                     o = t[n];
@@ -1996,15 +2061,15 @@
                                     eu.is(a) ? (o = "ref",
                                     s = t[n]) : (o = Object.keys(a)[0],
                                     "string" == typeof a[o] ? o += ":" + a[o] : s = a[o]),
-                                    i.referencedType = s ? s._typeid : -1
+                                    r.referencedType = s ? s._typeid : -1
                                 }
-                                i.type = o,
-                                e.fields.push(i)
+                                r.type = o,
+                                e.fields.push(r)
                             }
-                            r.types.push(e)
-                        }(a, i[o]._definition.schema)
+                            i.types.push(e)
+                        }(s, o[a]._definition.schema)
                     }
-                    return r.encodeAll()
+                    return i.encodeAll()
                 }
                 ,
                 t.decode = function(e, n) {
@@ -2154,6 +2219,404 @@
             })
         }(t)
     },
+    25904: function(e, t, n) {
+        "use strict";
+        t.PM = t.aG = t.ei = t.be = void 0;
+        let r = n(41396);
+        t.be = function(e, t) {
+            if (e) {
+                if (e instanceof Map || e instanceof r.MapSchema)
+                    return e.forEach(t);
+                if ("object" == typeof e)
+                    return Object.entries(e).forEach( ([e,n]) => t(n, e))
+            }
+        }
+        ,
+        t.ei = function(e) {
+            return e ? e instanceof Map || e instanceof r.MapSchema ? e.size : "object" == typeof e ? Object.keys(e).length : 0 : 0
+        }
+        ,
+        t.aG = function(e, t) {
+            if (e) {
+                if (e instanceof Map || e instanceof r.MapSchema)
+                    return e.get(t);
+                if ("object" == typeof e)
+                    return e[t]
+            }
+        }
+        ,
+        t.PM = function(e, t) {
+            if (!e)
+                return !1;
+            if (e instanceof Map || e instanceof r.MapSchema) {
+                for (let[n,r] of e.entries())
+                    if (t(r, n))
+                        return !0
+            } else if ("object" == typeof e)
+                return Object.entries(e).some( ([e,n]) => t(n, e));
+            return !1
+        }
+    },
+    96721: function(e, t) {
+        "use strict";
+        var n, r;
+        t.mY = void 0,
+        (r = n || (t.mY = n = {})).timeSync = "timeSync",
+        r.handshake = "handshake",
+        r.joinRoom = "joinRoom",
+        r.sendMapLibrary = "sendMapLibrary",
+        r.moveSelfPlayer = "mv",
+        r.swapOrCombineInventorySlots = "swapOrCombineInventorySlots",
+        r.changeEquipmentBar = "changeEquipmentBar",
+        r.addMessageToChat = "addMessageToChat",
+        r.setTypingState = "setTypingState",
+        r.setTosAccepted = "setTosAccepted",
+        r.playerNotification = "playerNotification",
+        r.receiveMessageInChat = "receiveMessageInChat",
+        r.setAvatar = "setAvatar",
+        r.setPet = "setPet",
+        r.setPetName = "setPetName",
+        r.setStorageName = "setStorageName",
+        r.useItem = "ui",
+        r.useItemError = "useItemError",
+        r.talkToNPC = "talkToNPC",
+        r.clickEntity = "clickEntity",
+        r.closeDialog = "closeDialog",
+        r.collideWithObject = "collideWithObject",
+        r.teleportPlayer = "teleportPlayer",
+        r.timerCheck = "timerCheck",
+        r.collectMailboxItem = "collectMailboxItem",
+        r.fetchMailbox = "fetchMailbox",
+        r.subscribe = "subscribe",
+        r.rentFarm = "rentFarm",
+        r.buyStoreItem = "buyStoreItem",
+        r.sellStoreItem = "sellStoreItem",
+        r.updateMapMembers = "updateMapMembers",
+        r.updateRolesAndPermissions = "updateRolesAndPermissions",
+        r.updateRoomRestrictions = "updateRoomRestrictions",
+        r.updateMapListing = "updateMapListing",
+        r.claimNftMap = "claimNftMap",
+        r.updateRoomName = "updateRoomName",
+        r.updatePlayer = "updatePlayer",
+        r.bookmarkMap = "bookmarkMap",
+        r.buildObject = "buildObject",
+        r.buildTile = "buildTile",
+        r.buildEntity = "buildEntity",
+        r.claimAll = "claimAll",
+        r.upgradeFarm = "upgradeFarm",
+        r.presentUI = "presentUI",
+        r.clientCmd = "clientCmd",
+        r.playerAction = "playerAction",
+        r.clientTrigger = "clientTrigger",
+        r.trade = "trade",
+        r.marketplace = "marketplace",
+        r.reportPlayer = "reportPlayer",
+        r.mintUgc = "mintUgc",
+        r.findNFTs = "findNFTs",
+        r.sellOrders = "sellOrders",
+        r.sellOrderReset = "sellOrderReset"
+    },
+    30908: function(e, t) {
+        "use strict";
+        var n, r;
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.Skills = t.DeprecatedCraftableTypeValues = t.DeprecatedCraftableTypeEnum = t.AchievementTypes = void 0,
+        t.AchievementTypes = ["craftable", "trophy", "badge", "collection", "skill", "statistic"],
+        (r = n || (t.DeprecatedCraftableTypeEnum = n = {})).forge = "forge",
+        r.cooking = "cooking",
+        r.woodwork = "woodwork",
+        r.windmill = "windmill",
+        r.textile_mill = "textile_mill",
+        r.kiln = "kiln",
+        r.quantum_recombinator = "quantum_recombinator",
+        r.winery = "winery",
+        r.industries = "industries",
+        r.gridcraftManufacturing = "gridcraftManufacturing",
+        r.gridcraftPacking = "gridcraftPacking",
+        r.pattyMaker = "pattyMaker",
+        r.foodProcessor = "foodProcessor",
+        r.grill = "grill",
+        r.assemblyTable = "assemblyTable",
+        r.deepFryer = "deepFryer",
+        t.DeprecatedCraftableTypeValues = Object.keys(n),
+        t.Skills = ["farming", "forestry", "cooking", "mining", "woodwork", "metalworking", "stoneshaping", "petcare", "business", "exploration", "granger", "ceramicist", "beekeeping", "textiler", "aviculture", "redifferentiator", "slugger", "winemaking", "fishing", "overall"]
+    },
+    26904: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.AvatarFlags = t.NFTCollectionTypes = void 0,
+        t.NFTCollectionTypes = ["pet", "avatar", "land", "membership", "guild", "other"],
+        t.AvatarFlags = ["singular", "nochain", "1155"]
+    },
+    97656: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    57755: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.supportedLegacyNetworks = t.supportedTestnets = t.SupportedNetworks = void 0,
+        t.SupportedNetworks = ["ethereum", "goerli", "matic", "mumbai", "bsc", "ronin", "saigon"],
+        t.supportedTestnets = ["goerli", "mumbai", "saigon"],
+        t.supportedLegacyNetworks = ["ronin", "saigon"]
+    },
+    12237: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    57563: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.CropDef = t.SoilDef = void 0;
+        class n {
+            constructor() {
+                this.defaultState = "normal",
+                this.states = {}
+            }
+        }
+        t.SoilDef = n;
+        class r {
+            constructor() {
+                this.defaultState = "seed",
+                this.waterDryRate = 1,
+                this.states = {}
+            }
+        }
+        t.CropDef = r
+    },
+    42825: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.ExpressionOperators = t.FunctionNames = t.ActionTypes = t.EventTypes = void 0,
+        t.EventTypes = ["click", "input", "timer", "place", "remove"],
+        t.ActionTypes = ["stateChange", "displayChange", "itemChange", "displayTimer", "setTimer", "adjustInventory", "addAchievement", "eventTrigger", "entityTrigger", "itemTrigger", "iteratePlayers", "spawn", "return", "spawnmap", "clientCommand", "adjustSkill", "adjustCoins", "adjustEnergy", "adjustPet", "craft", "collect", "craftCancel", "destroy", "mapDrop", "mailDrop", "scheduleNotice", "setTracker", "incTracker", "decTracker", "insertArray", "loadData", "move", "custom", "call", "broadcast", "globalMessage"],
+        t.FunctionNames = ["time", "rand", "normal", "floor", "ceil", "max", "min", "abs", "log", "round", "evalTracker", "string", "array", "inventory", "space", "environment", "trait", "achievement", "crafttime", "permission", "membership", "tag", "state", "energy", "coins", "quest", "roomfind", "eval", "pet"],
+        t.ExpressionOperators = ["or", "<", ">", "=", "<>", ">=", "<=", "and", "+", "*", "-", "/", "not", "mod"]
+    },
+    5341: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    13903: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.onUseItemTypes = t.UseItemTargets = void 0,
+        t.UseItemTargets = ["entities", "self", "pet", "objects", "entityLabels", "entityTypes", "objectTypes", "ground", "mapLabels"],
+        t.onUseItemTypes = ["placeEntity", "removeEntity", "placeObject", "removeObject", "placeTile", "removeTile", "move", "water", "fertilize", "harvest", "energy", "plant", "animate", "achievement", "generic", "discoverability", "execute", "membership", "placeLabel"]
+    },
+    43584: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.GameRoles = t.MapTypes = void 0,
+        t.MapTypes = ["pixelsNFTFarm", "tutorial", "player", "nft", "public", "private", "template"],
+        t.GameRoles = ["OWNER", "Manager", "Builder", "Visitor", "Guild-Pledger", "Guild-Worker", "Guild", "Guild-Member", "Admin", "ANY"]
+    },
+    38026: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.SupportedContractKinds = void 0,
+        t.SupportedContractKinds = ["erc20", "erc721", "erc1155", "dailyTrack"]
+    },
+    81990: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    24457: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    37140: function(e, t) {
+        "use strict";
+        var n, r;
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.AnimationMode = t.surfaceTypes = void 0,
+        t.surfaceTypes = ["wall", "floor"],
+        (r = n || (t.AnimationMode = n = {}))[r.loop = 1] = "loop",
+        r[r.click = 2] = "click",
+        r[r.approach = 4] = "approach",
+        r[r.approachloop = 5] = "approachloop"
+    },
+    85657: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.MAX_ENERGY = t.DEFAULTWARDROBE = t.DEFAULTINVENTORY = t.DEFAULT_BOOKMARKS = t.MembershipTypeNames = t.NetworkWalletProviderMap = void 0,
+        t.NetworkWalletProviderMap = {
+            ethereum: ["coinbase", "okx", "metamask", "trust"],
+            goerli: ["coinbase", "okx", "metamask", "trust"],
+            matic: ["coinbase", "okx", "metamask", "trust"],
+            mumbai: ["coinbase", "okx", "metamask", "trust"],
+            bsc: ["coinbase", "okx", "metamask", "trust"],
+            ronin: ["ronin"],
+            saigon: ["ronin"]
+        },
+        t.MembershipTypeNames = ["vip", "nftLand", "nftLand-pixels"],
+        t.DEFAULT_BOOKMARKS = 3,
+        t.DEFAULTINVENTORY = {
+            size: 18,
+            baseSize: 18,
+            activeRow: 0
+        },
+        t.DEFAULTWARDROBE = {
+            size: 36
+        },
+        t.MAX_ENERGY = 1e3
+    },
+    60135: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.QuestKind = void 0,
+        t.QuestKind = ["normal", "daily", "hidden"]
+    },
+    61486: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    76906: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    48091: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    59112: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
+    53518: function(e, t) {
+        "use strict";
+        var n, r;
+        t.m = void 0,
+        (r = n || (t.m = n = {}))[r.ROOM_UNINITIALIZED = 4008] = "ROOM_UNINITIALIZED",
+        r[r.DISCONNECTED = 4009] = "DISCONNECTED",
+        r[r.INVALID_TELEPORT = 4010] = "INVALID_TELEPORT",
+        r[r.INVALID_JOIN = 4011] = "INVALID_JOIN",
+        r[r.JOIN_IN_PROGRESS = 4013] = "JOIN_IN_PROGRESS",
+        r[r.DUPLICATE_ROOM = 4242] = "DUPLICATE_ROOM",
+        r[r.PLAYER_NOT_FOUND = 4501] = "PLAYER_NOT_FOUND",
+        r[r.INVALID_SESSION = 4503] = "INVALID_SESSION",
+        r[r.ROOM_FULL = 4504] = "ROOM_FULL",
+        r[r.INVALID_AVATAR = 4505] = "INVALID_AVATAR",
+        r[r.INVALID_USERNAME = 4506] = "INVALID_USERNAME",
+        r[r.AUTHENTICATION_FAILED = 4507] = "AUTHENTICATION_FAILED",
+        r[r.INCORRECT_CLIENT_VERSION = 4509] = "INCORRECT_CLIENT_VERSION",
+        r[r.NEED_RECAPTCHA = 4511] = "NEED_RECAPTCHA",
+        r[r.AUTHENTICATION_EXPIRED = 4512] = "AUTHENTICATION_EXPIRED",
+        r[r.PLAYER_BANNED = 4521] = "PLAYER_BANNED",
+        r[r.BAD_RECAPTCHA = 4567] = "BAD_RECAPTCHA",
+        r[r.ROOM_DISPOSING = 4595] = "ROOM_DISPOSING",
+        r[r.VELOCITY_CONTROL = 4596] = "VELOCITY_CONTROL",
+        r[r.SERVER_MAINTENANCE = 4597] = "SERVER_MAINTENANCE",
+        r[r.INVALID_WORLD = 4777] = "INVALID_WORLD",
+        r[r.INVALID_MAP = 4978] = "INVALID_MAP",
+        r[r.LOGGING_OUT = 4997] = "LOGGING_OUT",
+        r[r.ABANDONED = 4998] = "ABANDONED",
+        r[r.LOGGED_IN = 4999] = "LOGGED_IN"
+    },
+    4152: function(e, t, n) {
+        "use strict";
+        var r = this && this.__createBinding || (Object.create ? function(e, t, n, r) {
+            void 0 === r && (r = n);
+            var i = Object.getOwnPropertyDescriptor(t, n);
+            (!i || ("get"in i ? !t.__esModule : i.writable || i.configurable)) && (i = {
+                enumerable: !0,
+                get: function() {
+                    return t[n]
+                }
+            }),
+            Object.defineProperty(e, r, i)
+        }
+        : function(e, t, n, r) {
+            void 0 === r && (r = n),
+            e[r] = t[n]
+        }
+        )
+          , i = this && this.__exportStar || function(e, t) {
+            for (var n in e)
+                "default" === n || Object.prototype.hasOwnProperty.call(t, n) || r(t, e, n)
+        }
+        ;
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.OptimizedCache = void 0,
+        i(n(5341), t),
+        i(n(30908), t),
+        i(n(57563), t),
+        i(n(13903), t),
+        i(n(59112), t),
+        i(n(57755), t),
+        i(n(12237), t),
+        i(n(24457), t),
+        i(n(37140), t),
+        i(n(48091), t),
+        i(n(81990), t),
+        i(n(43584), t),
+        i(n(85657), t),
+        i(n(26904), t),
+        i(n(38026), t),
+        i(n(60135), t),
+        i(n(76906), t),
+        i(n(61486), t),
+        i(n(42825), t),
+        i(n(97656), t),
+        i(n(29921), t);
+        class o {
+            constructor() {
+                this.entities = {}
+            }
+            reset() {
+                this.entities = {}
+            }
+        }
+        t.OptimizedCache = o
+    },
+    29921: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
     7406: function(e, t, n) {
         "use strict";
         function r(e) {
@@ -2244,7 +2707,7 @@
             return null == e || "object" != typeof e || Object.isFrozen(e)
         }
         function y(e) {
-            var t = H[e];
+            var t = Y[e];
             return t || r(18, e),
             t
         }
@@ -2353,14 +2816,14 @@
                     n = Object.getPrototypeOf(n)
                 }
         }
-        function x(e) {
+        function T(e) {
             e.P || (e.P = !0,
-            e.l && x(e.l))
+            e.l && T(e.l))
         }
-        function N(e) {
+        function x(e) {
             e.o || (e.o = h(e.t))
         }
-        function T(e, t, n) {
+        function N(e, t, n) {
             var r, i, o, a, s, u, l, c = f(t) ? y("MapSet").F(t, n) : d(t) ? y("MapSet").T(t, n) : e.O ? (o = i = {
                 i: (r = Array.isArray(t)) ? 1 : 0,
                 A: n ? n.A : j,
@@ -2374,9 +2837,9 @@
                 j: null,
                 C: !1
             },
-            a = W,
+            a = H,
             r && (o = [i],
-            a = Y),
+            a = W),
             u = (s = Proxy.revocable(o, a)).revoke,
             l = s.proxy,
             i.k = l,
@@ -2416,7 +2879,7 @@
             }),
             t
         }
-        , H = {}, W = {
+        , Y = {}, H = {
             get: function(e, t) {
                 if (t === q)
                     return e;
@@ -2424,8 +2887,8 @@
                 if (!u(i, t))
                     return (r = k(i, t)) ? "value"in r ? r.value : null === (n = r.get) || void 0 === n ? void 0 : n.call(e.k) : void 0;
                 var a = i[t];
-                return e.I || !o(a) ? a : a === R(e.t, t) ? (N(e),
-                e.o[t] = T(e.A.h, a, e)) : a
+                return e.I || !o(a) ? a : a === R(e.t, t) ? (x(e),
+                e.o[t] = N(e.A.h, a, e)) : a
             },
             has: function(e, t) {
                 return t in p(e)
@@ -2447,8 +2910,8 @@
                         !0;
                     if (c(n, i) && (void 0 !== n || u(e.t, t)))
                         return !0;
-                    N(e),
-                    x(e)
+                    x(e),
+                    T(e)
                 }
                 return e.o[t] === n && (void 0 !== n || t in e.o) || Number.isNaN(n) && Number.isNaN(e.o[t]) || (e.o[t] = n,
                 e.R[t] = !0),
@@ -2456,8 +2919,8 @@
             },
             deleteProperty: function(e, t) {
                 return void 0 !== R(e.t, t) || t in e.t ? (e.R[t] = !1,
-                N(e),
-                x(e)) : delete e.R[t],
+                x(e),
+                T(e)) : delete e.R[t],
                 e.o && delete e.o[t],
                 !0
             },
@@ -2480,19 +2943,19 @@
             setPrototypeOf: function() {
                 r(12)
             }
-        }, Y = {};
-        a(W, function(e, t) {
-            Y[e] = function() {
+        }, W = {};
+        a(H, function(e, t) {
+            W[e] = function() {
                 return arguments[0] = arguments[0][0],
                 t.apply(this, arguments)
             }
         }),
-        Y.deleteProperty = function(e, t) {
-            return Y.set.call(this, e, t, void 0)
+        W.deleteProperty = function(e, t) {
+            return W.set.call(this, e, t, void 0)
         }
         ,
-        Y.set = function(e, t, n) {
-            return W.set.call(this, e[0], t, n, e[0])
+        W.set = function(e, t, n) {
+            return H.set.call(this, e[0], t, n, e[0])
         }
         ;
         var J = new (function() {
@@ -2519,7 +2982,7 @@
                     void 0 !== i && "function" != typeof i && r(7),
                     o(e)) {
                         var u = w(t)
-                          , l = T(t, e, void 0)
+                          , l = N(t, e, void 0)
                           , c = !0;
                         try {
                             a = n(l),
@@ -2595,7 +3058,7 @@
                     }),
                     3 === i ? new Set(n) : n
                 }(t));
-                var t, n = w(this), u = T(this, e, void 0);
+                var t, n = w(this), u = N(this, e, void 0);
                 return u[q].C = !0,
                 _(n),
                 u
@@ -3290,19 +3753,19 @@
                 t += "ModuleSymbhasOwnPr-0123456789ABCDEFGHNRVfgctiUvz_KqYTJkLxpZXIjQW"[64 * Math.random() | 0];
             return t
         }
-          , ex = ["name", "message", "stack", "code"]
-          , eN = function(e, t) {
+          , eT = ["name", "message", "stack", "code"]
+          , ex = function(e, t) {
             this.payload = e,
             this.meta = t
         }
-          , eT = function(e, t) {
+          , eN = function(e, t) {
             this.payload = e,
             this.meta = t
         }
           , eC = function(e) {
             if ("object" == typeof e && null !== e) {
-                for (var t = {}, n = 0; n < ex.length; n++) {
-                    var r = ex[n];
+                for (var t = {}, n = 0; n < eT.length; n++) {
+                    var r = eT[n];
                     "string" == typeof e[r] && (t[r] = e[r])
                 }
                 return t
@@ -3421,21 +3884,21 @@
                                             signal: d.signal,
                                             abort: p,
                                             rejectWithValue: function(e, t) {
-                                                return new eN(e,t)
+                                                return new ex(e,t)
                                             },
                                             fulfillWithValue: function(e, t) {
-                                                return new eT(e,t)
+                                                return new eN(e,t)
                                             }
                                         })).then(function(t) {
-                                            if (t instanceof eN)
+                                            if (t instanceof ex)
                                                 throw t;
-                                            return t instanceof eT ? r(t.payload, f, e, t.meta) : r(t, f, e)
+                                            return t instanceof eN ? r(t.payload, f, e, t.meta) : r(t, f, e)
                                         })])];
                                     case 3:
                                         return v = b.sent(),
                                         [3, 5];
                                     case 4:
-                                        return v = (y = b.sent())instanceof eN ? o(null, f, e, y.payload, y.meta) : o(y, f, e),
+                                        return v = (y = b.sent())instanceof ex ? o(null, f, e, y.payload, y.meta) : o(y, f, e),
                                         [3, 5];
                                     case 5:
                                         return n && !n.dispatchConditionRejection && o.match(v) && v.meta.condition || s(v),
@@ -3509,11 +3972,11 @@
                     enumerable: t,
                     get: function() {
                         var t = this[q];
-                        return W.get(t, e)
+                        return H.get(t, e)
                     },
                     set: function(t) {
                         var n = this[q];
-                        W.set(n, e, t)
+                        H.set(n, e, t)
                     }
                 },
                 n
@@ -3524,10 +3987,10 @@
                     if (!i.P)
                         switch (i.i) {
                         case 5:
-                            r(i) && x(i);
+                            r(i) && T(i);
                             break;
                         case 4:
-                            n(i) && x(i)
+                            n(i) && T(i)
                         }
                 }
             }
@@ -3608,14 +4071,14 @@
                                 if (4 === l)
                                     a(o, function(t) {
                                         t !== q && (void 0 !== i[t] || u(i, t) ? s[t] || e(o[t]) : (s[t] = !0,
-                                        x(n)))
+                                        T(n)))
                                     }),
                                     a(i, function(e) {
                                         void 0 !== o[e] || u(o, e) || (s[e] = !1,
-                                        x(n))
+                                        T(n))
                                     });
                                 else if (5 === l) {
-                                    if (r(n) && (x(n),
+                                    if (r(n) && (T(n),
                                     s.length = !0),
                                     o.length < i.length)
                                         for (var c = o.length; c < i.length; c++)
@@ -3636,7 +4099,7 @@
                     return 4 === e.i ? n(e) : r(e)
                 }
             },
-            H.ES5 || (H.ES5 = o)
+            Y.ES5 || (Y.ES5 = o)
         }()
     },
     84063: function(e, t, n) {
@@ -3737,7 +4200,7 @@
                 this.token = void 0,
                 this.endpoint = e.replace("ws", "http"),
                 (0,
-                l.getItem)(c, e=>this.token = e)
+                l.getItem)(c, e => this.token = e)
             }
             get hasToken() {
                 return !!this.token
@@ -3842,7 +4305,7 @@
             }
             registerPingService(e=15e3) {
                 this.unregisterPingService(),
-                this.keepOnlineInterval = setInterval(()=>this.request("get", "/auth"), e)
+                this.keepOnlineInterval = setInterval( () => this.request("get", "/auth"), e)
             }
             unregisterPingService() {
                 clearInterval(this.keepOnlineInterval)
@@ -3963,10 +4426,10 @@
                     };
                     e.reconnectionToken && (o.reconnectionToken = e.reconnectionToken);
                     let s = n || r;
-                    return r.connect(this.buildEndpoint(e.room, o), e.devMode && (()=>i(this, void 0, void 0, function*() {
+                    return r.connect(this.buildEndpoint(e.room, o), e.devMode && ( () => i(this, void 0, void 0, function*() {
                         console.info(`[Colyseus devMode]: ${String.fromCodePoint(128260)} Re-establishing connection with room id '${r.roomId}'...`);
                         let n = 0
-                          , o = ()=>i(this, void 0, void 0, function*() {
+                          , o = () => i(this, void 0, void 0, function*() {
                             n++;
                             try {
                                 yield this.consumeSeatReservation(e, t, s),
@@ -3978,10 +4441,10 @@
                         });
                         setTimeout(o, 2e3)
                     })), s),
-                    new Promise((e,t)=>{
-                        let n = (e,n)=>t(new a.ServerError(e,n));
+                    new Promise( (e, t) => {
+                        let n = (e, n) => t(new a.ServerError(e,n));
                         s.onError.once(n),
-                        s.onJoin.once(()=>{
+                        s.onJoin.once( () => {
                             s.onError.remove(n),
                             e(s)
                         }
@@ -4181,12 +4644,12 @@
                 l.getSerializer)("schema")),
                 this.rootSchema = t,
                 this.serializer.state = new t),
-                this.onError((e,t)=>{
+                this.onError( (e, t) => {
                     var n;
                     return null === (n = console.warn) || void 0 === n ? void 0 : n.call(console, `colyseus.js - onError => (${e}) ${t}`)
                 }
                 ),
-                this.onLeave(()=>this.removeAllListeners())
+                this.onLeave( () => this.removeAllListeners())
             }
             get id() {
                 return this.roomId
@@ -4215,8 +4678,8 @@
                 r.connect(e)
             }
             leave(e=!0) {
-                return new Promise(t=>{
-                    this.onLeave(e=>t(e)),
+                return new Promise(t => {
+                    this.onLeave(e => t(e)),
                     this.connection ? e ? this.connection.send([u.Protocol.LEAVE_ROOM]) : this.connection.close() : this.onLeave.invoke(p.CloseCode.CONSENTED)
                 }
                 )
@@ -4380,7 +4843,7 @@
         ,
         t.getItem = function(e, t) {
             let n = r().getItem(e);
-            "undefined" != typeof Promise && n instanceof Promise ? n.then(e=>t(e)) : t(n)
+            "undefined" != typeof Promise && n instanceof Promise ? n.then(e => t(e)) : t(n)
         }
     },
     58295: function(e, t) {
@@ -4389,7 +4852,7 @@
             value: !0
         }),
         t.createNanoEvents = void 0,
-        t.createNanoEvents = ()=>({
+        t.createNanoEvents = () => ({
             emit(e, ...t) {
                 let n = this.events[e] || [];
                 for (let e = 0, r = n.length; e < r; e++)
@@ -4399,9 +4862,9 @@
             on(e, t) {
                 var n;
                 return (null === (n = this.events[e]) || void 0 === n ? void 0 : n.push(t)) || (this.events[e] = [t]),
-                ()=>{
+                () => {
                     var n;
-                    this.events[e] = null === (n = this.events[e]) || void 0 === n ? void 0 : n.filter(e=>t !== e)
+                    this.events[e] = null === (n = this.events[e]) || void 0 === n ? void 0 : n.filter(e => t !== e)
                 }
             }
         })
@@ -4421,10 +4884,10 @@
                 this
             }
             invoke(...e) {
-                this.handlers.forEach(t=>t.apply(this, e))
+                this.handlers.forEach(t => t.apply(this, e))
             }
             invokeAsync(...e) {
-                return Promise.all(this.handlers.map(t=>t.apply(this, e)))
+                return Promise.all(this.handlers.map(t => t.apply(this, e)))
             }
             remove(e) {
                 let t = this.handlers.indexOf(e);
@@ -4441,7 +4904,7 @@
             function t(t) {
                 return e.register(t, this === null)
             }
-            return t.once = t=>{
+            return t.once = t => {
                 let n = function(...r) {
                     t.apply(this, r),
                     e.remove(n)
@@ -4449,10 +4912,10 @@
                 e.register(n)
             }
             ,
-            t.remove = t=>e.remove(t),
-            t.invoke = (...t)=>e.invoke(...t),
-            t.invokeAsync = (...t)=>e.invokeAsync(...t),
-            t.clear = ()=>e.clear(),
+            t.remove = t => e.remove(t),
+            t.invoke = (...t) => e.invoke(...t),
+            t.invokeAsync = (...t) => e.invokeAsync(...t),
+            t.clear = () => e.clear(),
             t
         }
     },
@@ -4503,7 +4966,7 @@
         a.registerSerializer)("none", o.NoneSerializer)
     },
     21331: function() {
-        ArrayBuffer.isView || (ArrayBuffer.isView = e=>null !== e && "object" == typeof e && e.buffer instanceof ArrayBuffer),
+        ArrayBuffer.isView || (ArrayBuffer.isView = e => null !== e && "object" == typeof e && e.buffer instanceof ArrayBuffer),
         "undefined" == typeof globalThis && "undefined" != typeof window && (window.globalThis = window)
     },
     59572: function(e, t) {
@@ -6444,11 +6907,11 @@
         var r;
         e = n.nmd(e),
         (function() {
-            var i, o = "Expected a function", a = "__lodash_hash_undefined__", s = "__lodash_placeholder__", u = 1 / 0, l = 0 / 0, c = [["ary", 128], ["bind", 1], ["bindKey", 2], ["curry", 8], ["curryRight", 16], ["flip", 512], ["partial", 32], ["partialRight", 64], ["rearg", 256]], f = "[object Arguments]", d = "[object Array]", p = "[object Boolean]", h = "[object Date]", v = "[object Error]", g = "[object Function]", m = "[object GeneratorFunction]", y = "[object Map]", b = "[object Number]", E = "[object Object]", _ = "[object Promise]", w = "[object RegExp]", O = "[object Set]", A = "[object String]", S = "[object Symbol]", P = "[object WeakMap]", I = "[object ArrayBuffer]", R = "[object DataView]", k = "[object Float32Array]", x = "[object Float64Array]", N = "[object Int8Array]", T = "[object Int16Array]", C = "[object Int32Array]", L = "[object Uint8Array]", M = "[object Uint8ClampedArray]", j = "[object Uint16Array]", D = "[object Uint32Array]", U = /\b__p \+= '';/g, $ = /\b(__p \+=) '' \+/g, V = /(__e\(.*?\)|\b__t\)) \+\n'';/g, B = /&(?:amp|lt|gt|quot|#39);/g, F = /[&<>"']/g, q = RegExp(B.source), Z = RegExp(F.source), G = /<%-([\s\S]+?)%>/g, z = /<%([\s\S]+?)%>/g, H = /<%=([\s\S]+?)%>/g, W = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/, Y = /^\w*$/, J = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g, K = /[\\^$.*+?()[\]{}|]/g, X = RegExp(K.source), Q = /^\s+/, ee = /\s/, et = /\{(?:\n\/\* \[wrapped with .+\] \*\/)?\n?/, en = /\{\n\/\* \[wrapped with (.+)\] \*/, er = /,? & /, ei = /[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g, eo = /[()=,{}\[\]\/\s]/, ea = /\\(\\)?/g, es = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g, eu = /\w*$/, el = /^[-+]0x[0-9a-f]+$/i, ec = /^0b[01]+$/i, ef = /^\[object .+?Constructor\]$/, ed = /^0o[0-7]+$/i, ep = /^(?:0|[1-9]\d*)$/, eh = /[\xc0-\xd6\xd8-\xf6\xf8-\xff\u0100-\u017f]/g, ev = /($^)/, eg = /['\n\r\u2028\u2029\\]/g, em = "\ud800-\udfff", ey = "\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff", eb = "\\u2700-\\u27bf", eE = "a-z\\xdf-\\xf6\\xf8-\\xff", e_ = "A-Z\\xc0-\\xd6\\xd8-\\xde", ew = "\\ufe0e\\ufe0f", eO = "\\xac\\xb1\\xd7\\xf7\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf\\u2000-\\u206f \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000", eA = "['’]", eS = "[" + eO + "]", eP = "[" + ey + "]", eI = "[" + eE + "]", eR = "[^" + em + eO + "\\d+" + eb + eE + e_ + "]", ek = "\ud83c[\udffb-\udfff]", ex = "[^" + em + "]", eN = "(?:\ud83c[\udde6-\uddff]){2}", eT = "[\ud800-\udbff][\udc00-\udfff]", eC = "[" + e_ + "]", eL = "\\u200d", eM = "(?:" + eI + "|" + eR + ")", ej = "(?:" + eA + "(?:d|ll|m|re|s|t|ve))?", eD = "(?:" + eA + "(?:D|LL|M|RE|S|T|VE))?", eU = "(?:" + eP + "|" + ek + ")?", e$ = "[" + ew + "]?", eV = "(?:" + eL + "(?:" + [ex, eN, eT].join("|") + ")" + e$ + eU + ")*", eB = e$ + eU + eV, eF = "(?:" + ["[" + eb + "]", eN, eT].join("|") + ")" + eB, eq = "(?:" + [ex + eP + "?", eP, eN, eT, "[" + em + "]"].join("|") + ")", eZ = RegExp(eA, "g"), eG = RegExp(eP, "g"), ez = RegExp(ek + "(?=" + ek + ")|" + eq + eB, "g"), eH = RegExp([eC + "?" + eI + "+" + ej + "(?=" + [eS, eC, "$"].join("|") + ")", "(?:" + eC + "|" + eR + ")+" + eD + "(?=" + [eS, eC + eM, "$"].join("|") + ")", eC + "?" + eM + "+" + ej, eC + "+" + eD, "\\d*(?:1ST|2ND|3RD|(?![123])\\dTH)(?=\\b|[a-z_])", "\\d*(?:1st|2nd|3rd|(?![123])\\dth)(?=\\b|[A-Z_])", "\\d+", eF].join("|"), "g"), eW = RegExp("[" + eL + em + ey + ew + "]"), eY = /[a-z][A-Z]|[A-Z]{2}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/, eJ = ["Array", "Buffer", "DataView", "Date", "Error", "Float32Array", "Float64Array", "Function", "Int8Array", "Int16Array", "Int32Array", "Map", "Math", "Object", "Promise", "RegExp", "Set", "String", "Symbol", "TypeError", "Uint8Array", "Uint8ClampedArray", "Uint16Array", "Uint32Array", "WeakMap", "_", "clearTimeout", "isFinite", "parseInt", "setTimeout"], eK = -1, eX = {};
-            eX[k] = eX[x] = eX[N] = eX[T] = eX[C] = eX[L] = eX[M] = eX[j] = eX[D] = !0,
+            var i, o = "Expected a function", a = "__lodash_hash_undefined__", s = "__lodash_placeholder__", u = 1 / 0, l = 0 / 0, c = [["ary", 128], ["bind", 1], ["bindKey", 2], ["curry", 8], ["curryRight", 16], ["flip", 512], ["partial", 32], ["partialRight", 64], ["rearg", 256]], f = "[object Arguments]", d = "[object Array]", p = "[object Boolean]", h = "[object Date]", v = "[object Error]", g = "[object Function]", m = "[object GeneratorFunction]", y = "[object Map]", b = "[object Number]", E = "[object Object]", _ = "[object Promise]", w = "[object RegExp]", O = "[object Set]", A = "[object String]", S = "[object Symbol]", P = "[object WeakMap]", I = "[object ArrayBuffer]", R = "[object DataView]", k = "[object Float32Array]", T = "[object Float64Array]", x = "[object Int8Array]", N = "[object Int16Array]", C = "[object Int32Array]", L = "[object Uint8Array]", M = "[object Uint8ClampedArray]", j = "[object Uint16Array]", D = "[object Uint32Array]", U = /\b__p \+= '';/g, $ = /\b(__p \+=) '' \+/g, V = /(__e\(.*?\)|\b__t\)) \+\n'';/g, B = /&(?:amp|lt|gt|quot|#39);/g, F = /[&<>"']/g, q = RegExp(B.source), Z = RegExp(F.source), G = /<%-([\s\S]+?)%>/g, z = /<%([\s\S]+?)%>/g, Y = /<%=([\s\S]+?)%>/g, H = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/, W = /^\w*$/, J = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g, K = /[\\^$.*+?()[\]{}|]/g, X = RegExp(K.source), Q = /^\s+/, ee = /\s/, et = /\{(?:\n\/\* \[wrapped with .+\] \*\/)?\n?/, en = /\{\n\/\* \[wrapped with (.+)\] \*/, er = /,? & /, ei = /[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g, eo = /[()=,{}\[\]\/\s]/, ea = /\\(\\)?/g, es = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g, eu = /\w*$/, el = /^[-+]0x[0-9a-f]+$/i, ec = /^0b[01]+$/i, ef = /^\[object .+?Constructor\]$/, ed = /^0o[0-7]+$/i, ep = /^(?:0|[1-9]\d*)$/, eh = /[\xc0-\xd6\xd8-\xf6\xf8-\xff\u0100-\u017f]/g, ev = /($^)/, eg = /['\n\r\u2028\u2029\\]/g, em = "\ud800-\udfff", ey = "\\u0300-\\u036f\\ufe20-\\ufe2f\\u20d0-\\u20ff", eb = "\\u2700-\\u27bf", eE = "a-z\\xdf-\\xf6\\xf8-\\xff", e_ = "A-Z\\xc0-\\xd6\\xd8-\\xde", ew = "\\ufe0e\\ufe0f", eO = "\\xac\\xb1\\xd7\\xf7\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf\\u2000-\\u206f \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000", eA = "['’]", eS = "[" + eO + "]", eP = "[" + ey + "]", eI = "[" + eE + "]", eR = "[^" + em + eO + "\\d+" + eb + eE + e_ + "]", ek = "\ud83c[\udffb-\udfff]", eT = "[^" + em + "]", ex = "(?:\ud83c[\udde6-\uddff]){2}", eN = "[\ud800-\udbff][\udc00-\udfff]", eC = "[" + e_ + "]", eL = "\\u200d", eM = "(?:" + eI + "|" + eR + ")", ej = "(?:" + eA + "(?:d|ll|m|re|s|t|ve))?", eD = "(?:" + eA + "(?:D|LL|M|RE|S|T|VE))?", eU = "(?:" + eP + "|" + ek + ")?", e$ = "[" + ew + "]?", eV = "(?:" + eL + "(?:" + [eT, ex, eN].join("|") + ")" + e$ + eU + ")*", eB = e$ + eU + eV, eF = "(?:" + ["[" + eb + "]", ex, eN].join("|") + ")" + eB, eq = "(?:" + [eT + eP + "?", eP, ex, eN, "[" + em + "]"].join("|") + ")", eZ = RegExp(eA, "g"), eG = RegExp(eP, "g"), ez = RegExp(ek + "(?=" + ek + ")|" + eq + eB, "g"), eY = RegExp([eC + "?" + eI + "+" + ej + "(?=" + [eS, eC, "$"].join("|") + ")", "(?:" + eC + "|" + eR + ")+" + eD + "(?=" + [eS, eC + eM, "$"].join("|") + ")", eC + "?" + eM + "+" + ej, eC + "+" + eD, "\\d*(?:1ST|2ND|3RD|(?![123])\\dTH)(?=\\b|[a-z_])", "\\d*(?:1st|2nd|3rd|(?![123])\\dth)(?=\\b|[A-Z_])", "\\d+", eF].join("|"), "g"), eH = RegExp("[" + eL + em + ey + ew + "]"), eW = /[a-z][A-Z]|[A-Z]{2}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/, eJ = ["Array", "Buffer", "DataView", "Date", "Error", "Float32Array", "Float64Array", "Function", "Int8Array", "Int16Array", "Int32Array", "Map", "Math", "Object", "Promise", "RegExp", "Set", "String", "Symbol", "TypeError", "Uint8Array", "Uint8ClampedArray", "Uint16Array", "Uint32Array", "WeakMap", "_", "clearTimeout", "isFinite", "parseInt", "setTimeout"], eK = -1, eX = {};
+            eX[k] = eX[T] = eX[x] = eX[N] = eX[C] = eX[L] = eX[M] = eX[j] = eX[D] = !0,
             eX[f] = eX[d] = eX[I] = eX[p] = eX[R] = eX[h] = eX[v] = eX[g] = eX[y] = eX[b] = eX[E] = eX[w] = eX[O] = eX[A] = eX[P] = !1;
             var eQ = {};
-            eQ[f] = eQ[d] = eQ[I] = eQ[R] = eQ[p] = eQ[h] = eQ[k] = eQ[x] = eQ[N] = eQ[T] = eQ[C] = eQ[y] = eQ[b] = eQ[E] = eQ[w] = eQ[O] = eQ[A] = eQ[S] = eQ[L] = eQ[M] = eQ[j] = eQ[D] = !0,
+            eQ[f] = eQ[d] = eQ[I] = eQ[R] = eQ[p] = eQ[h] = eQ[k] = eQ[T] = eQ[x] = eQ[N] = eQ[C] = eQ[y] = eQ[b] = eQ[E] = eQ[w] = eQ[O] = eQ[A] = eQ[S] = eQ[L] = eQ[M] = eQ[j] = eQ[D] = !0,
             eQ[v] = eQ[g] = eQ[P] = !1;
             var e0 = {
                 "\\": "\\",
@@ -6618,15 +7081,15 @@
                 }
                 return n
             }
-            function tx(e, t) {
+            function tT(e, t) {
                 for (var n = -1, r = Array(e); ++n < e; )
                     r[n] = t(n);
                 return r
             }
-            function tN(e) {
-                return e ? e.slice(0, tH(e) + 1).replace(Q, "") : e
+            function tx(e) {
+                return e ? e.slice(0, tY(e) + 1).replace(Q, "") : e
             }
-            function tT(e) {
+            function tN(e) {
                 return function(t) {
                     return e(t)
                 }
@@ -6852,7 +7315,7 @@
                 return "\\" + e0[e]
             }
             function tV(e) {
-                return eW.test(e)
+                return eH.test(e)
             }
             function tB(e) {
                 var t = -1
@@ -6893,20 +7356,20 @@
             function tz(e) {
                 return tV(e) ? e.match(ez) || [] : e.split("")
             }
-            function tH(e) {
+            function tY(e) {
                 for (var t = e.length; t-- && ee.test(e.charAt(t)); )
                     ;
                 return t
             }
-            var tW = tI({
+            var tH = tI({
                 "&amp;": "&",
                 "&lt;": "<",
                 "&gt;": ">",
                 "&quot;": '"',
                 "&#39;": "'"
             })
-              , tY = function e(t) {
-                var n, r, ee, em, ey = (t = null == t ? e5 : tY.defaults(e5.Object(), t, tY.pick(e5, eJ))).Array, eb = t.Date, eE = t.Error, e_ = t.Function, ew = t.Math, eO = t.Object, eA = t.RegExp, eS = t.String, eP = t.TypeError, eI = ey.prototype, eR = e_.prototype, ek = eO.prototype, ex = t["__core-js_shared__"], eN = eR.toString, eT = ek.hasOwnProperty, eC = 0, eL = (n = /[^.]+$/.exec(ex && ex.keys && ex.keys.IE_PROTO || "")) ? "Symbol(src)_1." + n : "", eM = ek.toString, ej = eN.call(eO), eD = e5._, eU = eA("^" + eN.call(eT).replace(K, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$"), e$ = e9 ? t.Buffer : i, eV = t.Symbol, eB = t.Uint8Array, eF = e$ ? e$.allocUnsafe : i, eq = tF(eO.getPrototypeOf, eO), ez = eO.create, eW = ek.propertyIsEnumerable, e0 = eI.splice, e4 = eV ? eV.isConcatSpreadable : i, e3 = eV ? eV.iterator : i, e6 = eV ? eV.toStringTag : i, e8 = function() {
+              , tW = function e(t) {
+                var n, r, ee, em, ey = (t = null == t ? e5 : tW.defaults(e5.Object(), t, tW.pick(e5, eJ))).Array, eb = t.Date, eE = t.Error, e_ = t.Function, ew = t.Math, eO = t.Object, eA = t.RegExp, eS = t.String, eP = t.TypeError, eI = ey.prototype, eR = e_.prototype, ek = eO.prototype, eT = t["__core-js_shared__"], ex = eR.toString, eN = ek.hasOwnProperty, eC = 0, eL = (n = /[^.]+$/.exec(eT && eT.keys && eT.keys.IE_PROTO || "")) ? "Symbol(src)_1." + n : "", eM = ek.toString, ej = ex.call(eO), eD = e5._, eU = eA("^" + ex.call(eN).replace(K, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$"), e$ = e9 ? t.Buffer : i, eV = t.Symbol, eB = t.Uint8Array, eF = e$ ? e$.allocUnsafe : i, eq = tF(eO.getPrototypeOf, eO), ez = eO.create, eH = ek.propertyIsEnumerable, e0 = eI.splice, e4 = eV ? eV.isConcatSpreadable : i, e3 = eV ? eV.iterator : i, e6 = eV ? eV.toStringTag : i, e8 = function() {
                     try {
                         var e = ih(eO, "defineProperty");
                         return e({}, "", {}),
@@ -6917,7 +7380,7 @@
                     if (oz(e) && !oM(e) && !(e instanceof ny)) {
                         if (e instanceof nm)
                             return e;
-                        if (eT.call(e, "__wrapped__"))
+                        if (eN.call(e, "__wrapped__"))
                             return iV(e)
                     }
                     return new nm(e)
@@ -6992,10 +7455,10 @@
                       , i = !n && !r && o$(e)
                       , o = !n && !r && !i && o0(e)
                       , a = n || r || i || o
-                      , s = a ? tx(e.length, eS) : []
+                      , s = a ? tT(e.length, eS) : []
                       , u = s.length;
                     for (var l in e)
-                        (t || eT.call(e, l)) && !(a && ("length" == l || i && ("offset" == l || "parent" == l) || o && ("buffer" == l || "byteLength" == l || "byteOffset" == l) || i_(l, u))) && s.push(l);
+                        (t || eN.call(e, l)) && !(a && ("length" == l || i && ("offset" == l || "parent" == l) || o && ("buffer" == l || "byteLength" == l || "byteOffset" == l) || i_(l, u))) && s.push(l);
                     return s
                 }
                 function nS(e) {
@@ -7003,15 +7466,15 @@
                     return t ? e[rl(0, t - 1)] : i
                 }
                 function nP(e, t, n) {
-                    (i === n || oN(e[t], n)) && (i !== n || t in e) || nN(e, t, n)
+                    (i === n || ox(e[t], n)) && (i !== n || t in e) || nx(e, t, n)
                 }
                 function nI(e, t, n) {
                     var r = e[t];
-                    eT.call(e, t) && oN(r, n) && (i !== n || t in e) || nN(e, t, n)
+                    eN.call(e, t) && ox(r, n) && (i !== n || t in e) || nx(e, t, n)
                 }
                 function nR(e, t) {
                     for (var n = e.length; n--; )
-                        if (oN(e[n][0], t))
+                        if (ox(e[n][0], t))
                             return n;
                     return -1
                 }
@@ -7021,10 +7484,10 @@
                     }),
                     r
                 }
-                function nx(e, t) {
+                function nT(e, t) {
                     return e && rB(t, ad(t), e)
                 }
-                function nN(e, t, n) {
+                function nx(e, t, n) {
                     "__proto__" == t && e8 ? e8(e, t, {
                         configurable: !0,
                         enumerable: !0,
@@ -7032,7 +7495,7 @@
                         writable: !0
                     }) : e[t] = n
                 }
-                function nT(e, t) {
+                function nN(e, t) {
                     for (var n = -1, r = t.length, o = ey(r), a = null == e; ++n < r; )
                         o[n] = a ? i : as(e, t[n]);
                     return o
@@ -7053,7 +7516,7 @@
                     if (d) {
                         if (v = e.length,
                         _ = new e.constructor(v),
-                        v && "string" == typeof e[0] && eT.call(e, "index") && (_.index = e.index,
+                        v && "string" == typeof e[0] && eN.call(e, "index") && (_.index = e.index,
                         _.input = e.input),
                         s = _,
                         !u)
@@ -7066,7 +7529,7 @@
                             if (s = l || B ? {} : ib(e),
                             !u)
                                 return l ? (P = ($ = s) && rB(e, ap(e), $),
-                                rB(e, ig(e), P)) : (U = nx(s, e),
+                                rB(e, ig(e), P)) : (U = nT(s, e),
                                 rB(e, iv(e), U))
                         } else {
                             if (!eQ[V])
@@ -7083,9 +7546,9 @@
                                     return r = n ? rM(e.buffer) : e.buffer,
                                     new e.constructor(r,e.byteOffset,e.byteLength);
                                 case k:
+                                case T:
                                 case x:
                                 case N:
-                                case T:
                                 case C:
                                 case L:
                                 case M:
@@ -7115,7 +7578,7 @@
                     a.set(e, s),
                     oK(e) ? e.forEach(function(r) {
                         s.add(nL(r, t, n, r, e, a))
-                    }) : oH(e) && e.forEach(function(r, i) {
+                    }) : oY(e) && e.forEach(function(r, i) {
                         s.set(i, nL(r, t, n, i, e, a))
                     });
                     var q = c ? l ? ia : io : l ? ap : ad
@@ -7142,7 +7605,7 @@
                 function nj(e, t, n) {
                     if ("function" != typeof e)
                         throw new eP(o);
-                    return iT(function() {
+                    return iN(function() {
                         e.apply(i, n)
                     }, t)
                 }
@@ -7155,7 +7618,7 @@
                       , l = t.length;
                     if (!s)
                         return u;
-                    n && (t = th(t, tT(n))),
+                    n && (t = th(t, tN(n))),
                     r ? (o = tp,
                     a = !1) : t.length >= 200 && (o = tL,
                     a = !1,
@@ -7177,7 +7640,7 @@
                 nh.templateSettings = {
                     escape: G,
                     evaluate: z,
-                    interpolate: H,
+                    interpolate: Y,
                     variable: "",
                     imports: {
                         _: nh
@@ -7206,12 +7669,12 @@
                         var n = t[e];
                         return n === a ? i : n
                     }
-                    return eT.call(t, e) ? t[e] : i
+                    return eN.call(t, e) ? t[e] : i
                 }
                 ,
                 nb.prototype.has = function(e) {
                     var t = this.__data__;
-                    return nr ? i !== t[e] : eT.call(t, e)
+                    return nr ? i !== t[e] : eN.call(t, e)
                 }
                 ,
                 nb.prototype.set = function(e, t) {
@@ -7328,7 +7791,7 @@
                 }
                 ;
                 var nU = rZ(nz)
-                  , n$ = rZ(nH, !0);
+                  , n$ = rZ(nY, !0);
                 function nV(e, t) {
                     var n = !0;
                     return nU(e, function(e, r, i) {
@@ -7368,16 +7831,16 @@
                 function nz(e, t) {
                     return e && nZ(e, t, ad)
                 }
-                function nH(e, t) {
+                function nY(e, t) {
                     return e && nG(e, t, ad)
                 }
-                function nW(e, t) {
+                function nH(e, t) {
                     return tf(t, function(t) {
                         return oF(e[t])
                     })
                 }
-                function nY(e, t) {
-                    t = rN(t, e);
+                function nW(e, t) {
+                    t = rx(t, e);
                     for (var n = 0, r = t.length; null != e && n < r; )
                         e = e[iU(t[n++])];
                     return n && n == r ? e : i
@@ -7388,7 +7851,7 @@
                 }
                 function nK(e) {
                     return null == e ? i === e ? "[object Undefined]" : "[object Null]" : e6 && e6 in eO(e) ? function(e) {
-                        var t = eT.call(e, e6)
+                        var t = eN.call(e, e6)
                           , n = e[e6];
                         try {
                             e[e6] = i;
@@ -7403,7 +7866,7 @@
                     return e > t
                 }
                 function nQ(e, t) {
-                    return null != e && eT.call(e, t)
+                    return null != e && eN.call(e, t)
                 }
                 function n0(e, t) {
                     return null != e && t in eO(e)
@@ -7411,7 +7874,7 @@
                 function n1(e, t, n) {
                     for (var r = n ? tp : td, o = e[0].length, a = e.length, s = a, u = ey(a), l = 1 / 0, c = []; s--; ) {
                         var f = e[s];
-                        s && t && (f = th(f, tT(t))),
+                        s && t && (f = th(f, tN(t))),
                         l = t4(f.length, l),
                         u[s] = !n && (t || o >= 120 && f.length >= 120) ? new nw(s && f) : i
                     }
@@ -7435,7 +7898,7 @@
                     return c
                 }
                 function n2(e, t, n) {
-                    t = rN(t, e);
+                    t = rx(t, e);
                     var r = null == (e = ik(e, t)) ? e : e[iU(iK(t))];
                     return null == r ? i : ts(r, e, n)
                 }
@@ -7475,7 +7938,7 @@
                                 case p:
                                 case h:
                                 case b:
-                                    return oN(+e, +t);
+                                    return ox(+e, +t);
                                 case v:
                                     return e.name == t.name && e.message == t.message;
                                 case w:
@@ -7503,13 +7966,13 @@
                                 return !1
                             }(e, t, l, n, r, o, a);
                         if (!(1 & n)) {
-                            var P = g && eT.call(e, "__wrapped__")
-                              , k = m && eT.call(t, "__wrapped__");
+                            var P = g && eN.call(e, "__wrapped__")
+                              , k = m && eN.call(t, "__wrapped__");
                             if (P || k) {
-                                var x = P ? e.value() : e
-                                  , N = k ? t.value() : t;
+                                var T = P ? e.value() : e
+                                  , x = k ? t.value() : t;
                                 return a || (a = new nO),
-                                o(x, N, n, r, a)
+                                o(T, x, n, r, a)
                             }
                         }
                         return !!_ && (a || (a = new nO),
@@ -7521,7 +7984,7 @@
                                 return !1;
                             for (var c = l; c--; ) {
                                 var f = u[c];
-                                if (!(s ? f in t : eT.call(t, f)))
+                                if (!(s ? f in t : eN.call(t, f)))
                                     return !1
                             }
                             var d = a.get(e)
@@ -7585,14 +8048,14 @@
                     return !(!oG(e) || eL && eL in e) && (oF(e) ? eU : ef).test(i$(e))
                 }
                 function n8(e) {
-                    return "function" == typeof e ? e : null == e ? aU : "object" == typeof e ? oM(e) ? rn(e[0], e[1]) : rt(e) : aH(e)
+                    return "function" == typeof e ? e : null == e ? aU : "object" == typeof e ? oM(e) ? rn(e[0], e[1]) : rt(e) : aY(e)
                 }
                 function n9(e) {
                     if (!iP(e))
                         return t1(e);
                     var t = [];
                     for (var n in eO(e))
-                        eT.call(e, n) && "constructor" != n && t.push(n);
+                        eN.call(e, n) && "constructor" != n && t.push(n);
                     return t
                 }
                 function n7(e, t) {
@@ -7624,8 +8087,8 @@
                         if (o || (o = new nO),
                         oG(a))
                             (function(e, t, n, r, o, a, s) {
-                                var u = ix(e, n)
-                                  , l = ix(t, n)
+                                var u = iT(e, n)
+                                  , l = iT(t, n)
                                   , c = s.get(l);
                                 if (c) {
                                     nP(e, n, c);
@@ -7640,7 +8103,7 @@
                                     f = l,
                                     p || h || v ? oM(u) ? f = u : oU(u) ? f = rV(u) : h ? (d = !1,
                                     f = rL(l, !0)) : v ? (d = !1,
-                                    f = rj(l, !0)) : f = [] : oY(l) || oL(l) ? (f = u,
+                                    f = rj(l, !0)) : f = [] : oW(l) || oL(l) ? (f = u,
                                     oL(u) ? f = o9(u) : (!oG(u) || oF(u)) && (f = ib(l))) : d = !1
                                 }
                                 d && (s.set(l, f),
@@ -7650,7 +8113,7 @@
                             }
                             )(e, t, s, n, rr, r, o);
                         else {
-                            var u = r ? r(ix(e, s), a, s + "", e, t, o) : i;
+                            var u = r ? r(iT(e, s), a, s + "", e, t, o) : i;
                             i === u && (u = a),
                             nP(e, s, u)
                         }
@@ -7664,12 +8127,12 @@
                 function ro(e, t, n) {
                     t = t.length ? th(t, function(e) {
                         return oM(e) ? function(t) {
-                            return nY(t, 1 === e.length ? e[0] : e)
+                            return nW(t, 1 === e.length ? e[0] : e)
                         }
                         : e
                     }) : [aU];
                     var r = -1;
-                    return t = th(t, tT(ic())),
+                    return t = th(t, tN(ic())),
                     function(e, t) {
                         var n = e.length;
                         for (e.sort(t); n--; )
@@ -7700,8 +8163,8 @@
                 function ra(e, t, n) {
                     for (var r = -1, i = t.length, o = {}; ++r < i; ) {
                         var a = t[r]
-                          , s = nY(e, a);
-                        n(s, a) && rd(o, rN(a, e), s)
+                          , s = nW(e, a);
+                        n(s, a) && rd(o, rx(a, e), s)
                     }
                     return o
                 }
@@ -7711,7 +8174,7 @@
                       , a = t.length
                       , s = e;
                     for (e === t && (t = rV(t)),
-                    n && (s = th(e, tT(n))); ++o < a; )
+                    n && (s = th(e, tN(n))); ++o < a; )
                         for (var u = 0, l = t[o], c = n ? n(l) : l; (u = i(s, c, u, r)) > -1; )
                             s !== e && e0.call(s, u, 1),
                             e0.call(e, u, 1);
@@ -7746,7 +8209,7 @@
                 function rd(e, t, n, r) {
                     if (!oG(e))
                         return e;
-                    t = rN(t, e);
+                    t = rx(t, e);
                     for (var o = -1, a = t.length, s = a - 1, u = e; null != u && ++o < a; ) {
                         var l = iU(t[o])
                           , c = n;
@@ -7831,7 +8294,7 @@
                     for (var n = -1, r = e.length, i = 0, o = []; ++n < r; ) {
                         var a = e[n]
                           , s = t ? t(a) : a;
-                        if (!n || !oN(s, u)) {
+                        if (!n || !ox(s, u)) {
                             var u = s;
                             o[i++] = 0 === a ? 0 : a
                         }
@@ -7887,11 +8350,11 @@
                     return s
                 }
                 function rO(e, t) {
-                    return t = rN(t, e),
+                    return t = rx(t, e),
                     null == (e = ik(e, t)) || delete e[iU(iK(t))]
                 }
                 function rA(e, t, n, r) {
-                    return rd(e, t, n(nY(e, t)), r)
+                    return rd(e, t, n(nW(e, t)), r)
                 }
                 function rS(e, t, n, r) {
                     for (var i = e.length, o = r ? i : -1; (r ? o-- : ++o < i) && t(e[o], o, e); )
@@ -7924,13 +8387,13 @@
                 function rk(e) {
                     return oU(e) ? e : []
                 }
-                function rx(e) {
+                function rT(e) {
                     return "function" == typeof e ? e : aU
                 }
-                function rN(e, t) {
+                function rx(e, t) {
                     return oM(e) ? e : iO(e, t) ? [e] : iD(o7(e))
                 }
-                function rT(e, t, n) {
+                function rN(e, t, n) {
                     var r = e.length;
                     return n = i === n ? r : n,
                     !t && n >= r ? e : rv(e, t, n)
@@ -8005,7 +8468,7 @@
                         var u = t[a]
                           , l = r ? r(n[u], e[u], u, n, e) : i;
                         i === l && (l = e[u]),
-                        o ? nN(n, u, l) : nI(n, u, l)
+                        o ? nx(n, u, l) : nI(n, u, l)
                     }
                     return n
                 }
@@ -8058,16 +8521,16 @@
                     return function(t) {
                         var n = tV(t = o7(t)) ? tz(t) : i
                           , r = n ? n[0] : t.charAt(0)
-                          , o = n ? rT(n, 1).join("") : t.slice(1);
+                          , o = n ? rN(n, 1).join("") : t.slice(1);
                         return r[e]() + o
                     }
                 }
-                function rH(e) {
+                function rY(e) {
                     return function(t) {
-                        return tg(aT(aA(t).replace(eZ, "")), e, "")
+                        return tg(aN(aA(t).replace(eZ, "")), e, "")
                     }
                 }
-                function rW(e) {
+                function rH(e) {
                     return function() {
                         var t = arguments;
                         switch (t.length) {
@@ -8093,7 +8556,7 @@
                         return oG(r) ? r : n
                     }
                 }
-                function rY(e) {
+                function rW(e) {
                     return function(t, n, r) {
                         var o = eO(t);
                         if (!oD(t)) {
@@ -8141,7 +8604,7 @@
                       , p = 2 & t
                       , h = 24 & t
                       , v = 512 & t
-                      , g = p ? i : rW(e);
+                      , g = p ? i : rH(e);
                     return function m() {
                         for (var y = arguments.length, b = ey(y), E = y; E--; )
                             b[E] = arguments[E];
@@ -8170,7 +8633,7 @@
                             return e
                         }(b, u) : v && y > 1 && b.reverse(),
                         f && l < y && (b.length = l),
-                        this && this !== e5 && this instanceof m && (S = g || rW(S)),
+                        this && this !== e5 && this instanceof m && (S = g || rH(S)),
                         S.apply(A, b)
                     }
                 }
@@ -8204,7 +8667,7 @@
                 }
                 function r0(e) {
                     return ii(function(t) {
-                        return t = th(t, tT(ic())),
+                        return t = th(t, tN(ic())),
                         rf(function(n) {
                             var r = this;
                             return e(t, function(e) {
@@ -8218,7 +8681,7 @@
                     if (n < 2)
                         return n ? rc(t, e) : t;
                     var r = rc(t, tI(e / tG(t)));
-                    return tV(t) ? rT(tz(r), 0, e).join("") : r.slice(0, e)
+                    return tV(t) ? rN(tz(r), 0, e).join("") : r.slice(0, e)
                 }
                 function r2(e) {
                     return function(t, n, r) {
@@ -8252,7 +8715,7 @@
                     4 & (t &= ~(f ? 64 : 32)) || (t &= -4);
                     var g = [e, t, o, h, d, v, p, u, l, c]
                       , m = n.apply(i, g);
-                    return iA(e) && iN(m, g),
+                    return iA(e) && ix(m, g),
                     m.placeholder = r,
                     iL(m, e, t)
                 }
@@ -8336,20 +8799,20 @@
                         8 == t || 16 == t ? (m = e,
                         y = t,
                         b = c,
-                        E = rW(m),
-                        T = function e() {
+                        E = rH(m),
+                        N = function e() {
                             for (var t = arguments.length, n = ey(t), r = t, o = il(e); r--; )
                                 n[r] = arguments[r];
                             var a = t < 3 && n[0] !== o && n[t - 1] !== o ? [] : tq(n, o);
                             return (t -= a.length) < b ? r3(m, y, rK, e.placeholder, i, n, a, i, i, b - t) : ts(this && this !== e5 && this instanceof e ? E : m, this, n)
                         }
-                        ) : 32 != t && 33 != t || a.length ? T = rK.apply(i, g) : (_ = e,
+                        ) : 32 != t && 33 != t || a.length ? N = rK.apply(i, g) : (_ = e,
                         w = t,
                         O = n,
                         A = r,
                         S = 1 & w,
-                        P = rW(_),
-                        T = function e() {
+                        P = rH(_),
+                        N = function e() {
                             for (var t = -1, n = arguments.length, r = -1, i = A.length, o = ey(i + n), a = this && this !== e5 && this instanceof e ? P : _; ++r < i; )
                                 o[r] = A[r];
                             for (; n--; )
@@ -8358,19 +8821,19 @@
                         }
                         );
                     else
-                        var m, y, b, E, _, w, O, A, S, P, I, R, k, x, N, T = (I = e,
+                        var m, y, b, E, _, w, O, A, S, P, I, R, k, T, x, N = (I = e,
                         R = t,
                         k = n,
-                        x = 1 & R,
-                        N = rW(I),
+                        T = 1 & R,
+                        x = rH(I),
                         function e() {
-                            return (this && this !== e5 && this instanceof e ? N : I).apply(x ? k : this, arguments)
+                            return (this && this !== e5 && this instanceof e ? x : I).apply(T ? k : this, arguments)
                         }
                         );
-                    return iL((v ? rp : iN)(T, g), e, t)
+                    return iL((v ? rp : ix)(N, g), e, t)
                 }
                 function r7(e, t, n, r) {
-                    return i === e || oN(e, ek[n]) && !eT.call(r, n) ? t : e
+                    return i === e || ox(e, ek[n]) && !eN.call(r, n) ? t : e
                 }
                 function ie(e, t, n, r, o, a) {
                     return oG(e) && oG(t) && (a.set(t, e),
@@ -8379,7 +8842,7 @@
                     e
                 }
                 function it(e) {
-                    return oY(e) ? i : e
+                    return oW(e) ? i : e
                 }
                 function ir(e, t, n, r, o, a) {
                     var s = 1 & n
@@ -8437,7 +8900,7 @@
                 }
                 : aq;
                 function iu(e) {
-                    for (var t = e.name + "", n = no[t], r = eT.call(no, t) ? n.length : 0; r--; ) {
+                    for (var t = e.name + "", n = no[t], r = eN.call(no, t) ? n.length : 0; r--; ) {
                         var i = n[r]
                           , o = i.func;
                         if (null == o || o == e)
@@ -8446,7 +8909,7 @@
                     return t
                 }
                 function il(e) {
-                    return (eT.call(nh, "placeholder") ? nh : e).placeholder
+                    return (eN.call(nh, "placeholder") ? nh : e).placeholder
                 }
                 function ic() {
                     var e = nh.iteratee || a$;
@@ -8471,7 +8934,7 @@
                 }
                 var iv = tK ? function(e) {
                     return null == e ? [] : tf(tK(e = eO(e)), function(t) {
-                        return eW.call(e, t)
+                        return eH.call(e, t)
                     })
                 }
                 : aJ
@@ -8484,7 +8947,7 @@
                 : aJ
                   , im = nK;
                 function iy(e, t, n) {
-                    t = rN(t, e);
+                    t = rx(t, e);
                     for (var r = -1, i = t.length, o = !1; ++r < i; ) {
                         var a = iU(t[r]);
                         if (!(o = null != e && n(e, a)))
@@ -8507,13 +8970,13 @@
                     if (!oG(n))
                         return !1;
                     var r = typeof t;
-                    return ("number" == r ? !!(oD(n) && i_(t, n.length)) : "string" == r && t in n) && oN(n[t], e)
+                    return ("number" == r ? !!(oD(n) && i_(t, n.length)) : "string" == r && t in n) && ox(n[t], e)
                 }
                 function iO(e, t) {
                     if (oM(e))
                         return !1;
                     var n = typeof e;
-                    return !!("number" == n || "symbol" == n || "boolean" == n || null == e || oQ(e)) || Y.test(e) || !W.test(e) || null != t && e in eO(t)
+                    return !!("number" == n || "symbol" == n || "boolean" == n || null == e || oQ(e)) || W.test(e) || !H.test(e) || null != t && e in eO(t)
                 }
                 function iA(e) {
                     var t = iu(e)
@@ -8545,7 +9008,7 @@
                     return t
                 }
                 );
-                var iS = ex ? oF : aK;
+                var iS = eT ? oF : aK;
                 function iP(e) {
                     var t = e && e.constructor;
                     return e === ("function" == typeof t && t.prototype || ek)
@@ -8568,14 +9031,14 @@
                     }
                 }
                 function ik(e, t) {
-                    return t.length < 2 ? e : nY(e, rv(t, 0, -1))
+                    return t.length < 2 ? e : nW(e, rv(t, 0, -1))
                 }
-                function ix(e, t) {
+                function iT(e, t) {
                     if (("constructor" !== t || "function" != typeof e[t]) && "__proto__" != t)
                         return e[t]
                 }
-                var iN = iM(rp)
-                  , iT = tb || function(e, t) {
+                var ix = iM(rp)
+                  , iN = tb || function(e, t) {
                     return e5.setTimeout(e, t)
                 }
                   , iC = iM(rh);
@@ -8645,7 +9108,7 @@
                 function i$(e) {
                     if (null != e) {
                         try {
-                            return eN.call(e)
+                            return ex.call(e)
                         } catch (e) {}
                         try {
                             return e + ""
@@ -8695,14 +9158,14 @@
                 function iz(e) {
                     return (null == e ? 0 : e.length) ? nq(e, 1) : []
                 }
-                function iH(e) {
+                function iY(e) {
                     return e && e.length ? e[0] : i
                 }
-                var iW = rf(function(e) {
+                var iH = rf(function(e) {
                     var t = th(e, rk);
                     return t.length && t[0] === e[0] ? n1(t) : []
                 })
-                  , iY = rf(function(e) {
+                  , iW = rf(function(e) {
                     var t = iK(e)
                       , n = th(e, rk);
                     return t === iK(n) ? t = i : n.pop(),
@@ -8724,7 +9187,7 @@
                 }
                 var i0 = ii(function(e, t) {
                     var n = null == e ? 0 : e.length
-                      , r = nT(e, t);
+                      , r = nN(e, t);
                     return ru(e, th(t, function(e) {
                         return i_(e, n) ? +e : e
                     }).sort(rD)),
@@ -8755,7 +9218,7 @@
                             return t = t2(e.length, t),
                             !0
                     }),
-                    tx(t, function(t) {
+                    tT(t, function(t) {
                         return th(e, tP(t))
                     })
                 }
@@ -8804,7 +9267,7 @@
                       , n = t ? e[0] : 0
                       , r = this.__wrapped__
                       , o = function(t) {
-                        return nT(t, e)
+                        return nN(t, e)
                     };
                     return !(t > 1) && !this.__actions__.length && r instanceof ny && i_(n) ? ((r = r.slice(n, +n + (t ? 1 : 0))).__actions__.push({
                         func: oi,
@@ -8817,10 +9280,10 @@
                     })) : this.thru(o)
                 })
                   , oa = rF(function(e, t, n) {
-                    eT.call(e, n) ? ++e[n] : nN(e, n, 1)
+                    eN.call(e, n) ? ++e[n] : nx(e, n, 1)
                 })
-                  , os = rY(iZ)
-                  , ou = rY(iG);
+                  , os = rW(iZ)
+                  , ou = rW(iG);
                 function ol(e, t) {
                     return (oM(e) ? tl : nU)(e, ic(t, 3))
                 }
@@ -8833,7 +9296,7 @@
                     : n$)(e, ic(t, 3))
                 }
                 var of = rF(function(e, t, n) {
-                    eT.call(e, n) ? e[n].push(t) : nN(e, n, [t])
+                    eN.call(e, n) ? e[n].push(t) : nx(e, n, [t])
                 })
                   , od = rf(function(e, t, n) {
                     var r = -1
@@ -8845,7 +9308,7 @@
                     o
                 })
                   , op = rF(function(e, t, n) {
-                    nN(e, n, t)
+                    nx(e, n, t)
                 });
                 function oh(e, t) {
                     return (oM(e) ? th : re)(e, ic(t, 3))
@@ -8918,7 +9381,7 @@
                         var e, n, r, i = om();
                         if (g(i))
                             return y(i);
-                        l = iT(m, (e = i - c,
+                        l = iN(m, (e = i - c,
                         n = i - f,
                         r = t - e,
                         p ? t4(r, s - n) : r))
@@ -8936,14 +9399,14 @@
                         o) {
                             if (i === l)
                                 return f = e = c,
-                                l = iT(m, t),
+                                l = iN(m, t),
                                 d ? v(e) : u;
                             if (p)
                                 return rC(l),
-                                l = iT(m, t),
+                                l = iN(m, t),
                                 v(c)
                         }
-                        return i === l && (l = iT(m, t)),
+                        return i === l && (l = iN(m, t)),
                         u
                     }
                     return t = o8(t) || 0,
@@ -9004,7 +9467,7 @@
                 }
                 oS.Cache = n_;
                 var oI = rf(function(e, t) {
-                    var n = (t = 1 == t.length && oM(t[0]) ? th(t[0], tT(ic())) : th(nq(t, 1), tT(ic()))).length;
+                    var n = (t = 1 == t.length && oM(t[0]) ? th(t[0], tN(ic())) : th(nq(t, 1), tN(ic()))).length;
                     return rf(function(r) {
                         for (var i = -1, o = t4(r.length, n); ++i < o; )
                             r[i] = t[i].call(this, r[i]);
@@ -9019,23 +9482,23 @@
                     var n = tq(t, il(ok));
                     return r9(e, 64, i, t, n)
                 })
-                  , ox = ii(function(e, t) {
+                  , oT = ii(function(e, t) {
                     return r9(e, 256, i, i, i, t)
                 });
-                function oN(e, t) {
+                function ox(e, t) {
                     return e === t || e != e && t != t
                 }
-                var oT = r4(nX)
+                var oN = r4(nX)
                   , oC = r4(function(e, t) {
                     return e >= t
                 })
                   , oL = n4(function() {
                     return arguments
                 }()) ? n4 : function(e) {
-                    return oz(e) && eT.call(e, "callee") && !eW.call(e, "callee")
+                    return oz(e) && eN.call(e, "callee") && !eH.call(e, "callee")
                 }
                   , oM = ey.isArray
-                  , oj = tt ? tT(tt) : function(e) {
+                  , oj = tt ? tN(tt) : function(e) {
                     return oz(e) && nK(e) == I
                 }
                 ;
@@ -9046,7 +9509,7 @@
                     return oz(e) && oD(e)
                 }
                 var o$ = tX || aK
-                  , oV = tn ? tT(tn) : function(e) {
+                  , oV = tn ? tN(tn) : function(e) {
                     return oz(e) && nK(e) == h
                 }
                 ;
@@ -9054,7 +9517,7 @@
                     if (!oz(e))
                         return !1;
                     var t = nK(e);
-                    return t == v || "[object DOMException]" == t || "string" == typeof e.message && "string" == typeof e.name && !oY(e)
+                    return t == v || "[object DOMException]" == t || "string" == typeof e.message && "string" == typeof e.name && !oW(e)
                 }
                 function oF(e) {
                     if (!oG(e))
@@ -9075,26 +9538,26 @@
                 function oz(e) {
                     return null != e && "object" == typeof e
                 }
-                var oH = tr ? tT(tr) : function(e) {
+                var oY = tr ? tN(tr) : function(e) {
                     return oz(e) && im(e) == y
                 }
                 ;
-                function oW(e) {
+                function oH(e) {
                     return "number" == typeof e || oz(e) && nK(e) == b
                 }
-                function oY(e) {
+                function oW(e) {
                     if (!oz(e) || nK(e) != E)
                         return !1;
                     var t = eq(e);
                     if (null === t)
                         return !0;
-                    var n = eT.call(t, "constructor") && t.constructor;
-                    return "function" == typeof n && n instanceof n && eN.call(n) == ej
+                    var n = eN.call(t, "constructor") && t.constructor;
+                    return "function" == typeof n && n instanceof n && ex.call(n) == ej
                 }
-                var oJ = ti ? tT(ti) : function(e) {
+                var oJ = ti ? tN(ti) : function(e) {
                     return oz(e) && nK(e) == w
                 }
-                  , oK = to ? tT(to) : function(e) {
+                  , oK = to ? tN(to) : function(e) {
                     return oz(e) && im(e) == O
                 }
                 ;
@@ -9104,7 +9567,7 @@
                 function oQ(e) {
                     return "symbol" == typeof e || oz(e) && nK(e) == S
                 }
-                var o0 = ta ? tT(ta) : function(e) {
+                var o0 = ta ? tN(ta) : function(e) {
                     return oz(e) && oZ(e.length) && !!eX[nK(e)]
                 }
                   , o1 = r4(n7)
@@ -9147,7 +9610,7 @@
                     }
                     if ("string" != typeof e)
                         return 0 === e ? e : +e;
-                    e = tN(e);
+                    e = tx(e);
                     var n = ec.test(e);
                     return n || ed.test(e) ? e2(e.slice(2), n ? 2 : 8) : el.test(e) ? l : +e
                 }
@@ -9163,7 +9626,7 @@
                         return
                     }
                     for (var n in t)
-                        eT.call(t, n) && nI(e, n, t[n])
+                        eN.call(t, n) && nI(e, n, t[n])
                 })
                   , at = rq(function(e, t) {
                     rB(t, ap(t), e)
@@ -9174,7 +9637,7 @@
                   , ar = rq(function(e, t, n, r) {
                     rB(t, ad(t), e, r)
                 })
-                  , ai = ii(nT)
+                  , ai = ii(nN)
                   , ao = rf(function(e, t) {
                     e = eO(e);
                     var n = -1
@@ -9184,7 +9647,7 @@
                         for (var a = t[n], s = ap(a), u = -1, l = s.length; ++u < l; ) {
                             var c = s[u]
                               , f = e[c];
-                            (i === f || oN(f, ek[c]) && !eT.call(e, c)) && (e[c] = a[c])
+                            (i === f || ox(f, ek[c]) && !eN.call(e, c)) && (e[c] = a[c])
                         }
                     return e
                 })
@@ -9193,7 +9656,7 @@
                     ts(av, i, e)
                 });
                 function as(e, t, n) {
-                    var r = null == e ? i : nY(e, t);
+                    var r = null == e ? i : nW(e, t);
                     return i === r ? n : r
                 }
                 function au(e, t) {
@@ -9205,7 +9668,7 @@
                 }, aM(aU))
                   , ac = rX(function(e, t, n) {
                     null != t && "function" != typeof t.toString && (t = eM.call(t)),
-                    eT.call(e, t) ? e[t].push(n) : e[t] = [n]
+                    eN.call(e, t) ? e[t].push(n) : e[t] = [n]
                 }, ic)
                   , af = rf(n2);
                 function ad(e) {
@@ -9224,7 +9687,7 @@
                         var t = iP(e)
                           , n = [];
                         for (var r in e)
-                            "constructor" == r && (t || !eT.call(e, r)) || n.push(r);
+                            "constructor" == r && (t || !eN.call(e, r)) || n.push(r);
                         return n
                     }(e)
                 }
@@ -9240,7 +9703,7 @@
                         return n;
                     var r = !1;
                     t = th(t, function(t) {
-                        return t = rN(t, e),
+                        return t = rx(t, e),
                         r || (r = t.length > 1),
                         t
                     }),
@@ -9271,40 +9734,40 @@
                 function a_(e) {
                     return null == e ? [] : tC(e, ad(e))
                 }
-                var aw = rH(function(e, t, n) {
+                var aw = rY(function(e, t, n) {
                     return t = t.toLowerCase(),
                     e + (n ? aO(t) : t)
                 });
                 function aO(e) {
-                    return aN(o7(e).toLowerCase())
+                    return ax(o7(e).toLowerCase())
                 }
                 function aA(e) {
                     return (e = o7(e)) && e.replace(eh, tD).replace(eG, "")
                 }
-                var aS = rH(function(e, t, n) {
+                var aS = rY(function(e, t, n) {
                     return e + (n ? "-" : "") + t.toLowerCase()
                 })
-                  , aP = rH(function(e, t, n) {
+                  , aP = rY(function(e, t, n) {
                     return e + (n ? " " : "") + t.toLowerCase()
                 })
                   , aI = rz("toLowerCase")
-                  , aR = rH(function(e, t, n) {
+                  , aR = rY(function(e, t, n) {
                     return e + (n ? "_" : "") + t.toLowerCase()
                 })
-                  , ak = rH(function(e, t, n) {
-                    return e + (n ? " " : "") + aN(t)
+                  , ak = rY(function(e, t, n) {
+                    return e + (n ? " " : "") + ax(t)
                 })
-                  , ax = rH(function(e, t, n) {
+                  , aT = rY(function(e, t, n) {
                     return e + (n ? " " : "") + t.toUpperCase()
                 })
-                  , aN = rz("toUpperCase");
-                function aT(e, t, n) {
+                  , ax = rz("toUpperCase");
+                function aN(e, t, n) {
                     if (e = o7(e),
                     t = n ? i : t,
                     i === t) {
                         var r;
                         return (r = e,
-                        eY.test(r)) ? e.match(eH) || [] : e.match(ei) || []
+                        eW.test(r)) ? e.match(eY) || [] : e.match(ei) || []
                     }
                     return e.match(t) || []
                 }
@@ -9317,7 +9780,7 @@
                 })
                   , aL = ii(function(e, t) {
                     return tl(t, function(t) {
-                        nN(e, t = iU(t), oE(e[t], e))
+                        nx(e, t = iU(t), oE(e[t], e))
                     }),
                     e
                 });
@@ -9346,11 +9809,11 @@
                 });
                 function aF(e, t, n) {
                     var r = ad(t)
-                      , i = nW(t, r);
+                      , i = nH(t, r);
                     null != n || oG(t) && (i.length || !r.length) || (n = t,
                     t = e,
                     e = this,
-                    i = nW(t, ad(t)));
+                    i = nH(t, ad(t)));
                     var o = !(oG(n) && "chain"in n) || !!n.chain
                       , a = oF(e);
                     return tl(i, function(n) {
@@ -9378,13 +9841,13 @@
                 var aZ = r0(th)
                   , aG = r0(tc)
                   , az = r0(ty);
-                function aH(e) {
+                function aY(e) {
                     return iO(e) ? tP(iU(e)) : function(t) {
-                        return nY(t, e)
+                        return nW(t, e)
                     }
                 }
-                var aW = r2()
-                  , aY = r2(!0);
+                var aH = r2()
+                  , aW = r2(!0);
                 function aJ() {
                     return []
                 }
@@ -9490,7 +9953,7 @@
                 nh.countBy = oa,
                 nh.create = function(e, t) {
                     var n = nv(e);
-                    return null == t ? n : nx(n, t)
+                    return null == t ? n : nT(n, t)
                 }
                 ,
                 nh.curry = function e(t, n, r) {
@@ -9588,11 +10051,11 @@
                 }
                 ,
                 nh.functions = function(e) {
-                    return null == e ? [] : nW(e, ad(e))
+                    return null == e ? [] : nH(e, ad(e))
                 }
                 ,
                 nh.functionsIn = function(e) {
-                    return null == e ? [] : nW(e, ap(e))
+                    return null == e ? [] : nH(e, ap(e))
                 }
                 ,
                 nh.groupBy = of,
@@ -9600,8 +10063,8 @@
                     return (null == e ? 0 : e.length) ? rv(e, 0, -1) : []
                 }
                 ,
-                nh.intersection = iW,
-                nh.intersectionBy = iY,
+                nh.intersection = iH,
+                nh.intersectionBy = iW,
                 nh.intersectionWith = iJ,
                 nh.invert = al,
                 nh.invertBy = ac,
@@ -9615,7 +10078,7 @@
                     var n = {};
                     return t = ic(t, 3),
                     nz(e, function(e, r, i) {
-                        nN(n, t(e, r, i), e)
+                        nx(n, t(e, r, i), e)
                     }),
                     n
                 }
@@ -9624,7 +10087,7 @@
                     var n = {};
                     return t = ic(t, 3),
                     nz(e, function(e, r, i) {
-                        nN(n, r, t(e, r, i))
+                        nx(n, r, t(e, r, i))
                     }),
                     n
                 }
@@ -9675,10 +10138,10 @@
                 nh.partition = ov,
                 nh.pick = am,
                 nh.pickBy = ay,
-                nh.property = aH,
+                nh.property = aY,
                 nh.propertyOf = function(e) {
                     return function(t) {
-                        return null == e ? i : nY(e, t)
+                        return null == e ? i : nW(e, t)
                     }
                 }
                 ,
@@ -9693,9 +10156,9 @@
                 }
                 ,
                 nh.pullAt = i0,
-                nh.range = aW,
-                nh.rangeRight = aY,
-                nh.rearg = ox,
+                nh.range = aH,
+                nh.rangeRight = aW,
+                nh.rearg = oT,
                 nh.reject = function(e, t) {
                     return (oM(e) ? tf : nF)(e, oP(ic(t, 3)))
                 }
@@ -9773,7 +10236,7 @@
                 ,
                 nh.split = function(e, t, n) {
                     return (n && "number" != typeof n && iw(e, t, n) && (t = n = i),
-                    n = i === n ? 4294967295 : n >>> 0) ? (e = o7(e)) && ("string" == typeof t || null != t && !oJ(t)) && !(t = r_(t)) && tV(e) ? rT(tz(e), 0, n) : e.split(t, n) : []
+                    n = i === n ? 4294967295 : n >>> 0) ? (e = o7(e)) && ("string" == typeof t || null != t && !oJ(t)) && !(t = r_(t)) && tV(e) ? rN(tz(e), 0, n) : e.split(t, n) : []
                 }
                 ,
                 nh.spread = function(e, t) {
@@ -9782,7 +10245,7 @@
                     return t = null == t ? 0 : t2(o5(t), 0),
                     rf(function(n) {
                         var r = n[t]
-                          , i = rT(n, 0, t);
+                          , i = rN(n, 0, t);
                         return r && tv(i, r),
                         ts(e, this, i)
                     })
@@ -9879,12 +10342,12 @@
                 nh.unzip = i5,
                 nh.unzipWith = i6,
                 nh.update = function(e, t, n) {
-                    return null == e ? e : rA(e, t, rx(n))
+                    return null == e ? e : rA(e, t, rT(n))
                 }
                 ,
                 nh.updateWith = function(e, t, n, r) {
                     return r = "function" == typeof r ? r : i,
-                    null == e ? e : rA(e, t, rx(n), r)
+                    null == e ? e : rA(e, t, rT(n), r)
                 }
                 ,
                 nh.values = a_,
@@ -9893,9 +10356,9 @@
                 }
                 ,
                 nh.without = i8,
-                nh.words = aT,
+                nh.words = aN,
                 nh.wrap = function(e, t) {
-                    return oR(rx(t), e)
+                    return oR(rT(t), e)
                 }
                 ,
                 nh.xor = i9,
@@ -9963,7 +10426,7 @@
                     return (n -= t.length) >= 0 && e.slice(n, o) == t
                 }
                 ,
-                nh.eq = oN,
+                nh.eq = ox,
                 nh.escape = function(e) {
                     return (e = o7(e)) && Z.test(e) ? e.replace(F, tU) : e
                 }
@@ -9987,7 +10450,7 @@
                 nh.findLast = ou,
                 nh.findLastIndex = iG,
                 nh.findLastKey = function(e, t) {
-                    return tE(e, ic(t, 3), nH)
+                    return tE(e, ic(t, 3), nY)
                 }
                 ,
                 nh.floor = a1,
@@ -10006,18 +10469,18 @@
                 }
                 ,
                 nh.forOwnRight = function(e, t) {
-                    return e && nH(e, ic(t, 3))
+                    return e && nY(e, ic(t, 3))
                 }
                 ,
                 nh.get = as,
-                nh.gt = oT,
+                nh.gt = oN,
                 nh.gte = oC,
                 nh.has = function(e, t) {
                     return null != e && iy(e, t, nQ)
                 }
                 ,
                 nh.hasIn = au,
-                nh.head = iH,
+                nh.head = iY,
                 nh.identity = aU,
                 nh.includes = function(e, t, n, r) {
                     e = oD(e) ? e : a_(e),
@@ -10057,7 +10520,7 @@
                 nh.isBuffer = o$,
                 nh.isDate = oV,
                 nh.isElement = function(e) {
-                    return oz(e) && 1 === e.nodeType && !oY(e)
+                    return oz(e) && 1 === e.nodeType && !oW(e)
                 }
                 ,
                 nh.isEmpty = function(e) {
@@ -10071,7 +10534,7 @@
                     if (iP(e))
                         return !n9(e).length;
                     for (var n in e)
-                        if (eT.call(e, n))
+                        if (eN.call(e, n))
                             return !1;
                     return !0
                 }
@@ -10093,7 +10556,7 @@
                 nh.isFunction = oF,
                 nh.isInteger = oq,
                 nh.isLength = oZ,
-                nh.isMap = oH,
+                nh.isMap = oY,
                 nh.isMatch = function(e, t) {
                     return e === t || n5(e, t, ip(t))
                 }
@@ -10104,7 +10567,7 @@
                 }
                 ,
                 nh.isNaN = function(e) {
-                    return oW(e) && e != +e
+                    return oH(e) && e != +e
                 }
                 ,
                 nh.isNative = function(e) {
@@ -10121,10 +10584,10 @@
                     return null === e
                 }
                 ,
-                nh.isNumber = oW,
+                nh.isNumber = oH,
                 nh.isObject = oG,
                 nh.isObjectLike = oz,
-                nh.isPlainObject = oY,
+                nh.isPlainObject = oW,
                 nh.isRegExp = oJ,
                 nh.isSafeInteger = function(e) {
                     return oq(e) && e >= -9007199254740991 && e <= 9007199254740991
@@ -10290,7 +10753,7 @@
                 }
                 ,
                 nh.result = function(e, t, n) {
-                    t = rN(t, e);
+                    t = rx(t, e);
                     var r = -1
                       , o = t.length;
                     for (o || (o = 1,
@@ -10340,7 +10803,7 @@
                     var n = null == e ? 0 : e.length;
                     if (n) {
                         var r = rm(e, t);
-                        if (r < n && oN(e[r], t))
+                        if (r < n && ox(e[r], t))
                             return r
                     }
                     return -1
@@ -10357,7 +10820,7 @@
                 nh.sortedLastIndexOf = function(e, t) {
                     if (null == e ? 0 : e.length) {
                         var n = rm(e, t, !0) - 1;
-                        if (oN(e[n], t))
+                        if (ox(e[n], t))
                             return n
                     }
                     return -1
@@ -10385,7 +10848,7 @@
                     n && iw(e, t, n) && (t = i),
                     e = o7(e),
                     t = an({}, t, r, r7);
-                    var o, a, s = an({}, t.imports, r.imports, r7), u = ad(s), l = tC(s, u), c = 0, f = t.interpolate || ev, d = "__p += '", p = eA((t.escape || ev).source + "|" + f.source + "|" + (f === H ? es : ev).source + "|" + (t.evaluate || ev).source + "|$", "g"), h = "//# sourceURL=" + (eT.call(t, "sourceURL") ? (t.sourceURL + "").replace(/\s/g, " ") : "lodash.templateSources[" + ++eK + "]") + "\n";
+                    var o, a, s = an({}, t.imports, r.imports, r7), u = ad(s), l = tC(s, u), c = 0, f = t.interpolate || ev, d = "__p += '", p = eA((t.escape || ev).source + "|" + f.source + "|" + (f === Y ? es : ev).source + "|" + (t.evaluate || ev).source + "|$", "g"), h = "//# sourceURL=" + (eN.call(t, "sourceURL") ? (t.sourceURL + "").replace(/\s/g, " ") : "lodash.templateSources[" + ++eK + "]") + "\n";
                     e.replace(p, function(t, n, r, i, s, u) {
                         return r || (r = i),
                         d += e.slice(c, u).replace(eg, t$),
@@ -10398,7 +10861,7 @@
                         t
                     }),
                     d += "';\n";
-                    var v = eT.call(t, "variable") && t.variable;
+                    var v = eN.call(t, "variable") && t.variable;
                     if (v) {
                         if (eo.test(v))
                             throw new eE("Invalid `variable` option passed into `_.template`")
@@ -10422,7 +10885,7 @@
                       , r = t4(e, 4294967295);
                     t = ic(t),
                     e -= 4294967295;
-                    for (var i = tx(r, t); ++n < e; )
+                    for (var i = tT(r, t); ++n < e; )
                         t(n);
                     return i
                 }
@@ -10446,24 +10909,24 @@
                 ,
                 nh.trim = function(e, t, n) {
                     if ((e = o7(e)) && (n || i === t))
-                        return tN(e);
+                        return tx(e);
                     if (!e || !(t = r_(t)))
                         return e;
                     var r = tz(e)
                       , o = tz(t)
                       , a = tM(r, o)
                       , s = tj(r, o) + 1;
-                    return rT(r, a, s).join("")
+                    return rN(r, a, s).join("")
                 }
                 ,
                 nh.trimEnd = function(e, t, n) {
                     if ((e = o7(e)) && (n || i === t))
-                        return e.slice(0, tH(e) + 1);
+                        return e.slice(0, tY(e) + 1);
                     if (!e || !(t = r_(t)))
                         return e;
                     var r = tz(e)
                       , o = tj(r, tz(t)) + 1;
-                    return rT(r, 0, o).join("")
+                    return rN(r, 0, o).join("")
                 }
                 ,
                 nh.trimStart = function(e, t, n) {
@@ -10473,7 +10936,7 @@
                         return e;
                     var r = tz(e)
                       , o = tM(r, tz(t));
-                    return rT(r, o).join("")
+                    return rN(r, o).join("")
                 }
                 ,
                 nh.truncate = function(e, t) {
@@ -10494,7 +10957,7 @@
                     var u = n - tG(r);
                     if (u < 1)
                         return r;
-                    var l = s ? rT(s, 0, u).join("") : e.slice(0, u);
+                    var l = s ? rN(s, 0, u).join("") : e.slice(0, u);
                     if (i === o)
                         return l + r;
                     if (s && (u += l.length - u),
@@ -10514,7 +10977,7 @@
                 }
                 ,
                 nh.unescape = function(e) {
-                    return (e = o7(e)) && q.test(e) ? e.replace(B, tW) : e
+                    return (e = o7(e)) && q.test(e) ? e.replace(B, tH) : e
                 }
                 ,
                 nh.uniqueId = function(e) {
@@ -10522,14 +10985,14 @@
                     return o7(e) + t
                 }
                 ,
-                nh.upperCase = ax,
-                nh.upperFirst = aN,
+                nh.upperCase = aT,
+                nh.upperFirst = ax,
                 nh.each = ol,
                 nh.eachRight = oc,
-                nh.first = iH,
+                nh.first = iY,
                 aF(nh, (em = {},
                 nz(nh, function(e, t) {
-                    eT.call(nh.prototype, t) || (em[t] = e)
+                    eN.call(nh.prototype, t) || (em[t] = e)
                 }),
                 em), {
                     chain: !1
@@ -10669,7 +11132,7 @@
                     var n = nh[t];
                     if (n) {
                         var r = n.name + "";
-                        eT.call(no, r) || (no[r] = []),
+                        eN.call(no, r) || (no[r] = []),
                         no[r].push({
                             name: t,
                             func: n
@@ -10819,9 +11282,9 @@
                 ),
                 nh
             }();
-            e5._ = tY,
+            e5._ = tW,
             i !== (r = (function() {
-                return tY
+                return tW
             }
             ).call(t, n, t, e)) && (e.exports = r)
         }
@@ -10946,13 +11409,13 @@
           , p = (0,
         s.cn)(0)
           , h = ["pixel", "coins"]
-          , v = e=>!!h.includes(e) && (l.e.set(d, e),
+          , v = e => !!h.includes(e) && (l.e.set(d, e),
         l.e.set(p, l.e.get(p) + 1),
         !0)
-          , g = ()=>{
+          , g = () => {
             l.e.set(d, "")
         }
-          , m = ()=>{
+          , m = () => {
             (0,
             u.KO)(p);
             let e = (0,
@@ -10992,7 +11455,7 @@
                 })
             })
         }
-          , y = ()=>{
+          , y = () => {
             (0,
             u.KO)(p);
             let e = (0,
@@ -11016,7 +11479,7 @@
                 style: {
                     height: "100%"
                 },
-                children: [...Array(12)].map((n,o)=>(0,
+                children: [...Array(12)].map( (n, o) => (0,
                 r.jsx)(i.q.div, {
                     className: a().text,
                     style: {
@@ -11043,7 +11506,7 @@
             })
         }
         ;
-        t.Z = ()=>{
+        t.Z = () => {
             let[e] = (0,
             u.KO)(d);
             return (0,
@@ -11070,9 +11533,9 @@
           , o = n(57295);
         function a(e) {
             let[t,n] = r.useState(!1)
-              , i = r.useMemo(()=>o.Z.preloadedBlob(e), [e, t]);
-            return r.useEffect(()=>{
-                o.Z.canPreload(e) && o.Z.preloadOneBlob(e).then(()=>n(!t)).catch(()=>{}
+              , i = r.useMemo( () => o.Z.preloadedBlob(e), [e, t]);
+            return r.useEffect( () => {
+                o.Z.canPreload(e) && o.Z.preloadOneBlob(e).then( () => n(!t)).catch( () => {}
                 )
             }
             , [e]),
@@ -11151,13 +11614,13 @@
             return i && (i = r.ZP.t(i, {
                 ns: "ui"
             }),
-            null === (n = e.displayInfo.values) || void 0 === n || n.forEach((e,t)=>{
+            null === (n = e.displayInfo.values) || void 0 === n || n.forEach( (e, t) => {
                 i = i.replace("{".concat(t, "}"), null == e ? void 0 : e.toString())
             }
             )),
             i
         }
-        let d = (e,t,n,r)=>{
+        let d = (e, t, n, r) => {
             let i = "";
             return e > 0 && (i += "".concat(e, "d ")),
             t > 0 && (i += "".concat(t, "h ")),
@@ -11196,7 +11659,7 @@
         }
         function g(e, t) {
             let n = new Map;
-            return e.forEach(e=>{
+            return e.forEach(e => {
                 n.set(e[t].toString(), e)
             }
             ),
@@ -11204,10 +11667,10 @@
         }
         function m(e, t) {
             let n = {
-                width: 32,
-                height: 32,
+                width: 64,
+                height: 64,
                 image: null == e ? void 0 : e.image,
-                scale: 3
+                scale: 2
             };
             if (e && t) {
                 var r, a, s, u;
@@ -11216,20 +11679,23 @@
                     (null == t ? void 0 : null === (a = t.sprite) || void 0 === a ? void 0 : a.image) && (n.image = t.sprite.image,
                     n.width = null === (s = t.sprite.size) || void 0 === s ? void 0 : s.width,
                     n.height = null === (u = t.sprite.size) || void 0 === u ? void 0 : u.height,
-                    n.height <= 40 && n.width <= 40 ? n.scale = 3 : n.height <= 90 && n.width <= 90 ? n.scale = 2 : n.scale = 1)
+                    n.height <= 40 && n.width <= 40 ? n.scale = 3 : n.height <= 90 && n.width <= 90 ? n.scale = 2 : n.scale = 1,
+                    n.width && n.height && (n.width *= n.scale,
+                    n.height *= n.scale),
+                    console.log("using object image with scale ".concat(n.scale, " ").concat(n.width)))
                 }
             }
             return n.image = (0,
             o.b7)(n.image),
             n
         }
-        let y = (e,t)=>{
+        let y = (e, t) => {
             navigator.share ? navigator.share({
                 ...t ? {
                     title: t
                 } : {},
                 url: e
-            }).then(()=>{}
+            }).then( () => {}
             ).catch(console.error) : navigator.clipboard && (navigator.clipboard.writeText(e),
             a.e.set(s.W_, [{
                 source: "other",
@@ -11238,7 +11704,7 @@
                 }
             }]))
         }
-          , b = e=>null == e ? void 0 : e.find(e=>/rent/gi.test(e))
+          , b = e => null == e ? void 0 : e.find(e => /rent/gi.test(e))
           , E = function(e) {
             let t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : "name";
             return "".concat(null == e ? void 0 : e.replace(/\)|\(/g, "_"), "_").concat(t)
@@ -11261,204 +11727,35 @@
           , i = !1
           , o = "".concat("https", "://").concat("pixels-server.pixels.xyz")
     },
-    17784: function(e, t, n) {
-        "use strict";
-        n.d(t, {
-            PM: function() {
-                return s
-            },
-            aG: function() {
-                return a
-            },
-            be: function() {
-                return i
-            },
-            ei: function() {
-                return o
-            }
-        });
-        var r = n(41396);
-        function i(e, t) {
-            if (e) {
-                if (e instanceof Map || e instanceof r.MapSchema)
-                    return e.forEach(t);
-                if ("object" == typeof e)
-                    return Object.entries(e).forEach(e=>{
-                        let[n,r] = e;
-                        return t(r, n)
-                    }
-                    )
-            }
-        }
-        function o(e) {
-            return e ? e instanceof Map || e instanceof r.MapSchema ? e.size : "object" == typeof e ? Object.keys(e).length : 0 : 0
-        }
-        function a(e, t) {
-            if (e) {
-                if (e instanceof Map || e instanceof r.MapSchema)
-                    return e.get(t);
-                if ("object" == typeof e)
-                    return e[t]
-            }
-        }
-        function s(e, t) {
-            if (!e)
-                return !1;
-            if (e instanceof Map || e instanceof r.MapSchema) {
-                for (let[n,r] of e.entries())
-                    if (t(r, n))
-                        return !0
-            } else if ("object" == typeof e)
-                return Object.entries(e).some(e=>{
-                    let[n,r] = e;
-                    return t(r, n)
-                }
-                );
-            return !1
-        }
-    },
-    11335: function(e, t, n) {
-        "use strict";
-        var r, i;
-        n.d(t, {
-            m: function() {
-                return r
-            }
-        }),
-        (i = r || (r = {})).timeSync = "timeSync",
-        i.handshake = "handshake",
-        i.joinRoom = "joinRoom",
-        i.sendMapLibrary = "sendMapLibrary",
-        i.moveSelfPlayer = "mv",
-        i.swapOrCombineInventorySlots = "swapOrCombineInventorySlots",
-        i.changeEquipmentBar = "changeEquipmentBar",
-        i.addMessageToChat = "addMessageToChat",
-        i.setTypingState = "setTypingState",
-        i.setTosAccepted = "setTosAccepted",
-        i.playerNotification = "playerNotification",
-        i.receiveMessageInChat = "receiveMessageInChat",
-        i.setAvatar = "setAvatar",
-        i.setPet = "setPet",
-        i.setPetName = "setPetName",
-        i.setStorageName = "setStorageName",
-        i.useItem = "ui",
-        i.useItemError = "useItemError",
-        i.talkToNPC = "talkToNPC",
-        i.clickEntity = "clickEntity",
-        i.closeDialog = "closeDialog",
-        i.collideWithObject = "collideWithObject",
-        i.teleportPlayer = "teleportPlayer",
-        i.timerCheck = "timerCheck",
-        i.collectMailboxItem = "collectMailboxItem",
-        i.fetchMailbox = "fetchMailbox",
-        i.subscribe = "subscribe",
-        i.rentFarm = "rentFarm",
-        i.buyStoreItem = "buyStoreItem",
-        i.sellStoreItem = "sellStoreItem",
-        i.updateMapMembers = "updateMapMembers",
-        i.updateRolesAndPermissions = "updateRolesAndPermissions",
-        i.updateRoomRestrictions = "updateRoomRestrictions",
-        i.updateMapListing = "updateMapListing",
-        i.claimNftMap = "claimNftMap",
-        i.updateRoomName = "updateRoomName",
-        i.updatePlayer = "updatePlayer",
-        i.bookmarkMap = "bookmarkMap",
-        i.buildObject = "buildObject",
-        i.buildTile = "buildTile",
-        i.buildEntity = "buildEntity",
-        i.claimAll = "claimAll",
-        i.upgradeFarm = "upgradeFarm",
-        i.presentUI = "presentUI",
-        i.clientCmd = "clientCmd",
-        i.playerAction = "playerAction",
-        i.clientTrigger = "clientTrigger",
-        i.trade = "trade",
-        i.marketplace = "marketplace",
-        i.reportPlayer = "reportPlayer",
-        i.mintUgc = "mintUgc",
-        i.findNFTs = "findNFTs",
-        i.sellOrders = "sellOrders",
-        i.sellOrderReset = "sellOrderReset"
-    },
-    27709: function(e, t, n) {
-        "use strict";
-        var r, i;
-        n.d(t, {
-            nA: function() {
-                return o
-            }
-        }),
-        (i = r || (r = {})).forge = "forge",
-        i.cooking = "cooking",
-        i.woodwork = "woodwork",
-        i.windmill = "windmill",
-        i.textile_mill = "textile_mill",
-        i.kiln = "kiln",
-        i.quantum_recombinator = "quantum_recombinator",
-        i.winery = "winery",
-        i.industries = "industries",
-        i.gridcraftManufacturing = "gridcraftManufacturing",
-        i.gridcraftPacking = "gridcraftPacking",
-        i.pattyMaker = "pattyMaker",
-        i.foodProcessor = "foodProcessor",
-        i.grill = "grill",
-        i.assemblyTable = "assemblyTable",
-        i.deepFryer = "deepFryer",
-        Object.keys(r);
-        let o = ["farming", "forestry", "cooking", "mining", "woodwork", "metalworking", "stoneshaping", "petcare", "business", "exploration", "granger", "ceramicist", "beekeeping", "textiler", "aviculture", "redifferentiator", "slugger", "winemaking", "fishing", "overall"]
-    },
-    42680: function(e, t, n) {
-        "use strict";
-        var r, i;
-        n.d(t, {
-            m: function() {
-                return r
-            }
-        }),
-        (i = r || (r = {}))[i.loop = 1] = "loop",
-        i[i.click = 2] = "click",
-        i[i.approach = 4] = "approach",
-        i[i.approachloop = 5] = "approachloop"
-    },
-    14715: function(e, t, n) {
-        "use strict";
-        n.d(t, {
-            m3: function() {
-                return r.m
-            },
-            vn: function() {
-                return i
-            },
-            jK: function() {
-                return o
-            }
-        }),
-        n(27709);
-        var r = n(42680);
-        let i = 3
-          , o = 1e3
-    },
-    49922: function(e, t, n) {
+    73913: function(e, t, n) {
         "use strict";
         let r;
         n.d(t, {
             l: function() {
-                return k
+                return I
             }
         });
-        var i, o, a = n(7767), s = n(80919), u = n(11335), l = n(53059), c = n(75268), f = n(23493), d = n.n(f), p = n(7654), h = n.n(p);
-        class v {
+        var i = n(7767)
+          , o = n(80919)
+          , a = n(96721)
+          , s = n(53059)
+          , u = n(75268)
+          , l = n(23493)
+          , c = n.n(l)
+          , f = n(7654)
+          , d = n.n(f);
+        class p {
             constructor(e, t) {
                 this.command = e,
                 this.payload = t
             }
         }
-        class g {
+        class h {
             pushNewObject(e) {
                 for (let n = 0; n < this.queue.length; n++) {
                     var t;
                     let r = this.queue[n];
-                    if (r.command !== u.m.buildObject || "remove" !== r.payload.type || (null === (t = r.payload.remove) || void 0 === t ? void 0 : t._id))
+                    if (r.command !== a.mY.buildObject || "remove" !== r.payload.type || (null === (t = r.payload.remove) || void 0 === t ? void 0 : t._id))
                         console.log("no match");
                     else {
                         r.payload.remove._id = e;
@@ -11470,7 +11767,7 @@
                 for (let n = 0; n < this.queue.length; n++) {
                     var t;
                     let r = this.queue[n];
-                    if (r.command === u.m.buildEntity && "remove" === r.payload.action && !(null === (t = r.payload.remove) || void 0 === t ? void 0 : t._id)) {
+                    if (r.command === a.mY.buildEntity && "remove" === r.payload.action && !(null === (t = r.payload.remove) || void 0 === t ? void 0 : t._id)) {
                         r.payload.remove._id = e;
                         break
                     }
@@ -11487,12 +11784,12 @@
                 switch (e.type) {
                 case "update":
                     if (n.type = "update",
-                    !e.update || !(t = l.Z.getMapObject(e.update._id)))
+                    !e.update || !(t = s.Z.getMapObject(e.update._id)))
                         return !1;
                     n.update = {
                         _id: e.update._id
                     },
-                    Object.keys(e.update).forEach(e=>{
+                    Object.keys(e.update).forEach(e => {
                         n.update[e] = t[e]
                     }
                     );
@@ -11505,13 +11802,13 @@
                     break;
                 case "remove":
                     if (n.type = "add",
-                    !e.remove || !(t = l.Z.getMapObject(e.remove._id)))
+                    !e.remove || !(t = s.Z.getMapObject(e.remove._id)))
                         return !1;
                     n.add = {
                         ...t
                     }
                 }
-                this.queue.push(new v(u.m.buildObject,n))
+                this.queue.push(new p(a.mY.buildObject,n))
             }
             pushEntity(e, t) {
                 let n;
@@ -11548,13 +11845,13 @@
                         label: n.label
                     }
                 }
-                this.queue.push(new v(u.m.buildEntity,r))
+                this.queue.push(new p(a.mY.buildEntity,r))
             }
             pushTiles(e, t) {
                 let n = {
                     action: "update"
                 };
-                n.update = e.map(e=>{
+                n.update = e.map(e => {
                     let n = null == t ? void 0 : t[e._id];
                     return n ? {
                         _id: e._id,
@@ -11574,27 +11871,27 @@
                     }
                 }
                 ),
-                this.queue.push(new v(u.m.buildTile,n))
+                this.queue.push(new p(a.mY.buildTile,n))
             }
             constructor() {
                 this.queue = []
             }
         }
-        var m = n(44945);
-        let y = e=>{
+        var v = n(44945);
+        let g = e => {
             let t = []
               , n = [];
             try {
-                return null == e || e.forEach(e=>{
+                return null == e || e.forEach(e => {
                     var n, r, i;
-                    null !== (i = null === (r = e.metadata) || void 0 === r ? void 0 : null === (n = r.worlds) || void 0 === n ? void 0 : n.length) && void 0 !== i && i && e.metadata.worlds.forEach((e,n)=>{
+                    null !== (i = null === (r = e.metadata) || void 0 === r ? void 0 : null === (n = r.worlds) || void 0 === n ? void 0 : n.length) && void 0 !== i && i && e.metadata.worlds.forEach( (e, n) => {
                         var r;
                         null !== e && (t[n] = (null !== (r = t[n]) && void 0 !== r ? r : 0) + e)
                     }
                     )
                 }
                 ),
-                b(t)
+                m(t)
             } catch (e) {
                 return console.log("worlds lookup", e),
                 {
@@ -11605,13 +11902,13 @@
                 }
             }
         }
-          , b = e=>{
+          , m = e => {
             let t = 0
               , n = []
               , r = 0
               , i = 0;
             try {
-                "function" == typeof (null == e ? void 0 : e.forEach) && e.forEach((e,o)=>{
+                "function" == typeof (null == e ? void 0 : e.forEach) && e.forEach( (e, o) => {
                     0 === o || null === e || 99 === o || o > 500 || (n.push({
                         id: o,
                         name: "World " + o,
@@ -11631,7 +11928,7 @@
                     r++,
                     i++);
                 if (0 === i && r < 2) {
-                    n.sort((e,t)=>e.id - t.id);
+                    n.sort( (e, t) => e.id - t.id);
                     let e = 0;
                     for (; e < n.length && !(n[e].id > e + 1); e++)
                         ;
@@ -11666,66 +11963,41 @@
             }
         }
         ;
-        class E {
+        class y {
             async fetchWorldData() {
                 try {
-                    let e = await m.Z.getWorldTotals();
-                    return b(null != e ? e : [])
+                    let e = await v.Z.getWorldTotals();
+                    return m(null != e ? e : [])
                 } catch (e) {
                     console.log("worlds error", e)
                 }
-                return y([])
+                return g([])
             }
             constructor(e) {
                 this.client = e
             }
         }
-        var _ = n(15624)
-          , w = n(11941)
-          , O = n(31040);
-        (i = o || (o = {}))[i.ROOM_UNINITIALIZED = 4008] = "ROOM_UNINITIALIZED",
-        i[i.DISCONNECTED = 4009] = "DISCONNECTED",
-        i[i.INVALID_TELEPORT = 4010] = "INVALID_TELEPORT",
-        i[i.INVALID_JOIN = 4011] = "INVALID_JOIN",
-        i[i.JOIN_IN_PROGRESS = 4013] = "JOIN_IN_PROGRESS",
-        i[i.DUPLICATE_ROOM = 4242] = "DUPLICATE_ROOM",
-        i[i.PLAYER_NOT_FOUND = 4501] = "PLAYER_NOT_FOUND",
-        i[i.INVALID_SESSION = 4503] = "INVALID_SESSION",
-        i[i.ROOM_FULL = 4504] = "ROOM_FULL",
-        i[i.INVALID_AVATAR = 4505] = "INVALID_AVATAR",
-        i[i.INVALID_USERNAME = 4506] = "INVALID_USERNAME",
-        i[i.AUTHENTICATION_FAILED = 4507] = "AUTHENTICATION_FAILED",
-        i[i.INCORRECT_CLIENT_VERSION = 4509] = "INCORRECT_CLIENT_VERSION",
-        i[i.NEED_RECAPTCHA = 4511] = "NEED_RECAPTCHA",
-        i[i.AUTHENTICATION_EXPIRED = 4512] = "AUTHENTICATION_EXPIRED",
-        i[i.PLAYER_BANNED = 4521] = "PLAYER_BANNED",
-        i[i.BAD_RECAPTCHA = 4567] = "BAD_RECAPTCHA",
-        i[i.ROOM_DISPOSING = 4595] = "ROOM_DISPOSING",
-        i[i.VELOCITY_CONTROL = 4596] = "VELOCITY_CONTROL",
-        i[i.SERVER_MAINTENANCE = 4597] = "SERVER_MAINTENANCE",
-        i[i.INVALID_WORLD = 4777] = "INVALID_WORLD",
-        i[i.INVALID_MAP = 4978] = "INVALID_MAP",
-        i[i.LOGGING_OUT = 4997] = "LOGGING_OUT",
-        i[i.ABANDONED = 4998] = "ABANDONED",
-        i[i.LOGGED_IN = 4999] = "LOGGED_IN";
-        var A = n(83454);
-        function S(e) {
+        var b = n(15624)
+          , E = n(11941)
+          , _ = n(31040)
+          , w = n(53518);
+        function O(e) {
             return JSON.parse(JSON.stringify(e))
         }
-        let P = "".concat("wss", "://").concat("pixels-server.pixels.xyz")
-          , I = null
-          , R = {
-            [s.Yi.PLAYER_MOVING]: {
-                command: u.m.moveSelfPlayer,
+        let A = "".concat("wss", "://").concat("pixels-server.pixels.xyz")
+          , S = null
+          , P = {
+            [o.Yi.PLAYER_MOVING]: {
+                command: a.mY.moveSelfPlayer,
                 throttle: !0,
-                adapter: e=>{
+                adapter: e => {
                     let t = -4 & Math.floor(Date.now() / 1e5);
                     return [Math.round(e.position.x) * (t % 1e3) + Math.round(e.position.y) * (t % 23) + t % 111, e.position.x, e.position.y, e.velocity.x, e.velocity.y]
                 }
             },
-            [s.qM.PLAYER_USED_ITEM]: {
-                command: u.m.useItem,
-                adapter: e=>{
+            [o.qM.PLAYER_USED_ITEM]: {
+                command: a.mY.useItem,
+                adapter: e => {
                     var t, n, r, i, o, a, s;
                     return {
                         id: null === (t = e.item) || void 0 === t ? void 0 : t.id,
@@ -11738,140 +12010,140 @@
                     }
                 }
             },
-            [u.m.clickEntity]: {
-                command: u.m.clickEntity
+            [a.mY.clickEntity]: {
+                command: a.mY.clickEntity
             },
-            [u.m.timerCheck]: {
-                command: u.m.timerCheck,
+            [a.mY.timerCheck]: {
+                command: a.mY.timerCheck,
                 throttle: !0
             },
-            [u.m.claimAll]: {
-                command: u.m.claimAll
+            [a.mY.claimAll]: {
+                command: a.mY.claimAll
             },
-            [s.qM.PLAYER_CLICKED_NPC]: {
-                command: u.m.talkToNPC,
-                adapter: e=>e
+            [o.qM.PLAYER_CLICKED_NPC]: {
+                command: a.mY.talkToNPC,
+                adapter: e => e
             },
-            [s.Yi.NPCDIALOG_CLOSE]: {
-                command: u.m.closeDialog,
-                adapter: e=>e
+            [o.Yi.NPCDIALOG_CLOSE]: {
+                command: a.mY.closeDialog,
+                adapter: e => e
             },
-            [s.Yi.TRIGGER_EVENT]: {
-                command: u.m.collideWithObject,
-                adapter: e=>({
+            [o.Yi.TRIGGER_EVENT]: {
+                command: a.mY.collideWithObject,
+                adapter: e => ({
                     objectId: e.targetId,
                     trigger: e.trigger
                 })
             },
-            [s.Yi.NFT_SELECTED]: {
-                command: u.m.setAvatar,
-                adapter: e=>e
+            [o.Yi.NFT_SELECTED]: {
+                command: a.mY.setAvatar,
+                adapter: e => e
             },
-            [s.Yi.PET_SELECTED]: {
-                command: u.m.setPet
+            [o.Yi.PET_SELECTED]: {
+                command: a.mY.setPet
             },
-            [s.Yi.PET_RENAME]: {
-                command: u.m.setPetName
+            [o.Yi.PET_RENAME]: {
+                command: a.mY.setPetName
             },
-            [s.Yi.SET_STORAGE_NAME]: {
-                command: u.m.setStorageName
+            [o.Yi.SET_STORAGE_NAME]: {
+                command: a.mY.setStorageName
             },
-            [s.Yi.CHAT_MESSAGE_SEND]: {
-                command: u.m.addMessageToChat
+            [o.Yi.CHAT_MESSAGE_SEND]: {
+                command: a.mY.addMessageToChat
             },
-            [s.Yi.SET_TYPING_STATE]: {
-                command: u.m.setTypingState,
+            [o.Yi.SET_TYPING_STATE]: {
+                command: a.mY.setTypingState,
                 throttle: !0
             },
-            [s.fb.SET_TOS_ACCEPTED]: {
-                command: u.m.setTosAccepted
+            [o.fb.SET_TOS_ACCEPTED]: {
+                command: a.mY.setTosAccepted
             },
-            [s.Yi.FARM_CLAIM]: {
-                command: u.m.rentFarm
+            [o.Yi.FARM_CLAIM]: {
+                command: a.mY.rentFarm
             },
-            [s.Yi.FIND_NFT]: {
-                command: u.m.findNFTs
+            [o.Yi.FIND_NFT]: {
+                command: a.mY.findNFTs
             },
-            [s.Yi.PUSH_SUBSCRIBE]: {
-                command: u.m.subscribe
+            [o.Yi.PUSH_SUBSCRIBE]: {
+                command: a.mY.subscribe
             },
-            [s.Yi.BUY_STORE_ITEM]: {
-                command: u.m.buyStoreItem
+            [o.Yi.BUY_STORE_ITEM]: {
+                command: a.mY.buyStoreItem
             },
-            [s.Yi.SELL_STORE_ITEM]: {
-                command: u.m.sellStoreItem
+            [o.Yi.SELL_STORE_ITEM]: {
+                command: a.mY.sellStoreItem
             },
-            [s.fb.BOOKMARK_MAP]: {
-                command: u.m.bookmarkMap
+            [o.fb.BOOKMARK_MAP]: {
+                command: a.mY.bookmarkMap
             },
-            [s.qM.BUILD_OBJECT]: {
-                command: u.m.buildObject,
-                adapter: e=>(r || (r = new g),
+            [o.qM.BUILD_OBJECT]: {
+                command: a.mY.buildObject,
+                adapter: e => (r || (r = new h),
                 r.pushObject(e),
                 e)
             },
-            [s.qM.BUILD_TILE]: {
-                command: u.m.buildTile,
-                adapter: e=>(r || (r = new g),
+            [o.qM.BUILD_TILE]: {
+                command: a.mY.buildTile,
+                adapter: e => (r || (r = new h),
                 e)
             },
-            [s.qM.BUILD_ENTITY]: {
-                command: u.m.buildEntity,
-                adapter: e=>(r || (r = new g),
-                r.pushEntity(e, k.getInstance().getMapEntities()),
+            [o.qM.BUILD_ENTITY]: {
+                command: a.mY.buildEntity,
+                adapter: e => (r || (r = new h),
+                r.pushEntity(e, I.getInstance().getMapEntities()),
                 e)
             },
-            [s.qM.UPGRADE_FARM]: {
-                command: u.m.upgradeFarm
+            [o.qM.UPGRADE_FARM]: {
+                command: a.mY.upgradeFarm
             },
-            [s.qM.ROOM_RESTRICTIONS]: {
-                command: u.m.updateRoomRestrictions
+            [o.qM.ROOM_RESTRICTIONS]: {
+                command: a.mY.updateRoomRestrictions
             },
-            [s.qM.ROOM_PERMISSIONS]: {
-                command: u.m.updateRolesAndPermissions
+            [o.qM.ROOM_PERMISSIONS]: {
+                command: a.mY.updateRolesAndPermissions
             },
-            [s.qM.ROOM_OWNERSHIP]: {
-                command: u.m.updateMapListing
+            [o.qM.ROOM_OWNERSHIP]: {
+                command: a.mY.updateMapListing
             },
-            [s.qM.CLAIM_NFTMAP]: {
-                command: u.m.claimNftMap,
-                adapter: e=>e
+            [o.qM.CLAIM_NFTMAP]: {
+                command: a.mY.claimNftMap,
+                adapter: e => e
             },
-            [s.qM.ROOM_MEMBERS]: {
-                command: u.m.updateMapMembers
+            [o.qM.ROOM_MEMBERS]: {
+                command: a.mY.updateMapMembers
             },
-            [s.qM.ROOM_NAME]: {
-                command: u.m.updateRoomName,
-                adapter: e=>({
+            [o.qM.ROOM_NAME]: {
+                command: a.mY.updateRoomName,
+                adapter: e => ({
                     name: e
                 })
             },
-            [s.fb.TRADE_SEND]: {
-                command: u.m.trade
+            [o.fb.TRADE_SEND]: {
+                command: a.mY.trade
             },
-            [s.fb.MARKETPLACE_SEND]: {
-                command: u.m.marketplace
+            [o.fb.MARKETPLACE_SEND]: {
+                command: a.mY.marketplace
             },
-            [s.fb.REPORT_PLAYER]: {
-                command: u.m.reportPlayer
+            [o.fb.REPORT_PLAYER]: {
+                command: a.mY.reportPlayer
             },
-            [s.Yi.FETCH_MAIL]: {
-                command: u.m.fetchMailbox
+            [o.Yi.FETCH_MAIL]: {
+                command: a.mY.fetchMailbox
             },
-            [s.Yi.COLLECT_MAIL_ITEM]: {
-                command: u.m.collectMailboxItem
+            [o.Yi.COLLECT_MAIL_ITEM]: {
+                command: a.mY.collectMailboxItem
             },
-            [s.Yi.MINT_UGC]: {
-                command: u.m.mintUgc
+            [o.Yi.MINT_UGC]: {
+                command: a.mY.mintUgc
             },
-            [s.Yi.CLIENT_TRIGGER]: {
-                command: u.m.clientTrigger,
-                adapter: e=>({
+            [o.Yi.CLIENT_TRIGGER]: {
+                command: a.mY.clientTrigger,
+                adapter: e => ({
                     ...e
                 })
             }
         };
-        class k {
+        class I {
             get chatMessages() {
                 var e;
                 return null === (e = this.room) || void 0 === e ? void 0 : e.state.chatMessages
@@ -11912,8 +12184,8 @@
                 return null !== (t = null === (e = this.room) || void 0 === e ? void 0 : e.state.mpBuy) && void 0 !== t ? t : 700
             }
             static getInstance() {
-                return k.singleton || (k.singleton = new k),
-                k.singleton
+                return I.singleton || (I.singleton = new I),
+                I.singleton
             }
             getMapEntities() {
                 var e, t;
@@ -11976,7 +12248,7 @@
                 "pixelsNFTFarm-".concat(n)
             }
             registerEvents() {
-                let e = (e,t,n)=>{
+                let e = (e, t, n) => {
                     if (!n || !this.room || this.room.sessionId !== n) {
                         console.log("message ignored because room not loaded", e);
                         return
@@ -11984,19 +12256,19 @@
                     this.room.send(e, t)
                 }
                 ;
-                Object.entries(R).forEach(t=>{
+                Object.entries(P).forEach(t => {
                     let[n,r] = t
-                      , i = r.throttle ? d()(e, 250) : e;
-                    s.ZP.registerEventListener(n, e=>{
+                      , i = r.throttle ? c()(e, 250) : e;
+                    o.ZP.registerEventListener(n, e => {
                         var t;
                         i(r.command, r.adapter ? r.adapter(e) : e, null === (t = this.room) || void 0 === t ? void 0 : t.sessionId)
                     }
                     )
                 }
                 );
-                let t = (t,n)=>{
-                    let r = n.throttle ? d()(e, 250) : e;
-                    t.subscribe(e=>{
+                let t = (t, n) => {
+                    let r = n.throttle ? c()(e, 250) : e;
+                    t.subscribe(e => {
                         var t;
                         let i = n.adapter ? n.adapter(e) : e;
                         r(n.command, i, null === (t = this.room) || void 0 === t ? void 0 : t.sessionId)
@@ -12004,22 +12276,22 @@
                     )
                 }
                 ;
-                t(s.rV.inventory.swapItems, {
-                    command: u.m.swapOrCombineInventorySlots
+                t(o.rV.inventory.swapItems, {
+                    command: a.mY.swapOrCombineInventorySlots
                 }),
-                t(s.rV.inventory.changeActiveRow, {
-                    command: u.m.changeEquipmentBar,
+                t(o.rV.inventory.changeActiveRow, {
+                    command: a.mY.changeEquipmentBar,
                     throttle: !0
                 }),
-                t(s.rV.sellOrders.fetch, {
-                    command: u.m.sellOrders,
+                t(o.rV.sellOrders.fetch, {
+                    command: a.mY.sellOrders,
                     throttle: !0
                 }),
-                t(s.rV.sellOrders.fill, {
-                    command: u.m.sellOrders
+                t(o.rV.sellOrders.fill, {
+                    command: a.mY.sellOrders
                 }),
-                t(s.rV.sellOrders.reset, {
-                    command: u.m.sellOrderReset
+                t(o.rV.sellOrders.reset, {
+                    command: a.mY.sellOrderReset
                 })
             }
             undoCommand() {
@@ -12036,7 +12308,7 @@
             checkParams() {
                 let e = new URLSearchParams(window.location.search);
                 e.has("mockEthAddress") && e.get("mockEthAddress"),
-                e.has("trigger") && (I = e.get("trigger"))
+                e.has("trigger") && (S = e.get("trigger"))
             }
             isSelfPlayer(e) {
                 var t;
@@ -12049,7 +12321,7 @@
                     let t = this.currentPlayer;
                     t && (null === (e = this.players) || void 0 === e || e.set(t.core.mid, t.core))
                 } else
-                    null === (n = this.room) || void 0 === n || null === (t = n.state) || void 0 === t || t.players.forEach((e,t)=>{
+                    null === (n = this.room) || void 0 === n || null === (t = n.state) || void 0 === t || t.players.forEach( (e, t) => {
                         var n;
                         null === (n = this.players) || void 0 === n || n.set(e.mid, e),
                         this.isSelfPlayer(t) || this.setupOtherPlayer(e, t)
@@ -12058,14 +12330,14 @@
             }
             handleDisconnect() {
                 var e;
-                null === (e = this.room) || void 0 === e || e.onLeave(e=>{
+                null === (e = this.room) || void 0 === e || e.onLeave(e => {
                     var t, n, r, i;
                     if (null === (n = this.currentPlayer) || void 0 === n ? void 0 : null === (t = n.core) || void 0 === t ? void 0 : t.isGuest) {
                         console.log("disconnected, code=", e),
                         null === (r = this.room) || void 0 === r || r.removeAllListeners();
                         return
                     }
-                    if (s.ZP.emitEventNow(s.fb.ROOM_LEAVE),
+                    if (o.ZP.emitEventNow(o.fb.ROOM_LEAVE),
                     this.room) {
                         if (console.log("disconnected, code=", e),
                         this.room.removeAllListeners(),
@@ -12074,12 +12346,12 @@
                         this.selfPlayer = void 0,
                         this.room = void 0,
                         4999 === e) {
-                            s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                            o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                                 message: ["playerKicked", "We offer our humble apologies. You have been disconnected from the game server as a result of joining from another device or browser window. Multiple connections are not permitted."]
                             });
                             return
                         }
-                        s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: "lostConnection"
                         })
                     }
@@ -12088,7 +12360,7 @@
             }
             handleRoomEvents() {
                 var e;
-                this.room && (this.room.onMessage(u.m.timeSync, e=>{
+                this.room && (this.room.onMessage(a.mY.timeSync, e => {
                     if ((null == e ? void 0 : e.ms) && !this.serverDeltaSet) {
                         let t = Date.now() - e.ms;
                         Math.abs(t) < Math.abs(this.serverTimeDelta) && (this.serverTimeDelta = t,
@@ -12096,104 +12368,104 @@
                     }
                 }
                 ),
-                this.room.state.listen("ownerAddress", e=>{
-                    s.ZP.emitEventNow(s.fb.ROOM_OWNER_CHANGED, e)
+                this.room.state.listen("ownerAddress", e => {
+                    o.ZP.emitEventNow(o.fb.ROOM_OWNER_CHANGED, e)
                 }
                 ),
-                this.room.state.listen("name", ()=>{
-                    this.room && s.ZP.emitEventNow(s.fb.ROOM_NAME_CHANGED, this.room.state.name)
+                this.room.state.listen("name", () => {
+                    this.room && o.ZP.emitEventNow(o.fb.ROOM_NAME_CHANGED, this.room.state.name)
                 }
                 ),
-                this.room.state.listen("guild", ()=>{
-                    this.room && s.ZP.emitEventNow(s.fb.ROOM_GUILD_CHANGED, this.room.state.guild)
+                this.room.state.listen("guild", () => {
+                    this.room && o.ZP.emitEventNow(o.fb.ROOM_GUILD_CHANGED, this.room.state.guild)
                 }
                 ),
-                this.room.state.permissions.onChange(()=>{
+                this.room.state.permissions.onChange( () => {
                     if (!this.room)
                         return;
                     let e = JSON.parse(JSON.stringify(this.room.state.permissions));
-                    s.ZP.emitEventNow(s.fb.ROOM_PERMISSIONS_CHANGED, e)
+                    o.ZP.emitEventNow(o.fb.ROOM_PERMISSIONS_CHANGED, e)
                 }
                 ),
-                this.room.state.restrictions.onChange(()=>{
+                this.room.state.restrictions.onChange( () => {
                     if (!this.room)
                         return;
                     let e = JSON.parse(JSON.stringify(this.room.state.restrictions));
-                    s.ZP.emitEventNow(s.fb.ROOM_RESTRICTIONS_CHANGED, e)
+                    o.ZP.emitEventNow(o.fb.ROOM_RESTRICTIONS_CHANGED, e)
                 }
                 ),
-                this.room.state.ownership && this.room.state.ownership.onChange(()=>{
+                this.room.state.ownership && this.room.state.ownership.onChange( () => {
                     if (!this.room)
                         return;
                     let e = JSON.parse(JSON.stringify(this.room.state.ownership));
-                    s.ZP.emitEventNow(s.fb.ROOM_OWNERSHIP_CHANGED, e)
+                    o.ZP.emitEventNow(o.fb.ROOM_OWNERSHIP_CHANGED, e)
                 }
                 ),
-                this.room.state.members.onAdd(()=>{
+                this.room.state.members.onAdd( () => {
                     if (!this.room)
                         return;
                     let e = JSON.parse(JSON.stringify(this.room.state.members));
-                    s.ZP.emitEventNow(s.fb.ROOM_MEMBERS_CHANGED, e)
+                    o.ZP.emitEventNow(o.fb.ROOM_MEMBERS_CHANGED, e)
                 }
                 ),
-                this.room.state.members.onRemove(()=>{
+                this.room.state.members.onRemove( () => {
                     if (!this.room)
                         return;
                     let e = JSON.parse(JSON.stringify(this.room.state.members));
-                    s.ZP.emitEventNow(s.fb.ROOM_MEMBERS_CHANGED, e)
+                    o.ZP.emitEventNow(o.fb.ROOM_MEMBERS_CHANGED, e)
                 }
                 ),
-                this.room.state.labels.onAdd(()=>{
+                this.room.state.labels.onAdd( () => {
                     var e;
                     if (!this.room)
                         return;
                     let t = null === (e = this.room.state.labels) || void 0 === e ? void 0 : e.toJSON();
-                    s.ZP.emitEventNow(s.fb.ROOM_LABELS_CHANGED, t)
+                    o.ZP.emitEventNow(o.fb.ROOM_LABELS_CHANGED, t)
                 }
                 ),
-                null === (e = this.room) || void 0 === e || e.onMessage("*", (e,t)=>{
+                null === (e = this.room) || void 0 === e || e.onMessage("*", (e, t) => {
                     if (this.room)
                         try {
-                            var n, i, o, a, c, f, d, p, h, v, g, m, y, b, E, A, S, P;
+                            var n, i, u, l, c, f, d, p, h, v, g, m, y, w, O, A, S, P;
                             switch (e) {
-                            case u.m.updatePlayer:
+                            case a.mY.updatePlayer:
                                 null === (n = this.playerSerializer) || void 0 === n || n.patch(t),
                                 this.applyStateChanges();
                                 break;
-                            case u.m.talkToNPC:
-                                s.ZP.emitEventNow(s.fb.NPC_SPEAKS, t);
+                            case a.mY.talkToNPC:
+                                o.ZP.emitEventNow(o.fb.NPC_SPEAKS, t);
                                 break;
-                            case u.m.receiveMessageInChat:
-                                s.ZP.emitEventNow(s.fb.CHAT_MESSAGE_RCV, {
+                            case a.mY.receiveMessageInChat:
+                                o.ZP.emitEventNow(o.fb.CHAT_MESSAGE_RCV, {
                                     ...t,
                                     whisper: !0
                                 });
                                 break;
-                            case u.m.buildObject:
+                            case a.mY.buildObject:
                                 r && "add" === t.action && r.pushNewObject(t._id),
-                                "add" === t.action || "update" === t.action ? l.Z.addMapObject(t) : "remove" === t.action && l.Z.removeMapObject(t),
-                                s.ZP.emitEventNow(s.fb.SERVER_BUILD_NODE, {
+                                "add" === t.action || "update" === t.action ? s.Z.addMapObject(t) : "remove" === t.action && s.Z.removeMapObject(t),
+                                o.ZP.emitEventNow(o.fb.SERVER_BUILD_NODE, {
                                     ...t,
                                     type: "object"
                                 });
                                 break;
-                            case u.m.buildTile:
-                                t.update && (r && "update" !== t.action && r.pushTiles(t.update, l.Z.getMapTiles()),
-                                l.Z.updateMapTiles(t.update)),
-                                s.ZP.emitEventNow(s.fb.SERVER_BUILD_NODE, {
+                            case a.mY.buildTile:
+                                t.update && (r && "update" !== t.action && r.pushTiles(t.update, s.Z.getMapTiles()),
+                                s.Z.updateMapTiles(t.update)),
+                                o.ZP.emitEventNow(o.fb.SERVER_BUILD_NODE, {
                                     type: "tile",
                                     ...t
                                 });
                                 break;
-                            case u.m.useItem:
-                                s.ZP.sendEventDelayed("CONFIRM_USEITEM", t),
+                            case a.mY.useItem:
+                                o.ZP.sendEventDelayed("CONFIRM_USEITEM", t),
                                 null === (i = this.scene) || void 0 === i || i.playerUsedItem(t);
                                 break;
-                            case u.m.useItemError:
+                            case a.mY.useItemError:
                                 if ("cannot-overwater" === t.message)
                                     break;
-                                s.rV.playSound.emit("snd_ui_error");
-                                let I = t.item && (null === (o = l.Z.getGameItem(t.item)) || void 0 === o ? void 0 : o.image)
+                                o.rV.playSound.emit("snd_ui_error");
+                                let I = t.item && (null === (u = s.Z.getGameItem(t.item)) || void 0 === u ? void 0 : u.image)
                                   , R = {
                                     source: "item",
                                     icon: I,
@@ -12202,37 +12474,37 @@
                                     },
                                     deduplicationKey: t.message
                                 };
-                                _.e.set(w.W_, [R]);
+                                b.e.set(E.W_, [R]);
                                 break;
-                            case u.m.teleportPlayer:
-                                s.ZP.emitEventNow(s.fb.ROOM_WARP, {
+                            case a.mY.teleportPlayer:
+                                o.ZP.emitEventNow(o.fb.ROOM_WARP, {
                                     mapId: t.mapId,
                                     spawn: t.spawn,
                                     source: t.source,
                                     abort: t.abort
                                 });
                                 break;
-                            case u.m.playerAction:
-                                "play" === t.action ? (t.sound && s.rV.playPositionedSound.emit({
+                            case a.mY.playerAction:
+                                "play" === t.action ? (t.sound && o.rV.playPositionedSound.emit({
                                     id: t.sound,
                                     position: null === (c = t.animation) || void 0 === c ? void 0 : c.position
                                 }),
-                                (null === (a = t.animation) || void 0 === a ? void 0 : a.name) && (t.target && "self" !== t.target ? null === (d = this.scene) || void 0 === d || d.playNodeAnimation({
+                                (null === (l = t.animation) || void 0 === l ? void 0 : l.name) && (t.target && "self" !== t.target ? null === (d = this.scene) || void 0 === d || d.playNodeAnimation({
                                     mid: t.target,
                                     animation: t.animation.name,
                                     position: t.animation.position,
                                     emoji: t.emoji,
                                     pet: !1
                                 }) : null === (f = this.scene) || void 0 === f || f.playPlayerAnimation(t.animation.name))) : "stop" === t.action ? t.sound && (console.log("stopping sound ".concat(t.sound)),
-                                s.ZP.sendEventDelayed("STOP_SOUND", t.sound)) : "petplay" === t.action ? t.emoji && (null === (v = this.scene) || void 0 === v || v.playNodeAnimation({
+                                o.ZP.sendEventDelayed("STOP_SOUND", t.sound)) : "petplay" === t.action ? t.emoji && (null === (v = this.scene) || void 0 === v || v.playNodeAnimation({
                                     mid: null !== (g = t.target) && void 0 !== g ? g : "",
                                     animation: null !== (m = null === (p = t.animation) || void 0 === p ? void 0 : p.name) && void 0 !== m ? m : "",
                                     position: null === (h = t.animation) || void 0 === h ? void 0 : h.position,
                                     emoji: t.emoji,
                                     pet: !0
                                 })) : "tween" === t.action && t.tweenTo && (null === (y = this.scene) || void 0 === y || y.playNodeAnimation({
-                                    mid: null !== (b = t.target) && void 0 !== b ? b : "",
-                                    animation: null !== (E = t.tweenTo.animation) && void 0 !== E ? E : "",
+                                    mid: null !== (w = t.target) && void 0 !== w ? w : "",
+                                    animation: null !== (O = t.tweenTo.animation) && void 0 !== O ? O : "",
                                     position: {
                                         x: t.tweenTo.x,
                                         y: t.tweenTo.y
@@ -12243,41 +12515,41 @@
                                     }
                                 }));
                                 break;
-                            case u.m.playerNotification:
-                                _.e.set(w.W_, [t]),
-                                (null == t ? void 0 : t.source) === "item" && (null === (S = t.text) || void 0 === S ? void 0 : S.count) > 0 && (null === (P = t.stacking) || void 0 === P ? void 0 : P.key) && s.ZP.emitEventNow(s.fb.PLAYER_INVENTORY_NEW, {
+                            case a.mY.playerNotification:
+                                b.e.set(E.W_, [t]),
+                                (null == t ? void 0 : t.source) === "item" && (null === (S = t.text) || void 0 === S ? void 0 : S.count) > 0 && (null === (P = t.stacking) || void 0 === P ? void 0 : P.key) && o.ZP.emitEventNow(o.fb.PLAYER_INVENTORY_NEW, {
                                     item: t.stacking.key
                                 });
                                 break;
-                            case u.m.sellOrders:
-                                _.e.set(O.v, t);
+                            case a.mY.sellOrders:
+                                b.e.set(_.v, t);
                                 break;
-                            case u.m.clientCmd:
-                                s.ZP.emitEventNow(s.fb.CLIENT_CMD, t);
+                            case a.mY.clientCmd:
+                                o.ZP.emitEventNow(o.fb.CLIENT_CMD, t);
                                 break;
-                            case u.m.presentUI:
-                                s.ZP.emitEventNow(s.fb.PRESENT_UI, t);
+                            case a.mY.presentUI:
+                                o.ZP.emitEventNow(o.fb.PRESENT_UI, t);
                                 break;
-                            case u.m.trade:
-                                s.ZP.emitEventNow(s.fb.TRADE_RECEIVE, t);
+                            case a.mY.trade:
+                                o.ZP.emitEventNow(o.fb.TRADE_RECEIVE, t);
                                 break;
-                            case u.m.marketplace:
-                                s.ZP.emitEventNow(s.fb.MARKETPLACE_RECEIVE, t);
+                            case a.mY.marketplace:
+                                o.ZP.emitEventNow(o.fb.MARKETPLACE_RECEIVE, t);
                                 break;
-                            case u.m.setAvatar:
-                                s.ZP.emitEventNow(s.fb.PLAYER_AVATAR, t);
+                            case a.mY.setAvatar:
+                                o.ZP.emitEventNow(o.fb.PLAYER_AVATAR, t);
                                 break;
-                            case u.m.bookmarkMap:
-                                s.ZP.emitEventNow(s.fb.BOOKMARK_MAP, t);
+                            case a.mY.bookmarkMap:
+                                o.ZP.emitEventNow(o.fb.BOOKMARK_MAP, t);
                                 break;
-                            case u.m.fetchMailbox:
-                                s.ZP.emitEventNow(s.fb.RECEIVE_MAIL, t);
+                            case a.mY.fetchMailbox:
+                                o.ZP.emitEventNow(o.fb.RECEIVE_MAIL, t);
                                 break;
-                            case u.m.collectMailboxItem:
-                                s.ZP.emitEventNow(s.fb.COLLECT_MAIL_ITEM_RESPONSE, t);
+                            case a.mY.collectMailboxItem:
+                                o.ZP.emitEventNow(o.fb.COLLECT_MAIL_ITEM_RESPONSE, t);
                                 break;
-                            case u.m.findNFTs:
-                                s.ZP.emitEventNow(s.Yi.FOUND_NFT, t);
+                            case a.mY.findNFTs:
+                                o.ZP.emitEventNow(o.Yi.FOUND_NFT, t);
                                 break;
                             default:
                                 console.warn("Unhandled server message", e, t)
@@ -12290,7 +12562,7 @@
                 this.handleDisconnect())
             }
             applyStateChanges() {
-                this.updatedEntities.forEach(e=>{
+                this.updatedEntities.forEach(e => {
                     this.entityUpdated(e)
                 }
                 ),
@@ -12304,78 +12576,78 @@
             handleRoomUpdates() {
                 if (!this.room)
                     return;
-                this.room.onStateChange(()=>{
+                this.room.onStateChange( () => {
                     this.applyStateChanges()
                 }
                 ),
-                this.room.state.entities.forEach(e=>{
+                this.room.state.entities.forEach(e => {
                     this.monitorEntity(e)
                 }
                 ),
-                this.room.state.entities.onAdd(e=>{
+                this.room.state.entities.onAdd(e => {
                     var t;
                     null === (t = this.scene) || void 0 === t || t.addEntityElement(void 0, e.toJSON()),
                     r && r.pushNewEntity(e.mid),
                     this.monitorEntity(e),
-                    s.ZP.emitEventNow(s.fb.SERVER_BUILD_NODE, {
+                    o.ZP.emitEventNow(o.fb.SERVER_BUILD_NODE, {
                         _id: e.mid,
                         action: "add",
                         type: "entity"
                     })
                 }
                 , !1),
-                this.room.state.entities.onRemove(e=>{
+                this.room.state.entities.onRemove(e => {
                     var t;
-                    let n = l.Z.getGameEntity(e.entity);
+                    let n = s.Z.getGameEntity(e.entity);
                     null === (t = this.scene) || void 0 === t || t.removeEntityElement(e.mid, null == n ? void 0 : n.type),
-                    s.ZP.emitEventNow(s.fb.SERVER_BUILD_NODE, {
+                    o.ZP.emitEventNow(o.fb.SERVER_BUILD_NODE, {
                         _id: e.mid,
                         action: "remove",
                         type: "entity"
                     })
                 }
                 ),
-                this.room.state.chatMessages.onAdd(e=>{
+                this.room.state.chatMessages.onAdd(e => {
                     var t;
-                    (null === (t = this.room) || void 0 === t ? void 0 : t.state) && "private" !== this.room.state.type && "tutorial" !== this.room.state.type && s.ZP.emitEventNow(s.fb.CHAT_MESSAGE_RCV, {
+                    (null === (t = this.room) || void 0 === t ? void 0 : t.state) && "private" !== this.room.state.type && "tutorial" !== this.room.state.type && o.ZP.emitEventNow(o.fb.CHAT_MESSAGE_RCV, {
                         ...e
                     })
                 }
                 , !1);
                 let e = this.room.state.storage;
-                (null == e ? void 0 : e.slots) && (e.slots.onAdd(e=>{
+                (null == e ? void 0 : e.slots) && (e.slots.onAdd(e => {
                     this.monitorSlot(e)
                 }
                 ),
-                e.slots.onRemove(()=>this.updatedInventory = !0)),
-                this.room.state.levels.onAdd((e,t)=>{
+                e.slots.onRemove( () => this.updatedInventory = !0)),
+                this.room.state.levels.onAdd( (e, t) => {
                     let n = JSON.parse(JSON.stringify(e));
-                    s.ZP.emitEventNow(s.fb.ROOM_LEVEL_ADD, {
+                    o.ZP.emitEventNow(o.fb.ROOM_LEVEL_ADD, {
                         key: t,
                         level: n
                     }),
                     this.monitorLevel(t, e, "room")
                 }
                 ),
-                this.room.state.players.onAdd((e,t)=>{
+                this.room.state.players.onAdd( (e, t) => {
                     var n, r, i;
                     this.room && ((null === (n = this.room.state) || void 0 === n ? void 0 : n.type) === "private" || (null === (r = this.room.state) || void 0 === r ? void 0 : r.type) === "tutorial" || (null === (i = this.players) || void 0 === i || i.set(e.mid, e),
-                    s.ZP.emitEventNow(s.fb.PLAYER_JOINED, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_JOINED, {
                         username: e.username,
                         sessionId: t,
                         id: e.mid
                     }),
-                    this.isSelfPlayer(t) || setTimeout(()=>this.setupOtherPlayer(e, t), 10)))
+                    this.isSelfPlayer(t) || setTimeout( () => this.setupOtherPlayer(e, t), 10)))
                 }
                 , !1),
-                this.room.state.players.onRemove((e,t)=>{
-                    var n, r, i, o;
+                this.room.state.players.onRemove( (e, t) => {
+                    var n, r, i, a;
                     this.room && (null === (n = this.room.state) || void 0 === n ? void 0 : n.type) !== "private" && (null === (r = this.room.state) || void 0 === r ? void 0 : r.type) !== "tutorial" && (null === (i = this.players) || void 0 === i || i.delete(e.mid),
-                    s.ZP.emitEventNow(s.fb.PLAYER_REMOVED, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_REMOVED, {
                         username: e.username,
                         id: e.mid
                     }),
-                    null === (o = this.scene) || void 0 === o || o.playerLeave(t, e.mid))
+                    null === (a = this.scene) || void 0 === a || a.playerLeave(t, e.mid))
                 }
                 )
             }
@@ -12392,36 +12664,33 @@
                 let r = n.leave(!0);
                 return null === (t = this.players) || void 0 === t || t.clear(),
                 this.scene = void 0,
-                s.ZP.emitEventNow(s.fb.ROOM_LEAVE),
+                o.ZP.emitEventNow(o.fb.ROOM_LEAVE),
                 r
             }
             doJoin(e) {
                 return e.domtitle = window.document.title,
                 e.haveHandshake = !!this.playerHandshake,
-                new Promise((t,n)=>{
+                new Promise( (t, n) => {
                     let r = 1
                       , i = ""
-                      , o = async()=>{
+                      , a = async () => {
                         if ("need-recaptcha" !== i || e.telemetryId)
-                            r > 1 && s.ZP.sendEventDelayed(s.fb.SLOW_LOAD, {
+                            r > 1 && o.ZP.sendEventDelayed(o.fb.SLOW_LOAD, {
                                 retry: r
                             });
                         else {
-                            let t = [m.Z.getStytchTelemetry().then(t=>{
+                            let t = [v.Z.getStytchTelemetry().then(t => {
                                 e.telemetryId = t
                             }
                             ).catch()];
-                            if (A.env.NEXT_PUBLIC_ENABLE_RECAPTCHA) {
-                                let n = window.grecaptcha.enterprise.execute("6Le2_BoiAAAAADeY39xwjDr8P-_AAtJJBW0hWX9M", {
-                                    action: "join_room"
-                                }).then(t=>{
-                                    e.recaptcha = t
-                                }
-                                ).catch();
-                                t.push(n)
+                            if (t.push(window.grecaptcha.enterprise.execute("6Lc63iQqAAAAANnRrUIMBM71F461lj8mULJfV7IH", {
+                                action: "join_room"
+                            }).then(t => {
+                                e.recaptcha = t
                             }
-                            if (await Promise.all(t),
-                            A.env.NEXT_PUBLIC_ENABLE_RECAPTCHA && !e.recaptcha) {
+                            ).catch()),
+                            await Promise.all(t),
+                            !e.recaptcha) {
                                 n({
                                     message: "no-recaptcha-available"
                                 });
@@ -12434,49 +12703,49 @@
                                 return
                             }
                         }
-                        m.Z.getRoomId(e.mapId, e.world).then(a=>{
-                            this.client.joinById(a, e).then(e=>t(e)).catch(e=>{
+                        v.Z.getRoomId(e.mapId, e.world).then(o => {
+                            this.client.joinById(o, e).then(e => t(e)).catch(e => {
                                 console.error("error from colyseus", JSON.stringify(e)),
                                 i = null == e ? void 0 : e.message,
-                                k.permanentErrors.includes(null == e ? void 0 : e.message) ? n(e) : k.retryErrors.includes(null == e ? void 0 : e.message) && r < 8 ? (setTimeout(o, 5e3),
-                                r += 1) : r >= 2 ? n(e) : (setTimeout(o, 3e3),
+                                I.permanentErrors.includes(null == e ? void 0 : e.message) ? n(e) : I.retryErrors.includes(null == e ? void 0 : e.message) && r < 8 ? (setTimeout(a, 5e3),
+                                r += 1) : r >= 2 ? n(e) : (setTimeout(a, 3e3),
                                 r += 1)
                             }
                             )
                         }
-                        ).catch(e=>{
+                        ).catch(e => {
                             console.error("error from getRoomId", JSON.stringify(e)),
                             i = null == e ? void 0 : e.message,
-                            k.permanentErrors.includes(null == e ? void 0 : e.message) ? n(e) : r >= 2 ? n(e) : (setTimeout(o, 3e3),
+                            I.permanentErrors.includes(null == e ? void 0 : e.message) ? n(e) : r >= 2 ? n(e) : (setTimeout(a, 3e3),
                             r += 1)
                         }
                         )
                     }
                     ;
-                    o()
+                    a()
                 }
                 )
             }
-            async connect(e, t, n, i, f, d, p, v, g) {
-                var y, b;
-                this.scene = i,
+            async connect(e, t, n, l, c, f, p, h, g) {
+                var m, y;
+                this.scene = l,
                 this.firstLoad && (this.registerEvents(),
                 this.firstLoad = !1);
-                let E = {};
+                let b = {};
                 if (n) {
                     let e = n.split(",");
-                    E.label = e[0],
-                    e.length >= 3 && (E.offset = {
+                    b.label = e[0],
+                    e.length >= 3 && (b.offset = {
                         x: parseInt(e[1], 10),
                         y: parseInt(e[2], 10)
                     })
                 }
                 Date.now() - this.serverDeltaSet > 18e5 && (this.serverDeltaSet = Date.now(),
-                m.Z.timeSync().then(e=>{
-                    h()(e) || (console.log("server delta ".concat(e)),
+                v.Z.timeSync().then(e => {
+                    d()(e) || (console.log("server delta ".concat(e)),
                     this.serverTimeDelta = e)
                 }
-                ).catch(()=>{
+                ).catch( () => {
                     this.serverDeltaSet = 0
                 }
                 )),
@@ -12484,119 +12753,119 @@
                 try {
                     this.room && (console.log("double join happened!"),
                     await this.disconnect()),
-                    console.log("joining map ".concat(e, ": ").concat(g, " version: ").concat(c.WX)),
+                    console.log("joining map ".concat(e, ": ").concat(g, " version: ").concat(u.WX)),
                     window.lemonGR = this.room = await this.doJoin({
                         mapId: e,
-                        token: f || "iamguest",
-                        isGuest: !f,
+                        token: c || "iamguest",
+                        isGuest: !c,
                         cryptoWallet: {},
                         username: p,
-                        playerId: v,
+                        playerId: h,
                         world: t,
-                        ver: c.WX,
-                        ...E,
-                        avatar: f || !d ? "" : JSON.stringify(d),
+                        ver: u.WX,
+                        ...b,
+                        avatar: c || !f ? "" : JSON.stringify(f),
                         lastSavedAt: g
                     })
                 } catch (e) {
-                    if ((null == e ? void 0 : e.code) === o.SERVER_MAINTENANCE)
-                        s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
-                            message: null !== (y = e.message) && void 0 !== y ? y : "server-maintenance"
+                    if ((null == e ? void 0 : e.code) === w.m.SERVER_MAINTENANCE)
+                        o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
+                            message: null !== (m = e.message) && void 0 !== m ? m : "server-maintenance"
                         });
-                    else if ((null == e ? void 0 : e.code) === o.PLAYER_BANNED) {
+                    else if ((null == e ? void 0 : e.code) === w.m.PLAYER_BANNED) {
                         let t = e.message.split("+|=|+")
                           , n = "playerIsBanned"
                           , r = "It's cool to be in a band. Not so cool to get BANNED. You can find the appeal form in our help center";
                         t.length > 1 && t[1] && (n = t[1],
                         r = t[1]),
-                        s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: [n, r]
                         })
                     } else
-                        (null == e ? void 0 : e.message) ? "room-is-full" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        (null == e ? void 0 : e.message) ? "room-is-full" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: "roomFull"
-                        }) : "join-in-progress" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "join-in-progress" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["joinInProgress", "Your account was in process of joining a room already. You cannot be connected until the prior attempt completes"]
-                        }) : "user-logging-out" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "user-logging-out" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["userLoggingOut", "Sorry, it is taking longer than expected to save your progress from the previous location. You can try again in a few seconds"]
-                        }) : "velocity-control" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "velocity-control" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["velocityControl", "The room you tried to join has too many players. Try choosing a different world."]
-                        }) : "authentication-rejected" === e.message || "authentication-failed" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "authentication-rejected" === e.message || "authentication-failed" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["authenticationRejected", "Use of automation or multiple accounts is not allowed. Please wait a few hours and use a supported browser"]
-                        }) : "invalid-token" === e.message || "player-not-found" === e.message || "could-not-authenticate" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "invalid-token" === e.message || "player-not-found" === e.message || "could-not-authenticate" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["authenticationFailed", "To say you are who you are may be contrary to fact. Your authentication was not so authenticated."]
-                        }) : "authentication-expired" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "authentication-expired" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["authenticationExpired", "You were there, now you are here. My head is spinning. Just...try again, please."]
-                        }) : "invalid-permissions" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "invalid-permissions" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["invalidPermissionsToJoinRoom", "The room owner did not let you in. Did you remember to knock nicely? Permission denied!"]
-                        }) : "user-already-logged-in" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "user-already-logged-in" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: "alreadyLoggedIn"
-                        }) : "transfer-in-progress" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "transfer-in-progress" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["transferInProgress", "There is a lot at stake, so you must take a break, and wait for your transfer to take"]
-                        }) : "invalid-client-version" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "invalid-client-version" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["updateClient", "No matter how hard you try to avoid it, things change. And so do you. Please refresh page for a new beginning."]
-                        }) : "no-recaptcha-available" === e.message || "no-telemetryId-available" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "no-recaptcha-available" === e.message || "no-telemetryId-available" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["noRecaptcha", "Dude, where's my server? Please disable ad blockers or other plugins"]
-                        }) : "invalid-map" === e.message ? s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : "invalid-map" === e.message ? o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["mapNotFound", "I see you brought your ticket to the dance, but there is no dancehall here. invalid-map"]
-                        }) : s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: [e.message, "Sorry, we couldn't enter you into the game. Care to try again? (".concat(e.message, ")")]
-                        }) : s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                        }) : o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                             message: ["joinFailed", "It appears likely your destination failed to exist. If you attempt to join again, who knows where you might land? Get it? L-A-N-D. Me, neither."]
                         });
                     return
                 }
-                this.playerSerializer = new a.mV,
+                this.playerSerializer = new i.mV,
                 this.playerHandshake && this.playerSerializer.handshake(this.playerHandshake);
-                let _ = new Promise(e=>{
+                let E = new Promise(e => {
                     var t, n;
-                    null === (t = this.room) || void 0 === t || t.onMessage(u.m.handshake, e=>{
+                    null === (t = this.room) || void 0 === t || t.onMessage(a.mY.handshake, e => {
                         this.playerHandshake = e,
                         this.playerSerializer.handshake(e)
                     }
                     ),
-                    null === (n = this.room) || void 0 === n || n.onMessage(u.m.joinRoom, t=>{
+                    null === (n = this.room) || void 0 === n || n.onMessage(a.mY.joinRoom, t => {
                         this.playerSerializer.setState(t),
                         e(this.playerSerializer.getState())
                     }
                     )
                 }
                 )
-                  , w = new Promise(e=>{
+                  , _ = new Promise(e => {
                     var t;
-                    null === (t = this.room) || void 0 === t || t.onMessage(u.m.sendMapLibrary, t=>{
-                        l.Z.setMapLibrary(t),
+                    null === (t = this.room) || void 0 === t || t.onMessage(a.mY.sendMapLibrary, t => {
+                        s.Z.setMapLibrary(t),
                         e()
                     }
                     )
                 }
                 );
                 this.handleRoomEvents();
-                let O = new Promise(e=>{
-                    this.room.onStateChange.once(()=>{
+                let O = new Promise(e => {
+                    this.room.onStateChange.once( () => {
                         e(this.room.state.players.get(this.room.sessionId))
                     }
                     )
                 }
                 );
-                await Promise.all([O, _, w]),
-                this.selfPlayer = await _;
+                await Promise.all([O, E, _]),
+                this.selfPlayer = await E;
                 let A = await O;
-                if (A || (A = await new Promise(e=>{
-                    this.room.onStateChange.once(()=>{
+                if (A || (A = await new Promise(e => {
+                    this.room.onStateChange.once( () => {
                         e(this.room.state.players.get(this.room.sessionId))
                     }
                     )
                 }
                 )),
-                await l.Z.scanGameLibrary(this.room.state.entities),
+                await s.Z.scanGameLibrary(this.room.state.entities),
                 this.selfPlayer && A) {
                     let e = JSON.parse(JSON.stringify(this.currentPlayer));
-                    (null === (b = e.full.pet) || void 0 === b ? void 0 : b.avatar) || delete e.full.pet,
+                    (null === (y = e.full.pet) || void 0 === y ? void 0 : y.avatar) || delete e.full.pet,
                     this.initPlayers(),
                     this.setupSelfPlayerListeners(this.selfPlayer, A),
                     this.scene.initSelfPlayerState(e),
-                    s.ZP.emitEventNow(s.fb.ROOM_LOADED, {
+                    o.ZP.emitEventNow(o.fb.ROOM_LOADED, {
                         player: e,
                         roomType: this.room.state.type,
                         mapId: this.room.state.id,
@@ -12607,23 +12876,23 @@
                         messages: JSON.parse(JSON.stringify(this.room.state.chatMessages)),
                         templateName: this.room.state.templateName
                     }),
-                    s.ZP.emitEventNow(s.fb.ROOM_NAME_CHANGED, this.room.state.name),
-                    s.ZP.emitEventNow(s.fb.PLAYER_ENERGY_CHANGE, {
+                    o.ZP.emitEventNow(o.fb.ROOM_NAME_CHANGED, this.room.state.name),
+                    o.ZP.emitEventNow(o.fb.PLAYER_ENERGY_CHANGE, {
                         energy: JSON.parse(JSON.stringify(this.selfPlayer.energy))
                     })
                 } else {
                     this.room.leave(!0),
-                    s.ZP.emitEventNow(s.fb.SVR_CANNOTCONNECT, {
+                    o.ZP.emitEventNow(o.fb.SVR_CANNOTCONNECT, {
                         message: ["playerMissing", "Something went wrong. Please try to join again"]
                     });
                     return
                 }
                 return this.handleRoomUpdates(),
-                I && f && (s.ZP.emitEventNow(s.Yi.CLIENT_TRIGGER, {
-                    trigger: I
+                S && c && (o.ZP.emitEventNow(o.Yi.CLIENT_TRIGGER, {
+                    trigger: S
                 }),
-                I = null),
-                f || this.room.leave(!0),
+                S = null),
+                c || this.room.leave(!0),
                 this.currentPlayer
             }
             entityUpdated(e) {
@@ -12631,7 +12900,7 @@
                 if (t) {
                     var n;
                     let e = t.toJSON();
-                    s.ZP.emitEventNow(s.fb.ENTITY_UPDATE, e),
+                    o.ZP.emitEventNow(o.fb.ENTITY_UPDATE, e),
                     null === (n = this.scene) || void 0 === n || n.updateEntity(e)
                 } else
                     console.error("entity ".concat(e, " changed but not found"))
@@ -12639,62 +12908,62 @@
             monitorEntity(e) {
                 var t;
                 let n = e.mid
-                  , r = l.Z.getGameEntity(e.entity);
-                (null == r ? void 0 : r.type) && e[r.type] && e.storage && e.storage.slots && (e.storage.slots.onAdd(e=>{
+                  , r = s.Z.getGameEntity(e.entity);
+                (null == r ? void 0 : r.type) && e[r.type] && e.storage && e.storage.slots && (e.storage.slots.onAdd(e => {
                     this.monitorSlot(e)
                 }
                 ),
-                e.storage.slots.onRemove(()=>this.updatedInventory = !0),
-                e.storage.listen("name", ()=>{
+                e.storage.slots.onRemove( () => this.updatedInventory = !0),
+                e.storage.listen("name", () => {
                     this.updatedEntities.add(n)
                 }
                 )),
-                null === (t = e.position) || void 0 === t || t.onChange(()=>{
+                null === (t = e.position) || void 0 === t || t.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.onChange(()=>{
+                e.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.generic && (e.generic.onChange(()=>{
+                e.generic && (e.generic.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.generic.displayInfo.onChange(()=>{
+                e.generic.displayInfo.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.generic.statics && (e.generic.statics.onChange(()=>{
+                e.generic.statics && (e.generic.statics.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.generic.statics.onAdd(()=>{
+                e.generic.statics.onAdd( () => {
                     this.updatedEntities.add(n)
                 }
                 , !1),
-                e.generic.statics.onRemove(()=>{
+                e.generic.statics.onRemove( () => {
                     this.updatedEntities.add(n)
                 }
                 )),
-                e.generic.trackers && (e.generic.trackers.onChange(()=>{
+                e.generic.trackers && (e.generic.trackers.onChange( () => {
                     this.updatedEntities.add(n)
                 }
                 ),
-                e.generic.trackers.onAdd(()=>{
+                e.generic.trackers.onAdd( () => {
                     this.updatedEntities.add(n)
                 }
                 , !1),
-                e.generic.trackers.onRemove(()=>{
+                e.generic.trackers.onRemove( () => {
                     this.updatedEntities.add(n)
                 }
                 )))
             }
             monitorAchievements(e) {
                 let t = e.achievementId;
-                e.onChange(()=>{
+                e.onChange( () => {
                     let e = JSON.parse(JSON.stringify(this.selfPlayer.achievements.get(t)));
-                    s.ZP.emitEventNow(s.fb.PLAYER_ACHIEVEMENT_CHANGED, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_ACHIEVEMENT_CHANGED, {
                         achievement: e
                     })
                 }
@@ -12702,19 +12971,19 @@
             }
             monitorLevel(e, t) {
                 let n = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : "player";
-                t.onChange(()=>{
+                t.onChange( () => {
                     var t, r, i;
                     if ("player" === n) {
                         if (this.selfPlayer) {
                             let t = JSON.parse(JSON.stringify(this.selfPlayer.levels.get(e)));
-                            s.ZP.emitEventNow(s.fb.PLAYER_LEVEL_CHANGED, {
+                            o.ZP.emitEventNow(o.fb.PLAYER_LEVEL_CHANGED, {
                                 key: e,
                                 level: t
                             })
                         }
                     } else if (null === (r = this.room) || void 0 === r ? void 0 : null === (t = r.state) || void 0 === t ? void 0 : t.levels) {
                         let t = JSON.parse(JSON.stringify(null === (i = this.room) || void 0 === i ? void 0 : i.state.levels.get(e)));
-                        s.ZP.emitEventNow(s.fb.ROOM_LEVEL_CHANGED, {
+                        o.ZP.emitEventNow(o.fb.ROOM_LEVEL_CHANGED, {
                             key: e,
                             level: t
                         })
@@ -12723,38 +12992,37 @@
                 )
             }
             inventoryChanged() {
-                this.selfPlayer && s.rV.inventory.serverStateChange.emit({
-                    inventory: S(this.selfPlayer.inventory)
+                this.selfPlayer && o.rV.inventory.serverStateChange.emit({
+                    inventory: O(this.selfPlayer.inventory)
                 })
             }
             wardrobeChanged() {
                 this.updatedWardrobe && (this.updatedWardrobe = !1,
-                this.selfPlayer && s.rV.wardrobe.serverStateChange.emit({
-                    wardrobe: S(this.selfPlayer.wardrobe)
+                this.selfPlayer && o.rV.wardrobe.serverStateChange.emit({
+                    wardrobe: O(this.selfPlayer.wardrobe)
                 }))
             }
             monitorSlot(e) {
                 this.updatedInventory = !0,
-                e.onChange(()=>{
+                e.onChange( () => {
                     this.updatedInventory = !0
                 }
                 )
             }
             monitorWardrobeSlot(e) {
                 this.updatedWardrobe = !0,
-                e.onChange(()=>{
+                e.onChange( () => {
                     this.updatedWardrobe = !0
                 }
                 )
             }
             monitorCoinSlot(e) {
                 let t = e.currencyId;
-                e.onChange(e=>{
-                    let n = e.find(e=>"balance" === e.field && e.value > e.previousValue)
-                      , r = JSON.parse(JSON.stringify(this.selfPlayer.coinInventory));
-                    s.ZP.emitEventNow("PLAYER_COIN_INVENTORY_CHANGE", {
+                e.listen("balance", (e, n) => {
+                    let r = JSON.parse(JSON.stringify(this.selfPlayer.coinInventory));
+                    o.ZP.emitEventNow("PLAYER_COIN_INVENTORY_CHANGE", {
                         coinInventory: r,
-                        added: n ? n.value - n.previousValue : 0,
+                        added: e > n ? e - n : 0,
                         currencyId: t
                     })
                 }
@@ -12765,7 +13033,7 @@
                 let t = null === (e = this.selfPlayer) || void 0 === e ? void 0 : e.pet;
                 if (t) {
                     let e = JSON.parse(JSON.stringify(t));
-                    s.ZP.emitEventNow(s.fb.PLAYER_PET_UPDATE, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_PET_UPDATE, {
                         full: {
                             pet: e
                         }
@@ -12773,18 +13041,18 @@
                 }
             }
             monitorPet(e) {
-                e.inventory && (e.inventory.slots.onAdd(e=>this.monitorSlot(e)),
-                e.inventory.slots.onRemove(()=>this.updatedInventory = !0)),
-                e.scriptInstance && e.scriptInstance.onChange(()=>this.updatedPet = !0),
-                e.avatar && (e.avatar.listen("name", ()=>this.updatedPet = !0),
-                e.avatar.listen("fade", ()=>this.updatedPet = !0))
+                e.inventory && (e.inventory.slots.onAdd(e => this.monitorSlot(e)),
+                e.inventory.slots.onRemove( () => this.updatedInventory = !0)),
+                e.scriptInstance && e.scriptInstance.onChange( () => this.updatedPet = !0),
+                e.avatar && (e.avatar.listen("name", () => this.updatedPet = !0),
+                e.avatar.listen("fade", () => this.updatedPet = !0))
             }
             petChange() {
                 let e = this.currentPlayer
                   , t = null == e ? void 0 : e.full.pet;
                 if (null == t ? void 0 : t.avatar) {
                     let n = JSON.parse(JSON.stringify(t));
-                    s.ZP.emitEventNow(s.fb.PLAYER_PET_CHANGE, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_PET_CHANGE, {
                         core: {
                             petAvatar: n.avatar,
                             position: {
@@ -12798,7 +13066,7 @@
                     }),
                     this.monitorPet(t)
                 } else
-                    s.ZP.emitEventNow(s.fb.PLAYER_PET_CHANGE, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_PET_CHANGE, {
                         core: {
                             petAvatar: void 0
                         },
@@ -12809,26 +13077,26 @@
             }
             setupSelfPlayerListeners(e, t) {
                 var n, r;
-                e.inventory.onChange(()=>this.inventoryChanged()),
+                e.inventory.onChange( () => this.inventoryChanged()),
                 (null === (n = e.pet) || void 0 === n ? void 0 : n.avatar) && this.monitorPet(e.pet),
-                e.listen("pet", ()=>this.petChange()),
-                e.energy.onChange(()=>{
+                e.listen("pet", () => this.petChange()),
+                e.energy.onChange( () => {
                     let e = JSON.parse(JSON.stringify(this.selfPlayer.energy));
-                    s.ZP.emitEventNow("PLAYER_ENERGY_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_ENERGY_CHANGE", {
                         energy: e
                     })
                 }
                 ),
-                t.currentAvatar && t.currentAvatar.onChange(()=>{
+                t.currentAvatar && t.currentAvatar.onChange( () => {
                     let e = t.currentAvatar.toJSON();
-                    s.ZP.emitEventNow("PLAYER_CURRENTAVATAR_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_CURRENTAVATAR_CHANGE", {
                         currentAvatar: e
                     })
                 }
                 );
-                let i = ()=>{
+                let i = () => {
                     let e = t.memberships.toJSON();
-                    s.ZP.emitEventNow("PLAYER_MEMBERSHIPS_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_MEMBERSHIPS_CHANGE", {
                         memberships: e
                     })
                 }
@@ -12836,122 +13104,122 @@
                 t.memberships.onChange(i),
                 t.memberships.onAdd(i, !1),
                 t.memberships.onRemove(i);
-                let o = ()=>{
+                let a = () => {
                     let e = t.modifiers.toJSON();
-                    s.ZP.emitEventNow("PLAYER_MODIFIERS_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_MODIFIERS_CHANGE", {
                         modifiers: e
                     })
                 }
                 ;
-                t.modifiers.onChange(o),
-                t.modifiers.onRemove(o),
-                t.modifiers.onAdd(o, !1),
-                t.listen("username", e=>{
-                    "mute" !== t.status && "restrict" !== t.status && "block" !== t.status && s.ZP.emitEventNow("PLAYER_USERNAME_CHANGE", {
+                t.modifiers.onChange(a),
+                t.modifiers.onRemove(a),
+                t.modifiers.onAdd(a, !1),
+                t.listen("username", e => {
+                    "mute" !== t.status && "restrict" !== t.status && "block" !== t.status && o.ZP.emitEventNow("PLAYER_USERNAME_CHANGE", {
                         username: e
                     })
                 }
                 ),
-                t.listen("status", e=>{
-                    s.ZP.emitEventNow("PLAYER_USERNAME_CHANGE", {
+                t.listen("status", e => {
+                    o.ZP.emitEventNow("PLAYER_USERNAME_CHANGE", {
                         username: "mute" === e || "restrict" === e || "block" === e ? "(muted)" : t.username
                     })
                 }
                 ),
-                e.listen("messages", e=>{
-                    s.ZP.emitEventNow(s.fb.MAIL_UPDATE, {
+                e.listen("messages", e => {
+                    o.ZP.emitEventNow(o.fb.MAIL_UPDATE, {
                         messages: e
                     })
                 }
                 ),
-                e.achievements.onAdd(e=>{
+                e.achievements.onAdd(e => {
                     let t = JSON.parse(JSON.stringify(e));
-                    s.ZP.emitEventNow(s.fb.PLAYER_ACHIEVEMENT_ADD, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_ACHIEVEMENT_ADD, {
                         achievement: t
                     }),
                     this.monitorAchievements(e)
                 }
                 ),
-                e.achievements.onRemove(e=>{
+                e.achievements.onRemove(e => {
                     let t = JSON.parse(JSON.stringify(e));
-                    s.ZP.emitEventNow(s.fb.PLAYER_ACHIEVEMENT_REMOVED, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_ACHIEVEMENT_REMOVED, {
                         achievement: t
                     })
                 }
                 ),
-                e.levels.onAdd((e,t)=>{
+                e.levels.onAdd( (e, t) => {
                     let n = JSON.parse(JSON.stringify(e));
-                    s.ZP.emitEventNow(s.fb.PLAYER_LEVEL_ADD, {
+                    o.ZP.emitEventNow(o.fb.PLAYER_LEVEL_ADD, {
                         key: t,
                         level: n
                     }),
                     this.monitorLevel(t, e)
                 }
                 ),
-                null === (r = e.entities) || void 0 === r || r.forEach(e=>{
+                null === (r = e.entities) || void 0 === r || r.forEach(e => {
                     this.monitorEntity(e)
                 }
                 ),
-                e.entities.onAdd(e=>{
+                e.entities.onAdd(e => {
                     var t;
                     let n = e.toJSON();
                     this.monitorEntity(e),
-                    s.ZP.emitEventNow(s.fb.ENTITY_ADD, n),
+                    o.ZP.emitEventNow(o.fb.ENTITY_ADD, n),
                     null === (t = this.scene) || void 0 === t || t.addPlayerEntityNodes(n)
                 }
                 , !1),
-                e.entities.onRemove(e=>{
+                e.entities.onRemove(e => {
                     var t;
-                    s.ZP.emitEventNow(s.fb.ENTITY_REMOVE, e.toJSON()),
+                    o.ZP.emitEventNow(o.fb.ENTITY_REMOVE, e.toJSON()),
                     null === (t = this.scene) || void 0 === t || t.removeEntity(e)
                 }
                 ),
-                e.farms.onAdd(()=>{
+                e.farms.onAdd( () => {
                     var e;
                     let t = JSON.parse(JSON.stringify(null === (e = this.selfPlayer) || void 0 === e ? void 0 : e.farms));
-                    s.ZP.emitEventNow("PLAYER_FARMS_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_FARMS_CHANGE", {
                         farms: t
                     })
                 }
                 , !1),
-                e.farms.onRemove(()=>{
+                e.farms.onRemove( () => {
                     var e;
                     let t = JSON.parse(JSON.stringify(null === (e = this.selfPlayer) || void 0 === e ? void 0 : e.farms));
-                    s.ZP.emitEventNow("PLAYER_FARMS_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_FARMS_CHANGE", {
                         farms: t
                     })
                 }
                 ),
-                e.inventory.slots.onAdd(e=>{
+                e.inventory.slots.onAdd(e => {
                     this.monitorSlot(e)
                 }
                 , !1),
-                e.inventory.slots.forEach(e=>{
+                e.inventory.slots.forEach(e => {
                     this.monitorSlot(e)
                 }
                 ),
-                e.inventory.slots.onRemove(()=>this.updatedInventory = !0),
-                e.wardrobe.slots.onAdd(e=>this.monitorWardrobeSlot(e), !1),
-                e.wardrobe.slots.forEach(e=>this.monitorWardrobeSlot(e)),
-                e.wardrobe.slots.onRemove(()=>this.updatedWardrobe = !0),
-                e.coinInventory.onAdd(e=>{
+                e.inventory.slots.onRemove( () => this.updatedInventory = !0),
+                e.wardrobe.slots.onAdd(e => this.monitorWardrobeSlot(e), !1),
+                e.wardrobe.slots.forEach(e => this.monitorWardrobeSlot(e)),
+                e.wardrobe.slots.onRemove( () => this.updatedWardrobe = !0),
+                e.coinInventory.onAdd(e => {
                     this.monitorCoinSlot(e)
                 }
                 ),
-                e.levels.onChange(()=>{
+                e.levels.onChange( () => {
                     let e = JSON.parse(JSON.stringify(this.selfPlayer.levels));
-                    s.ZP.emitEventNow("PLAYER_EXP_CHANGE", {
+                    o.ZP.emitEventNow("PLAYER_EXP_CHANGE", {
                         levels: e
                     })
                 }
                 ),
                 this.questsUpdated(),
-                e.quests.forEach(e=>{
-                    e.onChange(()=>this.questsUpdated())
+                e.quests.forEach(e => {
+                    e.onChange( () => this.questsUpdated())
                 }
                 ),
-                e.quests.onAdd(e=>{
-                    e.onChange(()=>this.questsUpdated()),
+                e.quests.onAdd(e => {
+                    e.onChange( () => this.questsUpdated()),
                     this.questsUpdated()
                 }
                 , !1)
@@ -12959,7 +13227,7 @@
             questsUpdated() {
                 if (this.selfPlayer) {
                     let e = JSON.parse(JSON.stringify(this.selfPlayer.quests));
-                    s.ZP.emitEventNow("PLAYER_QUESTPROGRESS_ADDED", {
+                    o.ZP.emitEventNow("PLAYER_QUESTPROGRESS_ADDED", {
                         quests: e
                     })
                 }
@@ -12974,7 +13242,7 @@
                 var n;
                 let r = this.transformPlayerCore(e)
                   , i = null === (n = this.scene) || void 0 === n ? void 0 : n.playerJoin(r, t)
-                  , o = ()=>{
+                  , o = () => {
                     if (!this.room)
                         return;
                     let e = this.getPlayerCoreBySessionId(t);
@@ -12986,7 +13254,7 @@
                     }
                 }
                 ;
-                i && (e.velocity.onChange(()=>{
+                i && (e.velocity.onChange( () => {
                     let e = this.getPlayerCoreBySessionId(t);
                     e && i.move(e.velocity, e.position)
                 }
@@ -12994,27 +13262,27 @@
                 e.currentAvatar.onChange(o),
                 e.modifiers.onChange(o),
                 e.listen("petAvatar", o),
-                e.listen("username", e=>{
+                e.listen("username", e => {
                     e !== r.username && o()
                 }
                 ),
-                e.listen("status", e=>{
+                e.listen("status", e => {
                     e !== r.status && o()
                 }
                 ),
-                e.listen("typingTimestamp", e=>{
+                e.listen("typingTimestamp", e => {
                     e && i.showChatTyping()
                 }
                 ),
                 e.petAvatar && e.petAvatar.onChange(o))
             }
             constructor() {
-                this.client = new a.KU(P),
+                this.client = new i.KU(A),
                 this.updateMap = !1,
                 this.firstLoad = !0,
                 this.serverTimeDelta = 0,
                 this.serverDeltaSet = 0,
-                this.worldService = new E(this.client),
+                this.worldService = new y(this.client),
                 this.updatedEntities = new Set,
                 this.updatedPet = !1,
                 this.updatedInventory = !1,
@@ -13022,9 +13290,9 @@
                 this.checkParams()
             }
         }
-        k.unwantedFarmNumbers = [0],
-        k.permanentErrors = ["room-is-full", "invalid-token", "could-not-authenticate", "player-not-found", "invalid-permissions", "bad-recaptca", "bad-telemetry-data", "invalid-map", "invalid-client-version", "player-is-banned", "authentication-expired", "invalid-world", "server-maintenance", "transfer-in-progress", "teleport-unauthorized", "join-in-progress"],
-        k.retryErrors = ["user-logging-out", "velocity-control"]
+        I.unwantedFarmNumbers = [0],
+        I.permanentErrors = ["room-is-full", "invalid-token", "could-not-authenticate", "player-not-found", "invalid-permissions", "bad-recaptca", "bad-telemetry-data", "invalid-map", "invalid-client-version", "player-is-banned", "authentication-expired", "invalid-world", "server-maintenance", "transfer-in-progress", "teleport-unauthorized", "join-in-progress"],
+        I.retryErrors = ["user-logging-out", "velocity-control"]
     },
     75268: function(e, t, n) {
         "use strict";
@@ -13081,13 +13349,13 @@
                 return I
             },
             fd: function() {
-                return N
+                return x
             },
             ft: function() {
                 return a
             },
             je: function() {
-                return x
+                return T
             },
             ji: function() {
                 return p
@@ -13117,7 +13385,7 @@
                 return l
             }
         });
-        let r = parseFloat("8.25")
+        let r = parseFloat("8.3")
           , i = 1676498533e3
           , o = "game-container"
           , a = "players"
@@ -13152,8 +13420,8 @@
           , I = .03
           , R = ["https://pixels.xyz", "https://pixels.online", "https://help.pixels.xyz"]
           , k = "https://d31ss916pli4td.cloudfront.net"
-          , x = "https://mesh-online-assets.s3.us-east-2.amazonaws.com"
-          , N = "".concat(k, "/game/ui/skills/skills_icon_")
+          , T = "https://mesh-online-assets.s3.us-east-2.amazonaws.com"
+          , x = "".concat(k, "/game/ui/skills/skills_icon_")
     },
     80919: function(e, t, n) {
         "use strict";
@@ -13302,8 +13570,8 @@
             async init() {
                 let e = await n.e(989).then(n.t.bind(n, 82260, 23));
                 this.phaserEventEmitter || (window.lemonEE = this.phaserEventEmitter = new e.Events.EventEmitter,
-                Object.values(s).forEach(e=>{
-                    this.registerEventListener(e, t=>{
+                Object.values(s).forEach(e => {
+                    this.registerEventListener(e, t => {
                         c.h.dispatch({
                             type: "game/".concat(e),
                             payload: t
@@ -13327,7 +13595,7 @@
             }
             sendEventDelayed(e, t) {
                 this._pending++,
-                setTimeout(()=>{
+                setTimeout( () => {
                     this._pending--,
                     this.emitEventNow(e, t)
                 }
@@ -13340,7 +13608,7 @@
         let d = new f
           , p = 0;
         function h() {
-            let e, t, {debugName: n, emitterAtom: r} = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : {}, i = [], o = t=>{
+            let e, t, {debugName: n, emitterAtom: r} = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : {}, i = [], o = t => {
                 let r = i.indexOf(t);
                 if (r < 0)
                     throw Error("Subscriber not found for '".concat(null != n ? n : a.id, "'. Did you already remove it?"));
@@ -13349,23 +13617,23 @@
             }
             , a = {
                 id: "event_".concat(++p),
-                emit: e=>i.forEach(t=>t(e)),
-                emitDeferred: e=>setTimeout(()=>a.emit(e)),
-                subscribe: t=>(r && !e && (e = c.e.sub(r, ()=>a.emit(c.e.get(r)))),
+                emit: e => i.forEach(t => t(e)),
+                emitDeferred: e => setTimeout( () => a.emit(e)),
+                subscribe: t => (r && !e && (e = c.e.sub(r, () => a.emit(c.e.get(r)))),
                 i.push(t),
-                ()=>o(t)),
-                subscribeAtom: e=>a.subscribe(t=>c.e.set(e, t)),
-                subscribeScene: (e,t)=>{
+                () => o(t)),
+                subscribeAtom: e => a.subscribe(t => c.e.set(e, t)),
+                subscribeScene: (e, t) => {
                     let n = a.subscribe(t);
                     return e.events.once("destroy", n),
-                    ()=>{
+                    () => {
                         e.events.off("destroy", n),
                         n()
                     }
                 }
                 ,
-                addReduxCase: (e,n)=>{
-                    t || (t = a.subscribe(e=>c.h.dispatch({
+                addReduxCase: (e, n) => {
+                    t || (t = a.subscribe(e => c.h.dispatch({
                         type: a.id,
                         payload: e
                     }))),
@@ -13434,7 +13702,7 @@
                 return s
             }
         });
-        var r = n(17784)
+        var r = n(25904)
           , i = n(53059)
           , o = n(75268);
         function a(e) {
@@ -13445,19 +13713,19 @@
         }
         function u(e, t) {
             return e === o.ft ? function(e) {
-                let t = l(e).map(t=>c({
+                let t = l(e).map(t => c({
                     avatarId: e,
                     attribute: t
-                })).map(e=>e[Math.floor(Math.random() * e.length)]);
+                })).map(e => e[Math.floor(Math.random() * e.length)]);
                 return {
                     id: e,
-                    pieces: t.reduce((e,t)=>({
+                    pieces: t.reduce( (e, t) => ({
                         ...e,
                         [t.type]: t
                     }), {})
                 }
             }(e) : function(e, t) {
-                let n = d(e).map(n=>({
+                let n = d(e).map(n => ({
                     attribute: n,
                     cosmetics: p({
                         avatarId: e,
@@ -13466,7 +13734,7 @@
                 }));
                 return {
                     id: e,
-                    pieces: n.map(e=>{
+                    pieces: n.map(e => {
                         var t;
                         let {attribute: n, cosmetics: r} = e
                           , i = null === (t = r.at(Math.floor(Math.random() * r.length))) || void 0 === t ? void 0 : t.value;
@@ -13476,7 +13744,7 @@
                                 value: i
                             }
                     }
-                    ).filter(e=>!!e).reduce((t,n,r,i)=>{
+                    ).filter(e => !!e).reduce( (t, n, r, i) => {
                         var o, a, s;
                         let {attribute: u, value: l} = n
                           , c = f({
@@ -13486,16 +13754,16 @@
                         return ((null == c ? void 0 : c.irremovable) || Math.random() < (null !== (o = null == c ? void 0 : c.chanceToAppearInRandomAvatar) && void 0 !== o ? o : .5)) && (t[u] = {
                             [u]: l
                         },
-                        null == c || null === (a = c.requires) || void 0 === a || a.forEach(e=>{
+                        null == c || null === (a = c.requires) || void 0 === a || a.forEach(e => {
                             if (t[e])
                                 return;
-                            let n = i.find(t=>t.attribute === e);
+                            let n = i.find(t => t.attribute === e);
                             n && (t[n.attribute] = {
                                 [n.attribute]: n.value
                             })
                         }
                         ),
-                        null == c || null === (s = c.replaces) || void 0 === s || s.forEach(e=>delete t[e])),
+                        null == c || null === (s = c.replaces) || void 0 === s || s.forEach(e => delete t[e])),
                         t
                     }
                     , {})
@@ -13505,11 +13773,11 @@
         function l(e) {
             let t = new Set
               , n = i.Z.getGameAvatar(e);
-            return n && n.defaults && ("function" == typeof n.defaults.forEach ? n.defaults.forEach(e=>{
+            return n && n.defaults && ("function" == typeof n.defaults.forEach ? n.defaults.forEach(e => {
                 "item" !== e.type && ("hair" !== e.type ? t.add(e.type) : (t.add("".concat(e.type, ".style")),
                 t.add("".concat(e.type, ".color"))))
             }
-            ) : "object" == typeof n.defaults && Object.keys(n.defaults).forEach(e=>{
+            ) : "object" == typeof n.defaults && Object.keys(n.defaults).forEach(e => {
                 t.add(e)
             }
             )),
@@ -13523,11 +13791,11 @@
                 o = n
             }
             let a = null == r ? void 0 : r.defaults;
-            if (a && (n = Object.values(a).filter(e=>e.type === o)),
+            if (a && (n = Object.values(a).filter(e => e.type === o)),
             t) {
                 let e = [n[0]];
-                return n.forEach(n=>{
-                    e.map(e=>e[t]).includes(n[t]) || e.push(n)
+                return n.forEach(n => {
+                    e.map(e => e[t]).includes(n[t]) || e.push(n)
                 }
                 ),
                 e
@@ -13538,28 +13806,28 @@
             let t = i.Z.getGameAvatar(e.avatarId);
             if (!t)
                 return;
-            let n = t.pieces.find(t=>t.id === e.attribute);
+            let n = t.pieces.find(t => t.id === e.attribute);
             return null == n ? void 0 : n.characterBuilderOptions
         }
         function d(e) {
             let t = i.Z.getGameAvatar(e);
-            return t ? t.pieces.map(e=>{
+            return t ? t.pieces.map(e => {
                 var t;
-                return (null === (t = e.attributes) || void 0 === t ? void 0 : t.map(e=>e.id)) || []
+                return (null === (t = e.attributes) || void 0 === t ? void 0 : t.map(e => e.id)) || []
             }
-            ).flat().filter((e,t,n)=>!!e && n.indexOf(e) === t) : []
+            ).flat().filter( (e, t, n) => !!e && n.indexOf(e) === t) : []
         }
         function p(e, t) {
             var n, o;
             let a = i.Z.getGameAvatar(e.avatarId);
             if (!a)
                 return [];
-            let s = null === (o = a.pieces.find(t=>t.id === e.attribute)) || void 0 === o ? void 0 : null === (n = o.characterBuilderOptions) || void 0 === n ? void 0 : n.cosmetics;
-            return s ? s.filter(e=>{
+            let s = null === (o = a.pieces.find(t => t.id === e.attribute)) || void 0 === o ? void 0 : null === (n = o.characterBuilderOptions) || void 0 === n ? void 0 : n.cosmetics;
+            return s ? s.filter(e => {
                 var n;
                 let i = null === (n = e.lock) || void 0 === n ? void 0 : n.itemId;
                 return !i || (0,
-                r.PM)(null == t ? void 0 : t.slots, e=>e.item === i && e.quantity > 0)
+                r.PM)(null == t ? void 0 : t.slots, e => e.item === i && e.quantity > 0)
             }
             ) : []
         }
@@ -13598,10 +13866,10 @@
         var r = n(96486)
           , i = n.n(r)
           , o = n(53059)
-          , a = n(49922)
+          , a = n(73913)
           , s = n(34853)
           , u = n(16497)
-          , l = n(17784);
+          , l = n(25904);
         function c(e, t) {
             var n, r, i;
             return t.full.energy.level >= -(null !== (i = null === (r = e.onUse) || void 0 === r ? void 0 : null === (n = r.energy) || void 0 === n ? void 0 : n.value) && void 0 !== i ? i : 0)
@@ -13634,11 +13902,11 @@
         let h = ["placeEntity", "placeObject", "move", "removeEntity", "removeObject"];
         function v(e) {
             var t, n;
-            return null == e ? void 0 : null === (n = e.onUse) || void 0 === n ? void 0 : null === (t = n.types) || void 0 === t ? void 0 : t.some(e=>h.includes(e))
+            return null == e ? void 0 : null === (n = e.onUse) || void 0 === n ? void 0 : null === (t = n.types) || void 0 === t ? void 0 : t.some(e => h.includes(e))
         }
         function g(e) {
             var t, n;
-            return null == e ? void 0 : null === (n = e.onUse) || void 0 === n ? void 0 : null === (t = n.types) || void 0 === t ? void 0 : t.some(e=>["removeEntity", "removeObject"].includes(e))
+            return null == e ? void 0 : null === (n = e.onUse) || void 0 === n ? void 0 : null === (t = n.types) || void 0 === t ? void 0 : t.some(e => ["removeEntity", "removeObject"].includes(e))
         }
         function m(e, t) {
             var n, r, i, o, l, c, f, d;
@@ -13736,7 +14004,7 @@
                 e = t
             }
             let f = null == e ? void 0 : e.useTargets;
-            return !!(f && (null === (u = e.onUse) || void 0 === u ? void 0 : u.types.every(e=>{
+            return !!(f && (null === (u = e.onUse) || void 0 === u ? void 0 : u.types.every(e => {
                 var i, u, f, d;
                 switch (e) {
                 case "harvest":
@@ -13785,7 +14053,7 @@
                 }
                 return !0
             }
-            ))) && (null == f ? void 0 : f.types.some(e=>{
+            ))) && (null == f ? void 0 : f.types.some(e => {
                 var r, a, s, u;
                 if ("entities" === e)
                     return null === (r = f.entities) || void 0 === r ? void 0 : r.includes(t);
@@ -13803,7 +14071,7 @@
                     return null === (s = f.objects) || void 0 === s ? void 0 : s.includes(t);
                 else if ("objectTypes" === e) {
                     let e = o.Z.getGameObject(t);
-                    return null == e ? void 0 : null === (u = e.types) || void 0 === u ? void 0 : u.every(e=>{
+                    return null == e ? void 0 : null === (u = e.types) || void 0 === u ? void 0 : u.every(e => {
                         var t;
                         return null === (t = f.objectTypes) || void 0 === t ? void 0 : t.includes(e)
                     }
@@ -13865,7 +14133,7 @@
             let t = r.Z.getTenants();
             if (!t)
                 return !1;
-            let n = Object.values(t).find(t=>t.name === e);
+            let n = Object.values(t).find(t => t.name === e);
             if (!n || (null == n ? void 0 : n.id) === o())
                 return !1;
             let i = "".concat(window.location.origin, "/").concat(n.id);
@@ -13909,7 +14177,7 @@
                     return this.blobs.get(t);
                 if (t.startsWith("blob:"))
                     return t;
-                let n = (async()=>{
+                let n = (async () => {
                     let e = "";
                     try {
                         let n = await (0,
@@ -13947,7 +14215,7 @@
                 return w
             },
             Ky: function() {
-                return x
+                return T
             },
             Ye: function() {
                 return R
@@ -14086,7 +14354,7 @@
         }, {
             path: "/"
         });
-        let l = ()=>{
+        let l = () => {
             var e;
             switch (null !== (e = "production".toString()) && void 0 !== e ? e : "local") {
             case "production":
@@ -14099,9 +14367,9 @@
                 return "/favicon_development"
             }
         }
-          , c = e=>!(!e || f(e)) && !a.Oe.reduce((t,n)=>t || e.startsWith(n), !1)
-          , f = e=>(null == e ? void 0 : e.startsWith("/")) && !(null == e ? void 0 : e.startsWith("//"))
-          , d = e=>{
+          , c = e => !(!e || f(e)) && !a.Oe.reduce( (t, n) => t || e.startsWith(n), !1)
+          , f = e => (null == e ? void 0 : e.startsWith("/")) && !(null == e ? void 0 : e.startsWith("//"))
+          , d = e => {
             if (null == e ? void 0 : e.includes("dashboard.pixels")) {
                 let t = window.location.hostname;
                 if ("dev.pixels.xyz" === t)
@@ -14117,7 +14385,7 @@
             }
             return e
         }
-          , p = e=>{
+          , p = e => {
             switch (e) {
             case "metamask":
                 return h("isMetaMask");
@@ -14132,13 +14400,13 @@
                 return null === (t = window.ronin) || void 0 === t ? void 0 : t.provider
             }
         }
-          , h = e=>{
+          , h = e => {
             var t;
             if (window.ethereum) {
                 if (!window.ethereum.isOkxWallet && window.ethereum[e] && !window.ethereum.providers)
                     return window.ethereum;
                 if (null === (t = window.ethereum.providers) || void 0 === t ? void 0 : t.length) {
-                    let t = window.ethereum.providers.find(t=>null == t ? void 0 : t[e]);
+                    let t = window.ethereum.providers.find(t => null == t ? void 0 : t[e]);
                     if (t)
                         return t
                 }
@@ -14147,7 +14415,7 @@
             }
         }
           , v = {}
-          , g = (e,t)=>{
+          , g = (e, t) => {
             if ("pixels-session" === e) {
                 let e = "pixels-session";
                 if (void 0 === t)
@@ -14180,8 +14448,8 @@
                 } catch (e) {}
             }
         }
-          , m = ()=>{
-            Object.keys(localStorage).filter(e=>e.startsWith("wc@2:") || e.startsWith("wagmi.") || e.startsWith("-walletlink:")).forEach(e=>localStorage.removeItem(e))
+          , m = () => {
+            Object.keys(localStorage).filter(e => e.startsWith("wc@2:") || e.startsWith("wagmi.") || e.startsWith("-walletlink:")).forEach(e => localStorage.removeItem(e))
         }
           , y = function(e) {
             let t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : 0;
@@ -14189,39 +14457,39 @@
                 maximumFractionDigits: t
             })
         }
-          , b = (e,t)=>{
+          , b = (e, t) => {
             var n, r;
             return y(e, null !== (r = null == t ? void 0 : t.roundDecimalPlaces) && void 0 !== r ? r : Math.floor(Math.log10(2 ** (null !== (n = null == t ? void 0 : t.roundBinaryPlaces) && void 0 !== n ? n : 0))))
         }
-          , E = (e,t)=>e < 1e3 ? b(e, t) : e < 1e6 ? (e / 1e3).toFixed(e < 1e4 ? 1 : 0) + "K" : e < 1e9 ? (e / 1e6).toFixed(e < 1e7 ? 1 : 0) + "M" : e < 1e12 ? (e / 1e9).toFixed(e < 1e10 ? 1 : 0) + "B" : "> 1e12"
-          , _ = e=>{
+          , E = (e, t) => e < 1e3 ? b(e, t) : e < 1e6 ? (e / 1e3).toFixed(e < 1e4 ? 1 : 0) + "K" : e < 1e9 ? (e / 1e6).toFixed(e < 1e7 ? 1 : 0) + "M" : e < 1e12 ? (e / 1e9).toFixed(e < 1e10 ? 1 : 0) + "B" : "> 1e12"
+          , _ = e => {
             var t;
             return (null == e ? void 0 : e.roundDecimalPlaces) ? null == e ? void 0 : e.roundDecimalPlaces : Math.floor(Math.log10(2 ** (null !== (t = null == e ? void 0 : e.roundBinaryPlaces) && void 0 !== t ? t : 0)))
         }
-          , w = (e,t)=>{
+          , w = (e, t) => {
             var n;
             let r = (null == t ? void 0 : t.roundDecimalPlaces) ? 10 ** t.roundDecimalPlaces : 2 ** (null !== (n = null == t ? void 0 : t.roundBinaryPlaces) && void 0 !== n ? n : 0);
             return Math.ceil(e * r) / r
         }
-          , O = (e,t)=>{
+          , O = (e, t) => {
             var n;
             let r = (null == t ? void 0 : t.roundDecimalPlaces) ? 10 ** t.roundDecimalPlaces : 2 ** (null !== (n = null == t ? void 0 : t.roundBinaryPlaces) && void 0 !== n ? n : 0);
             return Math.floor(e * r) / r
         }
-          , A = (e,t)=>Math.atan2(t.y - e.y, t.x - e.x)
-          , S = (e,t)=>(t.x - e.x) ** 2 + (t.y - e.y) ** 2
-          , P = e=>{
+          , A = (e, t) => Math.atan2(t.y - e.y, t.x - e.x)
+          , S = (e, t) => (t.x - e.x) ** 2 + (t.y - e.y) ** 2
+          , P = e => {
             let {selfPlayer: t, world: n, object: r, useType: i} = e;
             return t ? "self" === i || "pet" === i ? 0 : r ? Math.max(0, Math.abs(t.y - r.y) - r.height / 2) ** 2 + Math.max(0, Math.abs(t.x - r.x) - r.width / 2) ** 2 : (t.y - n.y) * (t.y - n.y) + (t.x - n.x) * (t.x - n.x) : 1e4
         }
-          , I = e=>window.fetch(e, {
+          , I = e => window.fetch(e, {
             mode: "cors",
             credentials: "omit"
         })
-          , R = async()=>{
+          , R = async () => {
             try {
                 return {
-                    version: await window.fetch("/version.json").then(e=>e.json())
+                    version: await window.fetch("/version.json").then(e => e.json())
                 }
             } catch (e) {
                 return {
@@ -14231,12 +14499,12 @@
             }
         }
           , k = {}
-          , x = async e=>{
+          , T = async e => {
             try {
                 if (k[e])
                     return k[e];
                 let t = encodeURIComponent(e)
-                  , n = await window.fetch("".concat(o.LB, "/v1/expand?url=").concat(t)).then(e=>e.json());
+                  , n = await window.fetch("".concat(o.LB, "/v1/expand?url=").concat(t)).then(e => e.json());
                 if (null == n ? void 0 : n.url)
                     return k[e] = n.url,
                     n.url
@@ -14245,15 +14513,15 @@
             }
             return e
         }
-          , N = /fuck|shit|cunt|cock|fcuk|nigger|5hit/i
-          , T = /\b(4r5e|5h1t|5hit|a55|hitler|anal|anus|ar5e|arrse|arse|ass|asshole|asswhole|a_s_s|b!tch|b00bs|b17ch|b1tch|ballbag|balls|ballsack|bastard|beastial|beastiality|bellend|bestial|bestiality|bi\+ch|biatch|bitch|bitcher|bitchers|bitches|bitchin|bitching|bloody|blow job|blowjob|boiolas|bollock|bollok|boner|boob|booob|boooob|booooob|booooooob|breasts|buceta|bugger|bum|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|cawk|chink|cipa|cl1t|clit|clitoris|cnut|cock|cok|coon|cox|crap|cum|cummer|cumming|cums|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|damn|dick|dickhead|dildo|dink|dinks|dirsa|dlck|doggin|dogging|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fag|fanny|fannyflaps|fanyy|fatass|fcuk|fcuker|fcuking|feck|fecker|felching|fellate|fellatio|flange|fook|fooker|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux|fux0r|f_u_c_k|gangbang|gangbanged|gangbangs|gaylord|gaysex|goatse|God|god-dam|god-damned|goddamn|goddamned|hardcoresex|heshe|hoare|hoer|homo|hore|horniest|horny|hotsex|jack-off|jackoff|jap|jerk-off|jism|jiz|jizm|jizz|kawk|knob|knobead|knobed|knobend|knobhead|knobjocky|knobjokey|kock|kondum|kondums|kum|kummer|kumming|kums|kunilingus|l3i\+ch|l3itch|labia|lust|lusting|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat*|masterbat3|masterbat|masturbate|mo-fo|mof0|mofo|mothafuck|mother fuck|motherfuck|muff|mutha|muthafeck|muthafuckk|muther|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|nob|nob jokey|nobhead|nobjocky|nobjokey|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|pawn|pecker|penis|penisfucker|phonesex|phuck|phuk|phuked|phuking|phukked|phukking|phuks|phuq|pigfucker|pimpis|piss|poop|porn|prick|pron|pube|pusse|pussi|pussy|rectum|retard|rimjaw|rimming|s hit|s.o.b.|sadist|schlong|screwing|scroat|scrote|scrotum|semen|sex|sh!\+|sh!t|sh1t|shag|shagger|shaggin|shagging|shemale|shi\+|skank|slut|sluts|smegma|smut|snatch|son-of-a-bitch|spunk|s_h_i_t|t1tt1e|teets|teez|testical|testicle|titfuck|tits|titt|titwank|tosser|turd|tw4t|twat|twathead|twatty|v14gra|v1gra|vagina|viagra|vulva|w00se|wang|wank|wanker|wanky|whoar|whore|xrated|xxx|kkk)/gi
-          , C = (null === (i = window.navigator) || void 0 === i ? void 0 : null === (r = i.languages) || void 0 === r ? void 0 : r.some(e=>null == e ? void 0 : e.startsWith("tl"))) ? /fuck|shit|cunt|cock|fcuk|hitler|[-._+,;:'`#^/\\]+[A-Za-z]+[-._+,;:'`#^/\\]|putang|asshole|asswhole|gago|bastard|beastial|punyeta|ulol|tae|hayop|bi\+ch|biatch|bitch|bitcher|bitchers|bitches|lintik|pakshet|bloody|blowjob|boiolas|bollock|bollok|boo+b|bogo|breasts|buceta|bugger|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|bobo|chink|cl1t|clit|clitoris|cnut|cock|cok|cox|cummer|cumming|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|dickhead|dildo|dinks|dirsa|dlck|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fanny|fanyy|fatass|fcuk|fcuker|fcuking|fecker|felching|fellate|fellatio|flange|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux0r|gangbang|gangbanged|gangbangs|gaylord|gaysex|god-dam|god-damned|goddamn|goddamned|hardcoresex|hoare|horniest|horny|hotsex|jack-off|jackoff|jerk-off|jism|jizm|jizz|kawk|puta|knobed|knobend|knobhead|knobjocky|knobjokey|kondum|kondums|kummer|kumming|kunilingus|l3i\+ch|l3itch|labia|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat|mo-fo|mof0|mothafuck|mother fucker|motherfuck|muthafeck|muthafuck|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|penis|penisfucker|phonesex|phuck|phuked|phuking|phukked|phukking|phuks|pigfucker|pimpis|pissflaps|pissin|pissing|pissoff|porno|pricks|pube|pusse|pussi|pussy|rectum|retard|rimjaw|schlong|scrote|scrotum|shagger|shaggin|shagging|shemale|skank|smegma|snatch|spunk|t1tt1e5|t1tties|teez|testical|testicle|titfuck|titties|tittyfuck|tittywank|titwank|tw4t|twat|twathead|twatty|twunt|twunter|tranny|trannie|vagina|viagra|vulva|wang|wank|wanker|wanky|whoar|whore|xxx/gi : /fuck|shit|cunt|cock|fcuk|hitler|[-._+,;:'`#^/\\]+[A-Za-z]+[-._+,;:'`#^/\\]|arrse|asshole|asswhole|ballbag|bastard|beastial|beastiality|bellend|bestiality|bi\+ch|biatch|bloody|blowjob|boiolas|bollock|bollok|boo+b|breasts|buceta|bugger|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|cawk|chink|cl1t|clit|clitoris|cnut|cock|cok|cox|cummer|cumming|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|dickhead|dildo|dinks|dirsa|dlck|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fanny|fanyy|fatass|fcuk|fcuker|fcuking|fecker|felching|fellate|fellatio|flange|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux0r|gangbang|gangbanged|gangbangs|gaylord|gaysex|god-dam|god-damned|goddamn|goddamned|hardcoresex|hoare|horniest|horny|hotsex|jack-off|jackoff|jerk-off|jism|jizm|jizz|kawk|knobead|knobed|knobend|knobhead|knobjocky|knobjokey|kondum|kondums|kummer|kumming|kunilingus|l3i\+ch|l3itch|labia|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat*|masterbat|mo-fo|mof0|mothafuck|mother fuck|motherfuck|muthafecker|muthafuck|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|penis|penisfucker|phonesex|phuck|phuked|phuking|phukked|phukking|phuks|pigfucker|pimpis|pissflaps|pissin|pissing|pissoff|porno|pornography|pornos|pricks|pube|pusse|pussi|pussy|rectum|retard|rimjaw|schlong|scrote|scrotum|shagger|shaggin|shagging|shemale|skank|smegma|snatch|spunk|t1tt1e5|t1tties|teez|testical|testicle|titfuck|titties|tittyfuck|tittywank|titwank|tw4t|twat|twathead|twatty|twunt|twunter|tranny|trannie|vagina|viagra|vulva|wang|wank|wanker|wanky|whoar|whore|xxx/gi
-          , L = e=>(T.lastIndex = 0,
+          , x = /fuck|shit|cunt|cock|fcuk|nigger|5hit/i
+          , N = /\b(4r5e|5h1t|5hit|a55|hitler|anal|anus|ar5e|arrse|arse|ass|asshole|asswhole|a_s_s|b!tch|b00bs|b17ch|b1tch|ballbag|balls|ballsack|bastard|beastial|beastiality|bellend|bestial|bestiality|bi\+ch|biatch|bitch|bitcher|bitchers|bitches|bitchin|bitching|bloody|blow job|blowjob|boiolas|bollock|bollok|boner|boob|booob|boooob|booooob|booooooob|breasts|buceta|bugger|bum|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|cawk|chink|cipa|cl1t|clit|clitoris|cnut|cock|cok|coon|cox|crap|cum|cummer|cumming|cums|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|damn|dick|dickhead|dildo|dink|dinks|dirsa|dlck|doggin|dogging|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fag|fanny|fannyflaps|fanyy|fatass|fcuk|fcuker|fcuking|feck|fecker|felching|fellate|fellatio|flange|fook|fooker|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux|fux0r|f_u_c_k|gangbang|gangbanged|gangbangs|gaylord|gaysex|goatse|God|god-dam|god-damned|goddamn|goddamned|hardcoresex|heshe|hoare|hoer|homo|hore|horniest|horny|hotsex|jack-off|jackoff|jap|jerk-off|jism|jiz|jizm|jizz|kawk|knob|knobead|knobed|knobend|knobhead|knobjocky|knobjokey|kock|kondum|kondums|kum|kummer|kumming|kums|kunilingus|l3i\+ch|l3itch|labia|lust|lusting|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat*|masterbat3|masterbat|masturbate|mo-fo|mof0|mofo|mothafuck|mother fuck|motherfuck|muff|mutha|muthafeck|muthafuckk|muther|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|nob|nob jokey|nobhead|nobjocky|nobjokey|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|pawn|pecker|penis|penisfucker|phonesex|phuck|phuk|phuked|phuking|phukked|phukking|phuks|phuq|pigfucker|pimpis|piss|poop|porn|prick|pron|pube|pusse|pussi|pussy|rectum|retard|rimjaw|rimming|s hit|s.o.b.|sadist|schlong|screwing|scroat|scrote|scrotum|semen|sex|sh!\+|sh!t|sh1t|shag|shagger|shaggin|shagging|shemale|shi\+|skank|slut|sluts|smegma|smut|snatch|son-of-a-bitch|spunk|s_h_i_t|t1tt1e|teets|teez|testical|testicle|titfuck|tits|titt|titwank|tosser|turd|tw4t|twat|twathead|twatty|v14gra|v1gra|vagina|viagra|vulva|w00se|wang|wank|wanker|wanky|whoar|whore|xrated|xxx|kkk)/gi
+          , C = (null === (i = window.navigator) || void 0 === i ? void 0 : null === (r = i.languages) || void 0 === r ? void 0 : r.some(e => null == e ? void 0 : e.startsWith("tl"))) ? /fuck|shit|cunt|cock|fcuk|hitler|[-._+,;:'`#^/\\]+[A-Za-z]+[-._+,;:'`#^/\\]|putang|asshole|asswhole|gago|bastard|beastial|punyeta|ulol|tae|hayop|bi\+ch|biatch|bitch|bitcher|bitchers|bitches|lintik|pakshet|bloody|blowjob|boiolas|bollock|bollok|boo+b|bogo|breasts|buceta|bugger|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|bobo|chink|cl1t|clit|clitoris|cnut|cock|cok|cox|cummer|cumming|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|dickhead|dildo|dinks|dirsa|dlck|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fanny|fanyy|fatass|fcuk|fcuker|fcuking|fecker|felching|fellate|fellatio|flange|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux0r|gangbang|gangbanged|gangbangs|gaylord|gaysex|god-dam|god-damned|goddamn|goddamned|hardcoresex|hoare|horniest|horny|hotsex|jack-off|jackoff|jerk-off|jism|jizm|jizz|kawk|puta|knobed|knobend|knobhead|knobjocky|knobjokey|kondum|kondums|kummer|kumming|kunilingus|l3i\+ch|l3itch|labia|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat|mo-fo|mof0|mothafuck|mother fucker|motherfuck|muthafeck|muthafuck|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|penis|penisfucker|phonesex|phuck|phuked|phuking|phukked|phukking|phuks|pigfucker|pimpis|pissflaps|pissin|pissing|pissoff|porno|pricks|pube|pusse|pussi|pussy|rectum|retard|rimjaw|schlong|scrote|scrotum|shagger|shaggin|shagging|shemale|skank|smegma|snatch|spunk|t1tt1e5|t1tties|teez|testical|testicle|titfuck|titties|tittyfuck|tittywank|titwank|tw4t|twat|twathead|twatty|twunt|twunter|tranny|trannie|vagina|viagra|vulva|wang|wank|wanker|wanky|whoar|whore|xxx/gi : /fuck|shit|cunt|cock|fcuk|hitler|[-._+,;:'`#^/\\]+[A-Za-z]+[-._+,;:'`#^/\\]|arrse|asshole|asswhole|ballbag|bastard|beastial|beastiality|bellend|bestiality|bi\+ch|biatch|bloody|blowjob|boiolas|bollock|bollok|boo+b|breasts|buceta|bugger|butthole|buttmunch|buttplug|c0ck|c0cksucker|carpet muncher|cawk|chink|cl1t|clit|clitoris|cnut|cock|cok|cox|cummer|cumming|cumshot|cunilingus|cunillingus|cunnilingus|cunt|cyalis|cyberfuc|d1ck|dickhead|dildo|dinks|dirsa|dlck|donkeyribber|doosh|duche|dyke|ejaculat|ejakulate|f u c k|f u c k e r|f4nny|fanny|fanyy|fatass|fcuk|fcuker|fcuking|fecker|felching|fellate|fellatio|flange|fudge packer|fudgepacker|fuk|fuker|fukker|fukkin|fuks|fukwhit|fukwit|fux0r|gangbang|gangbanged|gangbangs|gaylord|gaysex|god-dam|god-damned|goddamn|goddamned|hardcoresex|hoare|horniest|horny|hotsex|jack-off|jackoff|jerk-off|jism|jizm|jizz|kawk|knobead|knobed|knobend|knobhead|knobjocky|knobjokey|kondum|kondums|kummer|kumming|kunilingus|l3i\+ch|l3itch|labia|m0f0|m0fo|m45terbate|ma5terb8|ma5terbate|masochist|master-bate|masterb8|masterbat*|masterbat|mo-fo|mof0|mothafuck|mother fuck|motherfuck|muthafecker|muthafuck|n1gga|n1gger|nazi|nigg3r|nigg4h|nigga|niggah|niggas|niggaz|nigger|niggers|numbnuts|nutsack|orgasim|orgasims|orgasm|orgasms|p0rn|penis|penisfucker|phonesex|phuck|phuked|phuking|phukked|phukking|phuks|pigfucker|pimpis|pissflaps|pissin|pissing|pissoff|porno|pornography|pornos|pricks|pube|pusse|pussi|pussy|rectum|retard|rimjaw|schlong|scrote|scrotum|shagger|shaggin|shagging|shemale|skank|smegma|snatch|spunk|t1tt1e5|t1tties|teez|testical|testicle|titfuck|titties|tittyfuck|tittywank|titwank|tw4t|twat|twathead|twatty|twunt|twunter|tranny|trannie|vagina|viagra|vulva|wang|wank|wanker|wanky|whoar|whore|xxx/gi
+          , L = e => (N.lastIndex = 0,
         C.lastIndex = 0,
-        N.lastIndex = 0,
-        N.test(e) || T.test(e) || C.test(e.replace(/[^a-zA-Z1350]/, "")))
-          , M = e=>e.replaceAll(C, "@#$%").replaceAll(T, "!*^+")
-          , j = e=>e.replace(/^(http|https)?:?\/\/[^/]*/, "").replace(/\?.*$/, "").replace(/-|\/|\|_|\.png|uploadedAssets/g, "")
+        x.lastIndex = 0,
+        x.test(e) || N.test(e) || C.test(e.replace(/[^a-zA-Z1350]/, "")))
+          , M = e => e.replaceAll(C, "@#$%").replaceAll(N, "!*^+")
+          , j = e => e.replace(/^(http|https)?:?\/\/[^/]*/, "").replace(/\?.*$/, "").replace(/-|\/|\|_|\.png|uploadedAssets/g, "")
           , D = function(e) {
             let t = !(arguments.length > 1) || void 0 === arguments[1] || arguments[1];
             if (!e)
@@ -14266,8 +14534,8 @@
               , r = -1 === n ? e : e.substring(n + 1);
             return t && -1 === e.indexOf("?") && -1 === e.indexOf("#") ? "".concat(r, "?v3") : r
         }
-          , U = e=>e ? e.startsWith("/assets/ui") ? e.replace("/assets/ui/", "".concat(a.pZ, "/game/ui/")) : e.startsWith("/game") ? "".concat(a.pZ).concat(e) : e.startsWith("/assets/") ? e.replace("/assets/", "".concat(a.pZ, "/game/assets/")) : e.startsWith("/") && !e.startsWith("//") ? "".concat(a.pZ).concat(e) : e : ""
-          , $ = e=>{
+          , U = e => e ? e.startsWith("/assets/ui") ? e.replace("/assets/ui/", "".concat(a.pZ, "/game/ui/")) : e.startsWith("/game") ? "".concat(a.pZ).concat(e) : e.startsWith("/assets/") ? e.replace("/assets/", "".concat(a.pZ, "/game/assets/")) : e.startsWith("/") && !e.startsWith("//") ? "".concat(a.pZ).concat(e) : e : ""
+          , $ = e => {
             let t = (null == e ? void 0 : e.toLowerCase()) || ""
               , n = e;
             try {
@@ -14306,7 +14574,7 @@
                 return i.Z.loadLibraries(e)
             }
             registerEvents() {
-                r.ZP.registerEventListener(r.Vh.RESIZE, e=>{
+                r.ZP.registerEventListener(r.Vh.RESIZE, e => {
                     var t;
                     null === (t = this.roomScene) || void 0 === t || t.resize(e.width, e.height)
                 }
@@ -14324,29 +14592,29 @@
                 o.phaserGame
             }
             async freezeRoom(e) {
-                o.phaserGame.scene.getScenes(!0).forEach(t=>{
+                o.phaserGame.scene.getScenes(!0).forEach(t => {
                     t.events.emit("TRANSITION_OUT", e)
                 }
                 ),
-                await new Promise(t=>{
+                await new Promise(t => {
                     setTimeout(t, "quick" !== e ? 1500 : 1e3)
                 }
                 )
             }
             unfreezeRoom(e) {
-                o.phaserGame.scene.getScenes(!0).forEach(t=>{
+                o.phaserGame.scene.getScenes(!0).forEach(t => {
                     t.events.emit("TRANSITION_IN", e)
                 }
                 )
             }
             pauseRoom() {
-                o.phaserGame.scene.getScenes(!0).forEach(e=>{
+                o.phaserGame.scene.getScenes(!0).forEach(e => {
                     e !== this.audioScene && e.scene.pause()
                 }
                 )
             }
             async killScene() {
-                o.phaserGame && (o.phaserGame.scene.getScenes().forEach(e=>{
+                o.phaserGame && (o.phaserGame.scene.getScenes().forEach(e => {
                     e !== this.audioScene && e.scene.remove()
                 }
                 ),
@@ -14365,7 +14633,7 @@
                 var t;
                 o.phaserGame || await this.initGame(),
                 null === (t = this.audioScene) || void 0 === t || t.clearPositional();
-                let i = await Promise.all([n.e(989), n.e(87), n.e(445), n.e(255)]).then(n.bind(n, 13255));
+                let i = await Promise.all([n.e(989), n.e(640), n.e(445), n.e(220)]).then(n.bind(n, 57220));
                 if (o.reentrancyCheck) {
                     console.error("wtf are we doing? We cannot run this twice.");
                     return
@@ -14374,12 +14642,12 @@
                 let a = "room".concat(e.mapId);
                 a === this.currentScene && (a = "".concat(a, "2"));
                 let s = new i.default(a,e.mapId,e.worldId,e.spawn,e.transition)
-                  , u = setTimeout(()=>{
+                  , u = setTimeout( () => {
                     console.log("Have not loaded after 5 seconds!!!!"),
                     r.ZP.sendEventDelayed(r.fb.SLOW_LOAD)
                 }
                 , 5e3)
-                  , l = ()=>{
+                  , l = () => {
                     let e = this.currentScene && o.phaserGame.scene.getScene(this.currentScene);
                     e || console.log("no scene to destroy"),
                     clearTimeout(u),
@@ -14388,7 +14656,7 @@
                     this.currentScene = a,
                     this.roomScene = s,
                     null == e || e.scene.remove(),
-                    null == s || s.events.once("create", ()=>{
+                    null == s || s.events.once("create", () => {
                         r.ZP.emitEventNow(r.fb.GAME_INITIATED)
                     }
                     ),
@@ -14396,7 +14664,7 @@
                     r.ZP.removeEventListerner(r.fb.SVR_CANNOTCONNECT, c),
                     o.reentrancyCheck = !1
                 }
-                  , c = ()=>{
+                  , c = () => {
                     clearTimeout(u),
                     r.ZP.removeEventListerner(r.fb.GAME_CONNECTED, l),
                     r.ZP.removeEventListerner(r.fb.SVR_CANNOTCONNECT, c),
@@ -14446,22 +14714,22 @@
         let {toString: u} = Object.prototype
           , {getPrototypeOf: l} = Object
           , c = (r = Object.create(null),
-        e=>{
+        e => {
             let t = u.call(e);
             return r[t] || (r[t] = t.slice(8, -1).toLowerCase())
         }
         )
-          , f = e=>(e = e.toLowerCase(),
-        t=>c(t) === e)
-          , d = e=>t=>typeof t === e
+          , f = e => (e = e.toLowerCase(),
+        t => c(t) === e)
+          , d = e => t => typeof t === e
           , {isArray: p} = Array
           , h = d("undefined")
           , v = f("ArrayBuffer")
           , g = d("string")
           , m = d("function")
           , y = d("number")
-          , b = e=>null !== e && "object" == typeof e
-          , E = e=>{
+          , b = e => null !== e && "object" == typeof e
+          , E = e => {
             if ("object" !== c(e))
                 return !1;
             let t = l(e);
@@ -14501,16 +14769,16 @@
             return null
         }
         let R = "undefined" != typeof globalThis ? globalThis : "undefined" != typeof self ? self : "undefined" != typeof window ? window : global
-          , k = e=>!h(e) && e !== R
-          , x = (i = "undefined" != typeof Uint8Array && l(Uint8Array),
-        e=>i && e instanceof i)
-          , N = f("HTMLFormElement")
-          , T = (({hasOwnProperty: e})=>(t,n)=>e.call(t, n))(Object.prototype)
+          , k = e => !h(e) && e !== R
+          , T = (i = "undefined" != typeof Uint8Array && l(Uint8Array),
+        e => i && e instanceof i)
+          , x = f("HTMLFormElement")
+          , N = ( ({hasOwnProperty: e}) => (t, n) => e.call(t, n))(Object.prototype)
           , C = f("RegExp")
-          , L = (e,t)=>{
+          , L = (e, t) => {
             let n = Object.getOwnPropertyDescriptors(e)
               , r = {};
-            P(n, (n,i)=>{
+            P(n, (n, i) => {
                 let o;
                 !1 !== (o = t(n, i, e)) && (r[i] = o || n)
             }
@@ -14531,7 +14799,7 @@
             isBuffer: function(e) {
                 return null !== e && !h(e) && null !== e.constructor && !h(e.constructor) && m(e.constructor.isBuffer) && e.constructor.isBuffer(e)
             },
-            isFormData: e=>{
+            isFormData: e => {
                 let t;
                 return e && ("function" == typeof FormData && e instanceof FormData || m(e.append) && ("formdata" === (t = c(e)) || "object" === t && m(e.toString) && "[object FormData]" === e.toString()))
             }
@@ -14541,7 +14809,7 @@
             },
             isString: g,
             isNumber: y,
-            isBoolean: e=>!0 === e || !1 === e,
+            isBoolean: e => !0 === e || !1 === e,
             isObject: b,
             isPlainObject: E,
             isUndefined: h,
@@ -14550,15 +14818,15 @@
             isBlob: O,
             isRegExp: C,
             isFunction: m,
-            isStream: e=>b(e) && m(e.pipe),
+            isStream: e => b(e) && m(e.pipe),
             isURLSearchParams: S,
-            isTypedArray: x,
+            isTypedArray: T,
             isFileList: A,
             forEach: P,
             merge: function e() {
                 let {caseless: t} = k(this) && this || {}
                   , n = {}
-                  , r = (r,i)=>{
+                  , r = (r, i) => {
                     let o = t && I(n, i) || i;
                     E(n[o]) && E(r) ? n[o] = e(n[o], r) : E(r) ? n[o] = e({}, r) : p(r) ? n[o] = r.slice() : n[o] = r
                 }
@@ -14567,17 +14835,17 @@
                     arguments[e] && P(arguments[e], r);
                 return n
             },
-            extend: (e,t,n,{allOwnKeys: r}={})=>(P(t, (t,r)=>{
+            extend: (e, t, n, {allOwnKeys: r}={}) => (P(t, (t, r) => {
                 n && m(t) ? e[r] = s(t, n) : e[r] = t
             }
             , {
                 allOwnKeys: r
             }),
             e),
-            trim: e=>e.trim ? e.trim() : e.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, ""),
-            stripBOM: e=>(65279 === e.charCodeAt(0) && (e = e.slice(1)),
+            trim: e => e.trim ? e.trim() : e.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, ""),
+            stripBOM: e => (65279 === e.charCodeAt(0) && (e = e.slice(1)),
             e),
-            inherits: (e,t,n,r)=>{
+            inherits: (e, t, n, r) => {
                 e.prototype = Object.create(t.prototype, r),
                 e.prototype.constructor = e,
                 Object.defineProperty(e, "super", {
@@ -14586,7 +14854,7 @@
                 n && Object.assign(e.prototype, n)
             }
             ,
-            toFlatObject: (e,t,n,r)=>{
+            toFlatObject: (e, t, n, r) => {
                 let i, o, a;
                 let s = {};
                 if (t = t || {},
@@ -14604,7 +14872,7 @@
             ,
             kindOf: c,
             kindOfTest: f,
-            endsWith: (e,t,n)=>{
+            endsWith: (e, t, n) => {
                 e = String(e),
                 (void 0 === n || n > e.length) && (n = e.length),
                 n -= t.length;
@@ -14612,7 +14880,7 @@
                 return -1 !== r && r === n
             }
             ,
-            toArray: e=>{
+            toArray: e => {
                 if (!e)
                     return null;
                 if (p(e))
@@ -14626,7 +14894,7 @@
                 return n
             }
             ,
-            forEachEntry: (e,t)=>{
+            forEachEntry: (e, t) => {
                 let n;
                 let r = (e && e[Symbol.iterator]).call(e);
                 for (; (n = r.next()) && !n.done; ) {
@@ -14635,7 +14903,7 @@
                 }
             }
             ,
-            matchAll: (e,t)=>{
+            matchAll: (e, t) => {
                 let n;
                 let r = [];
                 for (; null !== (n = e.exec(t)); )
@@ -14643,12 +14911,12 @@
                 return r
             }
             ,
-            isHTMLForm: N,
-            hasOwnProperty: T,
-            hasOwnProp: T,
+            isHTMLForm: x,
+            hasOwnProperty: N,
+            hasOwnProp: N,
             reduceDescriptors: L,
-            freezeMethods: e=>{
-                L(e, (t,n)=>{
+            freezeMethods: e => {
+                L(e, (t, n) => {
                     if (m(e) && -1 !== ["arguments", "caller", "callee"].indexOf(n))
                         return !1;
                     if (m(e[n])) {
@@ -14657,7 +14925,7 @@
                             t.writable = !1;
                             return
                         }
-                        t.set || (t.set = ()=>{
+                        t.set || (t.set = () => {
                             throw Error("Can not rewrite read-only method '" + n + "'")
                         }
                         )
@@ -14666,10 +14934,10 @@
                 )
             }
             ,
-            toObjectSet: (e,t)=>{
+            toObjectSet: (e, t) => {
                 let n = {};
-                return (e=>{
-                    e.forEach(e=>{
+                return (e => {
+                    e.forEach(e => {
                         n[e] = !0
                     }
                     )
@@ -14678,17 +14946,17 @@
                 n
             }
             ,
-            toCamelCase: e=>e.toLowerCase().replace(/[-_\s]([a-z\d])(\w*)/g, function(e, t, n) {
+            toCamelCase: e => e.toLowerCase().replace(/[-_\s]([a-z\d])(\w*)/g, function(e, t, n) {
                 return t.toUpperCase() + n
             }),
-            noop: ()=>{}
+            noop: () => {}
             ,
-            toFiniteNumber: (e,t)=>Number.isFinite(e = +e) ? e : t,
+            toFiniteNumber: (e, t) => Number.isFinite(e = +e) ? e : t,
             findKey: I,
             global: R,
             isContextDefined: k,
             ALPHABET: D,
-            generateString: (e=16,t=D.ALPHA_DIGIT)=>{
+            generateString: (e=16, t=D.ALPHA_DIGIT) => {
                 let n = ""
                   , {length: r} = t;
                 for (; e--; )
@@ -14699,16 +14967,16 @@
             isSpecCompliantForm: function(e) {
                 return !!(e && m(e.append) && "FormData" === e[Symbol.toStringTag] && e[Symbol.iterator])
             },
-            toJSONObject: e=>{
+            toJSONObject: e => {
                 let t = Array(10)
-                  , n = (e,r)=>{
+                  , n = (e, r) => {
                     if (b(e)) {
                         if (t.indexOf(e) >= 0)
                             return;
                         if (!("toJSON"in e)) {
                             t[r] = e;
                             let i = p(e) ? [] : {};
-                            return P(e, (e,t)=>{
+                            return P(e, (e, t) => {
                                 let o = n(e, r + 1);
                                 h(o) || (i[t] = o)
                             }
@@ -14724,7 +14992,7 @@
             }
             ,
             isAsyncFn: U,
-            isThenable: e=>e && (b(e) || m(e)) && m(e.then) && m(e.catch)
+            isThenable: e => e && (b(e) || m(e)) && m(e.then) && m(e.catch)
         };
         function V(e, t, n, r, i) {
             Error.call(this),
@@ -14755,7 +15023,7 @@
         });
         let B = V.prototype
           , F = {};
-        ["ERR_BAD_OPTION_VALUE", "ERR_BAD_OPTION", "ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK", "ERR_FR_TOO_MANY_REDIRECTS", "ERR_DEPRECATED", "ERR_BAD_RESPONSE", "ERR_BAD_REQUEST", "ERR_CANCELED", "ERR_NOT_SUPPORT", "ERR_INVALID_URL"].forEach(e=>{
+        ["ERR_BAD_OPTION_VALUE", "ERR_BAD_OPTION", "ECONNABORTED", "ETIMEDOUT", "ERR_NETWORK", "ERR_FR_TOO_MANY_REDIRECTS", "ERR_DEPRECATED", "ERR_BAD_RESPONSE", "ERR_BAD_REQUEST", "ERR_CANCELED", "ERR_NOT_SUPPORT", "ERR_INVALID_URL"].forEach(e => {
             F[e] = {
                 value: e
             }
@@ -14765,11 +15033,11 @@
         Object.defineProperty(B, "isAxiosError", {
             value: !0
         }),
-        V.from = (e,t,n,r,i,o)=>{
+        V.from = (e, t, n, r, i, o) => {
             let a = Object.create(B);
             return $.toFlatObject(e, a, function(e) {
                 return e !== Error.prototype
-            }, e=>"isAxiosError" !== e),
+            }, e => "isAxiosError" !== e),
             V.call(a, e.message, t, n, r, i),
             a.cause = e,
             a.name = e.name,
@@ -14790,10 +15058,10 @@
                 !n && t ? "[" + e + "]" : e
             }).join(n ? "." : "") : t
         }
-        let H = $.toFlatObject($, {}, null, function(e) {
+        let Y = $.toFlatObject($, {}, null, function(e) {
             return /^is[A-Z]/.test(e)
         });
-        var W = function(e, t, n) {
+        var H = function(e, t, n) {
             if (!$.isObject(e))
                 throw TypeError("target must be an object");
             t = t || new FormData;
@@ -14840,7 +15108,7 @@
                 !1)
             }
             let c = []
-              , f = Object.assign(H, {
+              , f = Object.assign(Y, {
                 defaultVisitor: l,
                 convertValue: u,
                 isVisitable: Z
@@ -14860,7 +15128,7 @@
             }(e),
             t
         };
-        function Y(e) {
+        function W(e) {
             let t = {
                 "!": "%21",
                 "'": "%27",
@@ -14876,7 +15144,7 @@
         }
         function J(e, t) {
             this._pairs = [],
-            e && W(e, this, t)
+            e && H(e, this, t)
         }
         let K = J.prototype;
         function X(e) {
@@ -14901,9 +15169,9 @@
         ,
         K.toString = function(e) {
             let t = e ? function(t) {
-                return e.call(this, t, Y)
+                return e.call(this, t, W)
             }
-            : Y;
+            : W;
             return this._pairs.map(function(e) {
                 return t(e[0]) + "=" + t(e[1])
             }, "").join("&")
@@ -14959,7 +15227,7 @@
           , el = function(e) {
             if ($.isFormData(e) && $.isFunction(e.entries)) {
                 let t = {};
-                return $.forEachEntry(e, (e,n)=>{
+                return $.forEachEntry(e, (e, n) => {
                     !function e(t, n, r, i) {
                         let o = t[i++];
                         if ("__proto__" === o)
@@ -14978,7 +15246,7 @@
                             return r
                         }(r[o]))),
                         !a
-                    }($.matchAll(/\w+|\[(\w*)]/g, e).map(e=>"[]" === e[0] ? "" : e[1] || e[0]), n, t, 0)
+                    }($.matchAll(/\w+|\[(\w*)]/g, e).map(e => "[]" === e[0] ? "" : e[1] || e[0]), n, t, 0)
                 }
                 ),
                 t
@@ -15008,7 +15276,7 @@
                         var a, s;
                         return (a = e,
                         s = this.formSerializer,
-                        W(a, new eu.classes.URLSearchParams, Object.assign({
+                        H(a, new eu.classes.URLSearchParams, Object.assign({
                             visitor: function(e, t, n, r) {
                                 return eu.isNode && $.isBuffer(e) ? (this.append(t, e.toString("base64")),
                                 !1) : r.defaultVisitor.apply(this, arguments)
@@ -15017,7 +15285,7 @@
                     }
                     if ((n = $.isFileList(e)) || r.indexOf("multipart/form-data") > -1) {
                         let t = this.env && this.env.FormData;
-                        return W(n ? {
+                        return H(n ? {
                             "files[]": e
                         } : e, t && new t, this.formSerializer)
                     }
@@ -15076,12 +15344,12 @@
                 }
             }
         };
-        $.forEach(["delete", "get", "head", "post", "put", "patch"], e=>{
+        $.forEach(["delete", "get", "head", "post", "put", "patch"], e => {
             ec.headers[e] = {}
         }
         );
         let ef = $.toObjectSet(["age", "authorization", "content-length", "content-type", "etag", "expires", "from", "host", "if-modified-since", "if-unmodified-since", "last-modified", "location", "max-forwards", "proxy-authorization", "referer", "retry-after", "user-agent"]);
-        var ed = e=>{
+        var ed = e => {
             let t, n, r;
             let i = {};
             return e && e.split("\n").forEach(function(e) {
@@ -15100,7 +15368,7 @@
         function ev(e) {
             return !1 === e || null == e ? e : $.isArray(e) ? e.map(ev) : String(e)
         }
-        let eg = e=>/^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(e.trim());
+        let eg = e => /^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(e.trim());
         function em(e, t, n, r, i) {
             if ($.isFunction(r))
                 return r.call(this, t, n);
@@ -15125,7 +15393,7 @@
                     let o = $.findKey(r, i);
                     o && void 0 !== r[o] && !0 !== n && (void 0 !== n || !1 === r[o]) || (r[o || t] = ev(e))
                 }
-                let o = (e,t)=>$.forEach(e, (e,n)=>i(e, n, t));
+                let o = (e, t) => $.forEach(e, (e, n) => i(e, n, t));
                 return $.isPlainObject(e) || e instanceof this.constructor ? o(e, t) : $.isString(e) && (e = e.trim()) && !eg(e) ? o(ed(e), t) : null != e && i(t, e, n),
                 this
             }
@@ -15187,14 +15455,14 @@
             normalize(e) {
                 let t = this
                   , n = {};
-                return $.forEach(this, (r,i)=>{
+                return $.forEach(this, (r, i) => {
                     let o = $.findKey(n, i);
                     if (o) {
                         t[o] = ev(r),
                         delete t[i];
                         return
                     }
-                    let a = e ? i.trim().toLowerCase().replace(/([a-z\d])(\w*)/g, (e,t,n)=>t.toUpperCase() + n) : String(i).trim();
+                    let a = e ? i.trim().toLowerCase().replace(/([a-z\d])(\w*)/g, (e, t, n) => t.toUpperCase() + n) : String(i).trim();
                     a !== i && delete t[i],
                     t[a] = ev(r),
                     n[a] = !0
@@ -15207,7 +15475,7 @@
             }
             toJSON(e) {
                 let t = Object.create(null);
-                return $.forEach(this, (n,r)=>{
+                return $.forEach(this, (n, r) => {
                     null != n && !1 !== n && (t[r] = e && $.isArray(n) ? n.join(", ") : n)
                 }
                 ),
@@ -15217,7 +15485,7 @@
                 return Object.entries(this.toJSON())[Symbol.iterator]()
             }
             toString() {
-                return Object.entries(this.toJSON()).map(([e,t])=>e + ": " + t).join("\n")
+                return Object.entries(this.toJSON()).map( ([e,t]) => e + ": " + t).join("\n")
             }
             get[Symbol.toStringTag]() {
                 return "AxiosHeaders"
@@ -15227,7 +15495,7 @@
             }
             static concat(e, ...t) {
                 let n = new this(e);
-                return t.forEach(e=>n.set(e)),
+                return t.forEach(e => n.set(e)),
                 n
             }
             static accessor(e) {
@@ -15239,7 +15507,7 @@
                     let r = eh(e);
                     t[r] || (!function(e, t) {
                         let n = $.toCamelCase(" " + t);
-                        ["get", "set", "has"].forEach(r=>{
+                        ["get", "set", "has"].forEach(r => {
                             Object.defineProperty(e, r + n, {
                                 value: function(e, n, i) {
                                     return this[r].call(this, t, e, n, i)
@@ -15274,10 +15542,10 @@
             this.name = "CanceledError"
         }
         ey.accessor(["Content-Type", "Content-Length", "Accept", "Accept-Encoding", "User-Agent", "Authorization"]),
-        $.reduceDescriptors(ey.prototype, ({value: e},t)=>{
+        $.reduceDescriptors(ey.prototype, ({value: e}, t) => {
             let n = t[0].toUpperCase() + t.slice(1);
             return {
-                get: ()=>e,
+                get: () => e,
                 set(e) {
                     this[n] = e
                 }
@@ -15306,7 +15574,7 @@
             }
         } : {
             write() {},
-            read: ()=>null,
+            read: () => null,
             remove() {}
         };
         function eO(e, t) {
@@ -15368,7 +15636,7 @@
         function eP(e, t) {
             let n = 0
               , r = eS(50, 250);
-            return i=>{
+            return i => {
                 let o = i.loaded
                   , a = i.lengthComputable ? i.total : void 0
                   , s = o - n
@@ -15400,7 +15668,7 @@
                         if (eu.hasStandardBrowserEnv || eu.hasStandardBrowserWebWorkerEnv)
                             a.setContentType(!1);
                         else if (!1 !== (i = a.getContentType())) {
-                            let[e,...t] = i ? i.split(";").map(e=>e.trim()).filter(Boolean) : [];
+                            let[e,...t] = i ? i.split(";").map(e => e.trim()).filter(Boolean) : [];
                             a.setContentType([e || "multipart/form-data", ...t].join("; "))
                         }
                     }
@@ -15471,7 +15739,7 @@
                     s && "json" !== s && (c.responseType = e.responseType),
                     "function" == typeof e.onDownloadProgress && c.addEventListener("progress", eP(e.onDownloadProgress, !0)),
                     "function" == typeof e.onUploadProgress && c.upload && c.upload.addEventListener("progress", eP(e.onUploadProgress)),
-                    (e.cancelToken || e.signal) && (r = t=>{
+                    (e.cancelToken || e.signal) && (r = t => {
                         c && (n(!t || t.type ? new e_(null,e,c) : t),
                         c.abort(),
                         c = null)
@@ -15492,7 +15760,7 @@
                 )
             }
         };
-        $.forEach(eI, (e,t)=>{
+        $.forEach(eI, (e, t) => {
             if (e) {
                 try {
                     Object.defineProperty(e, "name", {
@@ -15505,9 +15773,9 @@
             }
         }
         );
-        let eR = e=>`- ${e}`
-          , ek = e=>$.isFunction(e) || null === e || !1 === e;
-        var ex = e=>{
+        let eR = e => `- ${e}`
+          , ek = e => $.isFunction(e) || null === e || !1 === e;
+        var eT = e => {
             let t, n;
             let {length: r} = e = $.isArray(e) ? e : [e]
               , i = {};
@@ -15521,35 +15789,35 @@
                 i[r || "#" + o] = n
             }
             if (!n) {
-                let e = Object.entries(i).map(([e,t])=>`adapter ${e} ` + (!1 === t ? "is not supported by the environment" : "is not available in the build"));
+                let e = Object.entries(i).map( ([e,t]) => `adapter ${e} ` + (!1 === t ? "is not supported by the environment" : "is not available in the build"));
                 throw new V("There is no suitable adapter to dispatch the request " + (r ? e.length > 1 ? "since :\n" + e.map(eR).join("\n") : " " + eR(e[0]) : "as no adapter specified"),"ERR_NOT_SUPPORT")
             }
             return n
         }
         ;
-        function eN(e) {
+        function ex(e) {
             if (e.cancelToken && e.cancelToken.throwIfRequested(),
             e.signal && e.signal.aborted)
                 throw new e_(null,e)
         }
-        function eT(e) {
-            return eN(e),
+        function eN(e) {
+            return ex(e),
             e.headers = ey.from(e.headers),
             e.data = eb.call(e, e.transformRequest),
             -1 !== ["post", "put", "patch"].indexOf(e.method) && e.headers.setContentType("application/x-www-form-urlencoded", !1),
-            ex(e.adapter || ec.adapter)(e).then(function(t) {
-                return eN(e),
+            eT(e.adapter || ec.adapter)(e).then(function(t) {
+                return ex(e),
                 t.data = eb.call(e, e.transformResponse, t),
                 t.headers = ey.from(t.headers),
                 t
             }, function(t) {
-                return !eE(t) && (eN(e),
+                return !eE(t) && (ex(e),
                 t && t.response && (t.response.data = eb.call(e, e.transformResponse, t.response),
                 t.response.headers = ey.from(t.response.headers))),
                 Promise.reject(t)
             })
         }
-        let eC = e=>e instanceof ey ? e.toJSON() : e;
+        let eC = e => e instanceof ey ? e.toJSON() : e;
         function eL(e, t) {
             t = t || {};
             let n = {};
@@ -15600,7 +15868,7 @@
                 socketPath: a,
                 responseEncoding: a,
                 validateStatus: s,
-                headers: (e,t)=>i(eC(e), eC(t), !0)
+                headers: (e, t) => i(eC(e), eC(t), !0)
             };
             return $.forEach(Object.keys(Object.assign({}, e, t)), function(r) {
                 let o = u[r] || i
@@ -15611,7 +15879,7 @@
         }
         let eM = "1.6.7"
           , ej = {};
-        ["object", "boolean", "number", "function", "string", "symbol"].forEach((e,t)=>{
+        ["object", "boolean", "number", "function", "string", "symbol"].forEach( (e, t) => {
             ej[e] = function(n) {
                 return typeof n === e || "a" + (t < 1 ? "n " : " ") + e
             }
@@ -15622,7 +15890,7 @@
             function r(e, t) {
                 return "[Axios v" + eM + "] Transitional option '" + e + "'" + t + (n ? ". " + n : "")
             }
-            return (n,i,o)=>{
+            return (n, i, o) => {
                 if (!1 === e)
                     throw new V(r(i, " has been removed" + (t ? " in " + t : "")),V.ERR_DEPRECATED);
                 return t && !eD[i] && (eD[i] = !0,
@@ -15692,7 +15960,7 @@
                 }, !0)),
                 t.method = (t.method || this.defaults.method || "get").toLowerCase();
                 let s = a && $.merge(a.common, a[t.method]);
-                a && $.forEach(["delete", "get", "head", "post", "put", "patch", "common"], e=>{
+                a && $.forEach(["delete", "get", "head", "post", "put", "patch", "common"], e => {
                     delete a[e]
                 }
                 ),
@@ -15709,7 +15977,7 @@
                 });
                 let f = 0;
                 if (!l) {
-                    let e = [eT.bind(this), void 0];
+                    let e = [eN.bind(this), void 0];
                     for (e.unshift.apply(e, u),
                     e.push.apply(e, c),
                     r = e.length,
@@ -15730,7 +15998,7 @@
                     }
                 }
                 try {
-                    n = eT.call(this, d)
+                    n = eN.call(this, d)
                 } catch (e) {
                     return Promise.reject(e)
                 }
@@ -15778,7 +16046,7 @@
                 }
                 );
                 let n = this;
-                this.promise.then(e=>{
+                this.promise.then(e => {
                     if (!n._listeners)
                         return;
                     let t = n._listeners.length;
@@ -15787,9 +16055,9 @@
                     n._listeners = null
                 }
                 ),
-                this.promise.then = e=>{
+                this.promise.then = e => {
                     let t;
-                    let r = new Promise(e=>{
+                    let r = new Promise(e => {
                         n.subscribe(e),
                         t = e
                     }
@@ -15899,7 +16167,7 @@
             NotExtended: 510,
             NetworkAuthenticationRequired: 511
         };
-        Object.entries(eF).forEach(([e,t])=>{
+        Object.entries(eF).forEach( ([e,t]) => {
             eF[t] = e
         }
         );
@@ -15923,7 +16191,7 @@
         eq.CancelToken = eB,
         eq.isCancel = eE,
         eq.VERSION = eM,
-        eq.toFormData = W,
+        eq.toFormData = H,
         eq.AxiosError = V,
         eq.Cancel = eq.CanceledError,
         eq.all = function(e) {
@@ -15942,16 +16210,16 @@
         ,
         eq.mergeConfig = eL,
         eq.AxiosHeaders = ey,
-        eq.formToJSON = e=>el($.isHTMLForm(e) ? new FormData(e) : e),
-        eq.getAdapter = ex,
+        eq.formToJSON = e => el($.isHTMLForm(e) ? new FormData(e) : e),
+        eq.getAdapter = eT,
         eq.HttpStatusCode = eF,
         eq.default = eq;
         var eZ = n(75268)
           , eG = n(60922)
           , ez = n(35466)
-          , eH = n(14411)
-          , eW = n(83454);
-        class eY {
+          , eY = n(14411)
+          , eH = n(83454);
+        class eW {
             async logAction(e) {
                 eq.get("".concat(this.baseAPIURL, "/log?message=") + encodeURIComponent(e))
             }
@@ -15966,23 +16234,23 @@
                 return !1
             }
             getStytchTelemetry() {
-                if (!eY.webAssemblySupported())
+                if (!eW.webAssemblySupported())
                     throw {
                         message: "wasm-required"
                     };
-                return new Promise((e,t)=>{
-                    setTimeout(()=>{
+                return new Promise( (e, t) => {
+                    setTimeout( () => {
                         t("no-telemetryId-available")
                     }
                     , 3e4),
-                    window.GetTelemetryID ? window.GetTelemetryID("public-token-live-e4dbf337-9f27-447f-908f-17038ec8d940", "https://auth.pixels.xyz/submit").then(n=>{
+                    window.GetTelemetryID ? window.GetTelemetryID("public-token-live-e4dbf337-9f27-447f-908f-17038ec8d940", "https://auth.pixels.xyz/submit").then(n => {
                         n || (console.log("GetTelemetryID returned nothing"),
                         t({
                             message: "no-telemetryId-available"
                         })),
                         e(n)
                     }
-                    ).catch(()=>{
+                    ).catch( () => {
                         t({
                             message: "his-air-hose-broke"
                         })
@@ -15996,7 +16264,7 @@
             }
             async captchaOptions(e) {
                 let t = {};
-                if (eW.env.NEXT_PUBLIC_ENABLE_RECAPTCHA && (t.recaptcha = await window.grecaptcha.enterprise.execute("6Le2_BoiAAAAADeY39xwjDr8P-_AAtJJBW0hWX9M", {
+                if (eH.env.NEXT_PUBLIC_ENABLE_RECAPTCHA && (t.recaptcha = await window.grecaptcha.enterprise.execute("6Lc63iQqAAAAANnRrUIMBM71F461lj8mULJfV7IH", {
                     action: e
                 }),
                 !t.recaptcha))
@@ -16178,16 +16446,16 @@
             async rateLimitedGet(e, t) {
                 for (; this.limiter; )
                     await this.limiter;
-                return this.limiter = (async()=>{
+                return this.limiter = (async () => {
                     var n;
                     let r = 1e3 - (Date.now() - (null !== (n = this.lastcall) && void 0 !== n ? n : 0));
-                    r > 0 && await new Promise(e=>setTimeout(e, r));
+                    r > 0 && await new Promise(e => setTimeout(e, r));
                     let {data: i} = await eq.get(t, e);
                     return this.lastcall = Date.now(),
                     i
                 }
                 )(),
-                this.limiter.then(e=>(this.limiter = void 0,
+                this.limiter.then(e => (this.limiter = void 0,
                 e))
             }
             async fetchPlayerDetails(e) {
@@ -16207,7 +16475,7 @@
                         Authorization: this.sessionToken
                     }
                 }
-                  , n = e.map(e=>"mid=".concat(e)).join("&");
+                  , n = e.map(e => "mid=".concat(e)).join("&");
                 try {
                     let {data: e} = await eq.get("".concat(this.baseAPIURL, "/player/usernames?").concat(n), t);
                     return e
@@ -16440,7 +16708,7 @@
                 let n = Date.now();
                 if (this.marketTime && n - this.marketTime < 2e3) {
                     let e = this.marketTime + 2e3 - n;
-                    await new Promise(t=>setTimeout(t, e))
+                    await new Promise(t => setTimeout(t, e))
                 }
                 let r = {
                     headers: {
@@ -16487,7 +16755,7 @@
                 this.baseColyeusURL = e
             }
         }
-        var eJ = new eY(eH.LB,"v1")
+        var eJ = new eW(eY.LB,"v1")
     },
     85469: function(e, t, n) {
         "use strict";
@@ -16546,10 +16814,10 @@
         "use strict";
         n.d(t, {
             Z: function() {
-                return W
+                return H
             },
             W: function() {
-                return H
+                return Y
             }
         });
         var r, i, o, a = n(34853), s = n(57715);
@@ -16864,7 +17132,7 @@
           , I = P.forEach
           , R = P.slice
           , k = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/
-          , x = function(e, t, n) {
+          , T = function(e, t, n) {
             var r = n || {};
             r.path = r.path || "/";
             var i = encodeURIComponent(t)
@@ -16909,7 +17177,7 @@
                 }
             return o
         }
-          , N = {
+          , x = {
             create: function(e, t, n, r) {
                 var i = arguments.length > 4 && void 0 !== arguments[4] ? arguments[4] : {
                     path: "/",
@@ -16918,7 +17186,7 @@
                 n && (i.expires = new Date,
                 i.expires.setTime(i.expires.getTime() + 6e4 * n)),
                 r && (i.domain = r),
-                document.cookie = x(e, encodeURIComponent(t), i)
+                document.cookie = T(e, encodeURIComponent(t), i)
             },
             read: function(e) {
                 for (var t = "".concat(e, "="), n = document.cookie.split(";"), r = 0; r < n.length; r++) {
@@ -16933,18 +17201,18 @@
                 this.create(e, "", -1)
             }
         }
-          , T = {
+          , N = {
             name: "cookie",
             lookup: function(e) {
                 var t;
                 if (e.lookupCookie && "undefined" != typeof document) {
-                    var n = N.read(e.lookupCookie);
+                    var n = x.read(e.lookupCookie);
                     n && (t = n)
                 }
                 return t
             },
             cacheUserLanguage: function(e, t) {
-                t.lookupCookie && "undefined" != typeof document && N.create(t.lookupCookie, e, t.cookieMinutes, t.cookieDomain, t.cookieOptions)
+                t.lookupCookie && "undefined" != typeof document && x.create(t.lookupCookie, e, t.cookieMinutes, t.cookieDomain, t.cookieOptions)
             }
         }
           , C = {
@@ -17101,7 +17369,7 @@
                     }),
                     this.options.lookupFromUrlIndex && (this.options.lookupFromPathIndex = this.options.lookupFromUrlIndex),
                     this.i18nOptions = n,
-                    this.addDetector(T),
+                    this.addDetector(N),
                     this.addDetector(C),
                     this.addDetector(j),
                     this.addDetector($),
@@ -17145,7 +17413,7 @@
         Z.type = "languageDetector";
         var G = n(60922);
         let z = !1;
-        a.ZP.on("onLoaded", ()=>{
+        a.ZP.on("onLoaded", () => {
             console.log("loading i18n"),
             z = !0
         }
@@ -17171,16 +17439,16 @@
                     return "//pixels-server.pixels.xyz/v1/i18n/{{ns}}/{{lng}}" + "?tenant=".concat(e)
                 }
             }
-        }, e=>{
+        }, e => {
             z = !e
         }
         );
-        let H = function() {
+        let Y = function() {
             let e = arguments.length > 0 && void 0 !== arguments[0] && arguments[0];
             if (e || !z)
                 return a.ZP.reloadResources()
         };
-        var W = a.ZP
+        var H = a.ZP
     },
     53059: function(e, t, n) {
         "use strict";
@@ -17196,11 +17464,11 @@
             if (!r || 0 === r.length)
                 return o;
             let a = {};
-            return o.forEach((e,n)=>{
+            return o.forEach( (e, n) => {
                 t in e && (a[e[t]] = n)
             }
             ),
-            r.forEach(e=>{
+            r.forEach(e => {
                 let n = e[t];
                 if (n in a) {
                     if (i) {
@@ -17216,7 +17484,7 @@
             ),
             o
         }
-        let o = (e,t)=>{
+        let o = (e, t) => {
             var n, r, a, s, u;
             let l = t.entities[e];
             if (!l || "generic" !== l.type || !(null === (n = l.generic) || void 0 === n ? void 0 : n.inherits))
@@ -17261,10 +17529,10 @@
             async loadLibraries(e) {
                 try {
                     this.gameLibraryPromise || (this.gameLibraryPromise = this.api.fetchGameLibrary(),
-                    this.gameLibraryPromise.then(e=>{
+                    this.gameLibraryPromise.then(e => {
                         this.transformGameLibrary(e)
                     }
-                    ).catch(e=>{
+                    ).catch(e => {
                         var t;
                         (null == e ? void 0 : null === (t = e.response) || void 0 === t ? void 0 : t.data) === "invalid-client-password" && (this.invalidClientPassword = !0),
                         this.gameLibraryPromise = void 0
@@ -17299,8 +17567,8 @@
                 }
             }
             transformGameLibrary(e) {
-                e.sounds && (e.sounds = new Map(e.sounds.map(e=>[e.id, e]))),
-                e.entities && Object.keys(e.entities).forEach(t=>{
+                e.sounds && (e.sounds = new Map(e.sounds.map(e => [e.id, e]))),
+                e.entities && Object.keys(e.entities).forEach(t => {
                     o(t, e)
                 }
                 ),
@@ -17310,10 +17578,10 @@
                 let t = {
                     sounds: e.sounds
                 };
-                return Object.entries(e).forEach(e=>{
+                return Object.entries(e).forEach(e => {
                     let[n,r] = e;
                     "sounds" !== n && (t[n] = {},
-                    r.forEach(e=>{
+                    r.forEach(e => {
                         t[n][e.id] = e
                     }
                     ))
@@ -17354,11 +17622,11 @@
                 e.objects && Object.assign(this.gameLibrary.objects, e.objects),
                 e.stores && Object.assign(this.gameLibrary.stores, e.stores),
                 e.entities && (Object.assign(this.gameLibrary.entities, e.entities),
-                Object.keys(e.entities).forEach(e=>{
+                Object.keys(e.entities).forEach(e => {
                     o(e, this.gameLibrary)
                 }
                 )),
-                e.sounds && e.sounds.forEach(e=>{
+                e.sounds && e.sounds.forEach(e => {
                     this.gameLibrary.sounds.set(e.id, e)
                 }
                 ),
@@ -17372,21 +17640,21 @@
             getGameNonWallObjects() {
                 if (!this.nonWallObjects) {
                     var e;
-                    this.nonWallObjects = (null === (e = this.gameLibrary) || void 0 === e ? void 0 : e.objects) ? Object.values(this.gameLibrary.objects).filter(e=>!e.wall) : void 0
+                    this.nonWallObjects = (null === (e = this.gameLibrary) || void 0 === e ? void 0 : e.objects) ? Object.values(this.gameLibrary.objects).filter(e => !e.wall) : void 0
                 }
                 return this.nonWallObjects
             }
             getGameWallObjects() {
                 if (!this.wallObjects) {
                     var e;
-                    this.wallObjects = (null === (e = this.gameLibrary) || void 0 === e ? void 0 : e.objects) ? Object.values(this.gameLibrary.objects).filter(e=>!!e.wall) : void 0
+                    this.wallObjects = (null === (e = this.gameLibrary) || void 0 === e ? void 0 : e.objects) ? Object.values(this.gameLibrary.objects).filter(e => !!e.wall) : void 0
                 }
                 return this.wallObjects
             }
             getGameWallCategories() {
                 if (!this.wallCategories) {
                     let e = this.getGameWallObjects();
-                    this.wallCategories = null == e ? void 0 : e.reduce((e,t)=>({
+                    this.wallCategories = null == e ? void 0 : e.reduce( (e, t) => ({
                         ...e,
                         [t.wall.type]: [...e[t.wall.type] || [], t]
                     }), {})
@@ -17473,31 +17741,31 @@
                     tilesets: new Set,
                     sounds: new Set
                 };
-                this.mapLibrary.config.objects && Object.entries(this.mapLibrary.config.objects).forEach(e=>{
+                this.mapLibrary.config.objects && Object.entries(this.mapLibrary.config.objects).forEach(e => {
                     let[,t] = e;
                     this.gameLibrary.objects && Object.hasOwn(this.gameLibrary.objects, t.object) || n.objects.add(t.object)
                 }
                 ),
-                this.mapLibrary.config.tiles && Object.entries(this.mapLibrary.config.tiles).forEach(e=>{
+                this.mapLibrary.config.tiles && Object.entries(this.mapLibrary.config.tiles).forEach(e => {
                     let[,t] = e;
                     this.gameLibrary.tilesets && Object.hasOwn(this.gameLibrary.tilesets, t.tileset) || n.tilesets.add(t.tileset)
                 }
                 ),
-                this.mapLibrary.config.sounds && this.mapLibrary.config.sounds.forEach(e=>{
+                this.mapLibrary.config.sounds && this.mapLibrary.config.sounds.forEach(e => {
                     this.gameLibrary.sounds && this.gameLibrary.sounds.has(e) || n.sounds.add(e)
                 }
                 ),
-                e.forEach(e=>{
+                e.forEach(e => {
                     this.gameLibrary.entities && Object.hasOwn(this.gameLibrary.entities, e.entity) || n.entities.add(e.entity)
                 }
                 );
                 let r = !0
                   , i = {};
-                if (Object.entries(n).filter(e=>{
+                if (Object.entries(n).filter(e => {
                     let[,t] = e;
                     return t.size > 0
                 }
-                ).forEach(e=>{
+                ).forEach(e => {
                     let[t,n] = e;
                     r = !1,
                     i[t] = Array.from(n)
@@ -17572,7 +17840,7 @@
             }
             updateMapTiles(e) {
                 let t = this.getMapTiles();
-                e && t && e.forEach(e=>{
+                e && t && e.forEach(e => {
                     t[e._id] = e
                 }
                 )
@@ -17608,7 +17876,7 @@
             }
             getMapTilesAt(e) {
                 let t;
-                return this.mapLibrary && (t = Object.values(this.mapLibrary.config.tiles).filter(t=>t.x === e.x && t.y === e.y)),
+                return this.mapLibrary && (t = Object.values(this.mapLibrary.config.tiles).filter(t => t.x === e.x && t.y === e.y)),
                 t
             }
             getGameQuests() {
@@ -17653,7 +17921,7 @@
         n(4449),
         n(36958);
         var u = n(15624);
-        let l = e=>{
+        let l = e => {
             var t, n;
             (null === (t = window) || void 0 === t ? void 0 : t.gtag) && (null === (n = window) || void 0 === n || n.gtag("config", "G-QGP383C71B", {
                 page_path: e
@@ -17662,7 +17930,7 @@
         ;
         var c = n(53059);
         n(35466);
-        var f = e=>{
+        var f = e => {
             let {children: t} = e
               , [n,r] = (0,
             i.useState)("")
@@ -17670,9 +17938,9 @@
             i.useState)(void 0)
               , [s,u] = (0,
             i.useState)(!0)
-              , l = ()=>{
+              , l = () => {
                 u(!0),
-                c.Z.loadLibraries().finally(()=>{
+                c.Z.loadLibraries().finally( () => {
                     c.Z.isClientPasswordInvalid() ? a(!0) : a(!1),
                     u(!1)
                 }
@@ -17680,24 +17948,24 @@
             }
             ;
             return (0,
-            i.useEffect)(()=>{
+            i.useEffect)( () => {
                 l()
             }
             , []),
             t
         }
-          , d = e=>{
+          , d = e => {
             let {Component: t, pageProps: n} = e
               , c = (0,
             o.useRouter)();
             return (0,
-            i.useEffect)(()=>{
-                let e = e=>{
+            i.useEffect)( () => {
+                let e = e => {
                     l(e)
                 }
                 ;
                 return c.events.on("routeChangeComplete", e),
-                ()=>{
+                () => {
                     c.events.off("routeChangeComplete", e)
                 }
             }
@@ -17736,7 +18004,7 @@
         function i(e, t) {
             if (e in r) {
                 let n = r[e];
-                r[e] = (e,r)=>{
+                r[e] = (e, r) => {
                     n(e, r),
                     t(e, r)
                 }
@@ -17757,10 +18025,10 @@
         var r = n(45238)
           , i = n(28466)
           , o = n(80919)
-          , a = n(49922)
+          , a = n(73913)
           , s = n(60943)
           , u = n(15624)
-          , l = n(17784);
+          , l = n(25904);
         function c(e) {
             o.ZP.emitEventNow(o.fb.TRADE_SEND, e)
         }
@@ -17776,7 +18044,7 @@
             return u.e.get(i.eH) ? void 0 : (0,
             i.sG)(u.h.getState())
         }
-        let p = e=>{
+        let p = e => {
             var t;
             let {slot: n, item: r, adjustment: o, sourceSlot: s} = e
               , l = u.h.getState()
@@ -17791,11 +18059,11 @@
             let v = null === (t = p.players[h]) || void 0 === t ? void 0 : t.items;
             if (!v)
                 return;
-            let g = v.map(e=>e)
-              , m = g.find(e=>e.slot === n);
+            let g = v.map(e => e)
+              , m = g.find(e => e.slot === n);
             if (m && !r) {
                 let e = m.quantity + o;
-                g = g.filter(e=>e.slot !== n),
+                g = g.filter(e => e.slot !== n),
                 e > 0 && g.push({
                     ...m,
                     quantity: e
@@ -17803,7 +18071,7 @@
             } else {
                 if (!r)
                     return;
-                g = g.filter(e=>e.slot !== n && e.originalSlot !== s),
+                g = g.filter(e => e.slot !== n && e.originalSlot !== s),
                 o > 0 && g.push({
                     item: r,
                     quantity: o,
@@ -17821,7 +18089,7 @@
             })
         }
         ;
-        o.rV.inventory.serverStateChange.subscribe(e=>{
+        o.rV.inventory.serverStateChange.subscribe(e => {
             var t;
             let n = u.h.getState()
               , r = (0,
@@ -17835,7 +18103,7 @@
             if (!f)
                 return;
             let p = !1
-              , h = f.filter(e=>{
+              , h = f.filter(e => {
                 var t;
                 let n = null === (t = s.slots) || void 0 === t ? void 0 : t[e.originalSlot.toString()];
                 return !!n && n.item === e.item && !(n.quantity < e.quantity) || (p = !0,
@@ -17854,7 +18122,7 @@
         (0,
         r.H)(i.sU.type, p),
         (0,
-        r.H)(i.gJ.type, (e,t)=>{
+        r.H)(i.gJ.type, (e, t) => {
             var n;
             let {slot: r, mouseButton: o} = e
               , u = t.getState()
@@ -17873,7 +18141,7 @@
             s.B6)(u)
               , g = (0,
             s.xM)(u)
-              , m = h.find(e=>e.slot === r);
+              , m = h.find(e => e.slot === r);
             0 === o ? v ? p({
                 slot: r,
                 item: v.id,
@@ -17905,7 +18173,7 @@
           , i = n(53059)
           , o = n(51309);
         let a = (0,
-        r.hg)("game/authenticatedWallet", async(e,t)=>{
+        r.hg)("game/authenticatedWallet", async (e, t) => {
             try {
                 let n = await i.Z.loadLibraries(e.mapId);
                 if (!i.Z.isValid())
@@ -17960,7 +18228,7 @@
                 return m
             },
             YR: function() {
-                return x
+                return T
             },
             ZP: function() {
                 return _
@@ -17987,7 +18255,7 @@
                 return D
             },
             iM: function() {
-                return N
+                return x
             },
             k4: function() {
                 return L
@@ -17996,12 +18264,12 @@
                 return j
             },
             z1: function() {
-                return T
+                return N
             }
         });
         var r = n(7406)
           , i = n(60922)
-          , o = n(49922)
+          , o = n(73913)
           , a = n(97790)
           , s = n(53059)
           , u = n(84252)
@@ -18026,16 +18294,16 @@
             name: "auth",
             initialState: d,
             reducers: {
-                checkAuthentication: (e,t)=>{
+                checkAuthentication: (e, t) => {
                     e.loading = !0,
                     e.mapId = t.payload.mapId
                 }
                 ,
-                walletRequired: (e,t)=>{
+                walletRequired: (e, t) => {
                     e.showWalletNotFoundWarning = !1 !== t.payload
                 }
                 ,
-                setConnected: (e,t)=>{
+                setConnected: (e, t) => {
                     e.errorMessage = "",
                     e.connected = t.payload.connected,
                     e.provider = t.payload.provider,
@@ -18049,7 +18317,7 @@
                     t.payload.connected && (e.errorMessage = void 0)
                 }
                 ,
-                continueAsGuest: (e,t)=>{
+                continueAsGuest: (e, t) => {
                     var n;
                     e.errorMessage = void 0,
                     e.authenticated = !0,
@@ -18059,7 +18327,7 @@
                     e.sessionToken = null
                 }
                 ,
-                createPlayer: (e,t)=>{
+                createPlayer: (e, t) => {
                     if (e.errorMessage = void 0,
                     e.sessionToken)
                         console.log("waiting for middleware to createplayer"),
@@ -18076,17 +18344,17 @@
                     }
                 }
                 ,
-                loadingDone: e=>{
+                loadingDone: e => {
                     e.loading = !1
                 }
                 ,
-                authenticate: (e,t)=>{
+                authenticate: (e, t) => {
                     e.errorMessage = void 0,
                     e.mapId = t.payload.mapId,
                     e.loading = !0
                 }
                 ,
-                updatedPlayer: (e,t)=>{
+                updatedPlayer: (e, t) => {
                     t.payload.username && (e.username = t.payload.username),
                     t.payload.playerId && (e.playerId = t.payload.playerId),
                     t.payload.playerAvatar && (e.playerAvatar = {
@@ -18097,7 +18365,7 @@
                     t.payload.cryptoWallets && (e.cryptoWallets = t.payload.cryptoWallets)
                 }
                 ,
-                authenticatedPlayer: (e,t)=>{
+                authenticatedPlayer: (e, t) => {
                     if (e.loading = !1,
                     e.username = t.payload.username,
                     e.playerId = t.payload.playerId,
@@ -18119,7 +18387,7 @@
                     e.errorMessage = void 0
                 }
                 ,
-                authenticateError: (e,t)=>{
+                authenticateError: (e, t) => {
                     var n;
                     e.errorMessage = null === (n = t.payload) || void 0 === n ? void 0 : n.message,
                     e.loading = !1,
@@ -18128,7 +18396,7 @@
                     e.errorMessage && console.log("set error message", JSON.stringify(e.errorMessage))
                 }
                 ,
-                serviceNotification: (e,t)=>{
+                serviceNotification: (e, t) => {
                     var n, r;
                     e.noticeDialog.visible = !0,
                     e.noticeDialog.msgKey = t.payload.message,
@@ -18136,11 +18404,11 @@
                     e.noticeDialog.allowReload = null === (r = t.payload.allowReload) || void 0 === r || r
                 }
                 ,
-                closeNotification: e=>{
+                closeNotification: e => {
                     e.noticeDialog.allowClose && (e.noticeDialog.visible = !1)
                 }
                 ,
-                loggedOut: e=>{
+                loggedOut: e => {
                     e.loading = !1,
                     e.errorMessage = void 0,
                     e.provider = void 0,
@@ -18155,16 +18423,16 @@
                     e.cryptoWallets = void 0
                 }
                 ,
-                setIsAccountDirty: (e,t)=>{
+                setIsAccountDirty: (e, t) => {
                     e.isAccountDirty = t.payload
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LOADED", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LOADED", e => {
                     e.noticeDialog.visible = !1
                 }
                 ),
-                e.addCase("game/SVR_CANNOTCONNECT", (e,t)=>{
+                e.addCase("game/SVR_CANNOTCONNECT", (e, t) => {
                     var n;
                     e.loading = !0,
                     e.authenticated = !1,
@@ -18178,12 +18446,12 @@
                     e.errorMessage = null === (n = t.payload) || void 0 === n ? void 0 : n.message
                 }
                 ),
-                e.addCase("game/PLAYER_AVATAR", (e,t)=>{
+                e.addCase("game/PLAYER_AVATAR", (e, t) => {
                     t.payload.success ? (t.payload.username && (e.username = t.payload.username),
                     t.payload.playerAvatar && (e.playerAvatar = t.payload.playerAvatar)) : "username-already-exists" === t.payload.message ? e.errorMessage = ["nameInUse", "Name in use"] : e.errorMessage = ["internalServerError", "Task Failed Successfully. msg: UpdateAvatar"]
                 }
                 ),
-                e.addCase("game/SERVICE_COMMAND", (e,t)=>{
+                e.addCase("game/SERVICE_COMMAND", (e, t) => {
                     var n, r, i, l, c, f;
                     let d = null == t ? void 0 : null === (r = t.payload) || void 0 === r ? void 0 : null === (n = r.command) || void 0 === n ? void 0 : n.toLowerCase();
                     "notice" === d ? (e.noticeDialog.visible = !0,
@@ -18201,24 +18469,24 @@
                 )
             }
         })
-          , h = e=>e.auth.playerAvatar
-          , v = e=>e.auth.authenticated
-          , g = e=>e.auth.username
-          , m = e=>({
+          , h = e => e.auth.playerAvatar
+          , v = e => e.auth.authenticated
+          , g = e => e.auth.username
+          , m = e => ({
             email: e.auth.email,
             password: e.auth.password,
             newuser: e.auth.newuser
         })
-          , y = e=>({
+          , y = e => ({
             method_id: e.auth.methodid,
             code: e.auth.code
         })
-          , b = e=>e.auth.connected && e.auth.provider
-          , E = e=>e.auth.loading
-          , _ = e=>e.auth.errorMessage
-          , w = e=>e.auth.cryptoWallets
-          , O = e=>e.auth.noticeDialog
-          , {checkAuthentication: A, setConnected: S, walletRequired: P, continueAsGuest: I, createPlayer: R, loadingDone: k, authenticate: x, authenticatedPlayer: N, updatedPlayer: T, authenticateError: C, loggedOut: L, setIsAccountDirty: M, closeNotification: j, serviceNotification: D} = p.actions;
+          , b = e => e.auth.connected && e.auth.provider
+          , E = e => e.auth.loading
+          , _ = e => e.auth.errorMessage
+          , w = e => e.auth.cryptoWallets
+          , O = e => e.auth.noticeDialog
+          , {checkAuthentication: A, setConnected: S, walletRequired: P, continueAsGuest: I, createPlayer: R, loadingDone: k, authenticate: T, authenticatedPlayer: x, updatedPlayer: N, authenticateError: C, loggedOut: L, setIsAccountDirty: M, closeNotification: j, serviceNotification: D} = p.actions;
         t.Co = p.reducer
     },
     28274: function(e, t, n) {
@@ -18269,14 +18537,14 @@
           , o = n(53059)
           , a = n(47414)
           , s = n(80919)
-          , u = n(11335)
-          , l = n(49922);
-        let c = (e,t,n,r)=>{
+          , u = n(96721)
+          , l = n(73913);
+        let c = (e, t, n, r) => {
             if (e && !t) {
                 let n = l.l.getInstance().getEntityByUniqueId(e);
                 t = null == n ? void 0 : n.entity
             }
-            t && e && s.ZP.sendEventDelayed(u.m.clickEntity, {
+            t && e && s.ZP.sendEventDelayed(u.mY.clickEntity, {
                 mid: e,
                 impact: n,
                 entity: t,
@@ -18297,19 +18565,19 @@
             name: "craftingSlice",
             initialState: f,
             reducers: {
-                selectCraftable: (e,t)=>{
+                selectCraftable: (e, t) => {
                     e.ui = {
                         ...e.ui,
                         selectedCraftable: t.payload.id
                     }
                 }
                 ,
-                closeCraftingDialog: e=>{
+                closeCraftingDialog: e => {
                     e.showCrafting && c(e.ui.table_mid, e.ui.table_entity, "uiclose"),
                     e.showCrafting = !1
                 }
                 ,
-                showCraftingWindow: (e,t)=>{
+                showCraftingWindow: (e, t) => {
                     let {craftType: n, source: r, achievement: i, state: o, quantity: a, finish: s, tableTier: u} = t.payload
                       , l = null == o ? void 0 : o.startsWith("update:");
                     (!l || e.showCrafting && e.ui.table_mid === r) && (e.showCrafting && e.ui.table_mid && e.ui.table_entity && e.ui.craftType !== n && c(e.ui.table_mid, e.ui.table_entity, "uiclose"),
@@ -18324,8 +18592,8 @@
                     e.showCrafting = !0)
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LEAVE", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.achievements = {},
                     e.showCrafting = !1,
                     e.ui = {
@@ -18333,19 +18601,19 @@
                     }
                 }
                 ),
-                e.addCase("game/PLAYER_ACHIEVEMENT_ADD", (e,t)=>{
+                e.addCase("game/PLAYER_ACHIEVEMENT_ADD", (e, t) => {
                     e.achievements[t.payload.achievement.achievementId] = t.payload.achievement
                 }
                 ),
-                e.addCase("game/PLAYER_ACHIEVEMENT_CHANGED", (e,t)=>{
+                e.addCase("game/PLAYER_ACHIEVEMENT_CHANGED", (e, t) => {
                     e.achievements[t.payload.achievement.achievementId] = t.payload.achievement
                 }
                 ),
-                e.addCase("game/PLAYER_ACHIEVEMENT_REMOVED", (e,t)=>{
+                e.addCase("game/PLAYER_ACHIEVEMENT_REMOVED", (e, t) => {
                     delete e.achievements[t.payload.achievement.achievementId]
                 }
                 ),
-                e.addCase("game/SERVER_BUILD_NODE", (e,t)=>{
+                e.addCase("game/SERVER_BUILD_NODE", (e, t) => {
                     if (e.ui.table_mid && "entity" === t.payload.type && "remove" === t.payload.action) {
                         let n = t.payload._id
                           , r = l.l.getInstance().getEntityByUniqueId(e.ui.table_mid);
@@ -18357,30 +18625,30 @@
         })
           , {selectCraftable: p, closeCraftingDialog: h, showCraftingWindow: v} = d.actions;
         t.ZP = d.reducer;
-        let g = e=>e.crafting.showCrafting
-          , m = e=>Object.values(e.crafting.achievements)
-          , y = e=>e.crafting.ui
-          , b = e=>e.crafting.ui.selectedCraftable ? e.crafting.achievements[e.crafting.ui.selectedCraftable] || {
+        let g = e => e.crafting.showCrafting
+          , m = e => Object.values(e.crafting.achievements)
+          , y = e => e.crafting.ui
+          , b = e => e.crafting.ui.selectedCraftable ? e.crafting.achievements[e.crafting.ui.selectedCraftable] || {
             achievementId: e.crafting.ui.selectedCraftable
         } : null
-          , E = e=>e.crafting.ui.entityState
+          , E = e => e.crafting.ui.entityState
           , _ = (0,
-        i.P1)([b, a.RQ, E], (e,t,n)=>r=>{
+        i.P1)([b, a.RQ, E], (e, t, n) => r => {
             if (!e || "busy" === n)
                 return !1;
             let i = o.Z.getGameAchievement(e.achievementId);
-            return !!i && !!i.craftable && i.craftable.requiredItems.every(e=>t(e.id) >= e.quantity * r)
+            return !!i && !!i.craftable && i.craftable.requiredItems.every(e => t(e.id) >= e.quantity * r)
         }
         )
           , w = (0,
-        i.P1)([b, a.xK], (e,t)=>n=>{
+        i.P1)([b, a.xK], (e, t) => n => {
             let r = Object.values(t.slots);
             if (e) {
                 var i;
                 let t = o.Z.getGameAchievement(e.achievementId);
                 if (!t)
                     return !1;
-                if (null === (i = t.craftable) || void 0 === i ? void 0 : i.requiredItems.some(e=>r.filter(t=>t.item === e.id).some(t=>t.quantity === e.quantity)))
+                if (null === (i = t.craftable) || void 0 === i ? void 0 : i.requiredItems.some(e => r.filter(t => t.item === e.id).some(t => t.quantity === e.quantity)))
                     return !0
             }
             if (t.size > r.length)
@@ -18388,20 +18656,20 @@
             let a = o.Z.getGameItem(n);
             if (!a)
                 return !1;
-            let s = r.filter(e=>e.item === n).reduce((e,t)=>e + t.quantity, 0);
+            let s = r.filter(e => e.item === n).reduce( (e, t) => e + t.quantity, 0);
             return !!s && (!a.inventory.maxQuantity || a.inventory.maxQuantity - s % a.inventory.maxQuantity > 0)
         }
         )
-          , O = e=>{
+          , O = e => {
             let t = b(e);
             if (!t)
                 return [];
             let n = o.Z.getGameAchievement(t.achievementId);
-            return n && n.craftable ? n.craftable.requiredItems.filter(t=>t.unconsumable && t.quantity > (0,
+            return n && n.craftable ? n.craftable.requiredItems.filter(t => t.unconsumable && t.quantity > (0,
             a.RQ)(e)(t.id)) : []
         }
-          , A = e=>e.crafting.ui.craftType
-          , S = e=>{
+          , A = e => e.crafting.ui.craftType
+          , S = e => {
             var t;
             return !!((null === (t = e.crafting.ui) || void 0 === t ? void 0 : t.entityState) && ["crafting", "ready"].includes(e.crafting.ui.entityState))
         }
@@ -18414,15 +18682,15 @@
             }
         });
         var r = n(7406)
-          , i = n(49922);
+          , i = n(73913);
         let o = (0,
-        r.hg)("game/fetchWorlds", async()=>i.l.getInstance().worldService.fetchWorldData())
+        r.hg)("game/fetchWorlds", async () => i.l.getInstance().worldService.fetchWorldData())
     },
     74800: function(e, t, n) {
         "use strict";
         n.d(t, {
             $J: function() {
-                return N
+                return x
             },
             E3: function() {
                 return q
@@ -18437,7 +18705,7 @@
                 return b
             },
             Mr: function() {
-                return T
+                return N
             },
             Nb: function() {
                 return O
@@ -18446,7 +18714,7 @@
                 return M
             },
             Sm: function() {
-                return x
+                return T
             },
             XK: function() {
                 return G
@@ -18676,30 +18944,30 @@
                 isActive: !1
             }
         }
-          , h = (e,t)=>{
+          , h = (e, t) => {
             var n;
             let {key: r, level: i} = t.payload;
             (null === (n = e.player) || void 0 === n ? void 0 : n.full) && (e.player.full.levels || (e.player.full.levels = {}),
             r && i && (e.player.full.levels[r] = i))
         }
-          , v = (e,t)=>{
+          , v = (e, t) => {
             let {key: n, level: r} = t.payload;
             e.room && e.room.levels && (e.room.levels[n] = r)
         }
-          , g = (e,t)=>{
+          , g = (e, t) => {
             var n, r, i;
             if (e.npc_dialog.queue.length > 0) {
                 let n = e.npc_dialog.queue[e.npc_dialog.queue.length - 1];
-                if (t.npcId === n.npcId && t.event === n.event && t.mid === n.event && t.pet === n.pet && (null === (r = t.messages) || void 0 === r ? void 0 : r.length) === (null === (i = n.messages) || void 0 === i ? void 0 : i.length) && t.messages.every((e,t)=>n.messages[t] === e))
+                if (t.npcId === n.npcId && t.event === n.event && t.mid === n.event && t.pet === n.pet && (null === (r = t.messages) || void 0 === r ? void 0 : r.length) === (null === (i = n.messages) || void 0 === i ? void 0 : i.length) && t.messages.every( (e, t) => n.messages[t] === e))
                     return !1
             }
-            if (t.pet && (e.npc_dialog.isActive && e.npc_dialog.pet || e.npc_dialog.queue.some(e=>{
+            if (t.pet && (e.npc_dialog.isActive && e.npc_dialog.pet || e.npc_dialog.queue.some(e => {
                 var n, r;
-                return e.pet && (null === (n = e.messages) || void 0 === n ? void 0 : n.length) === (null === (r = t.messages) || void 0 === r ? void 0 : r.length) && e.messages.every((e,n)=>e === t.messages[n])
+                return e.pet && (null === (n = e.messages) || void 0 === n ? void 0 : n.length) === (null === (r = t.messages) || void 0 === r ? void 0 : r.length) && e.messages.every( (e, n) => e === t.messages[n])
             }
             )))
                 return;
-            let o = null === (n = t.messages) || void 0 === n ? void 0 : n.some(e=>!e.includes(" ") && !!e.includes("_") && "" === (d.ZP.t(e, {
+            let o = null === (n = t.messages) || void 0 === n ? void 0 : n.some(e => !e.includes(" ") && !!e.includes("_") && "" === (d.ZP.t(e, {
                 ns: "quest",
                 defaultValue: ""
             }) || d.ZP.t(e, {
@@ -18709,7 +18977,7 @@
             return e.npc_dialog.queue.push(t),
             o
         }
-          , m = e=>{
+          , m = e => {
             if (e.npc_dialog.queue.length > 0) {
                 let t = e.npc_dialog.queue[0];
                 e.npc_dialog.isActive = !0,
@@ -18731,34 +18999,34 @@
             name: "game",
             initialState: p,
             reducers: {
-                mapSelected: (e,t)=>{
+                mapSelected: (e, t) => {
                     e.room.mapId = t.payload.mapId,
                     e.room.lastSavedAt = t.payload.lastSavedAt
                 }
                 ,
-                dialogNext: e=>{
+                dialogNext: e => {
                     let {messages: t} = e.npc_dialog
                       , {currentMessageIndex: n} = e.npc_dialog;
                     n += 1,
                     t && n < t.length ? e.npc_dialog.currentMessageIndex = n : m(e)
                 }
                 ,
-                dialogBack: e=>{
+                dialogBack: e => {
                     e.npc_dialog.currentMessageIndex = Math.max(e.npc_dialog.currentMessageIndex - 1, 0)
                 }
                 ,
-                togglePlayersOnline: e=>{
+                togglePlayersOnline: e => {
                     e.playersOnline.isVisible = !e.playersOnline.isVisible
                 }
                 ,
-                setPlayerOnlineInfo: (e,t)=>{
+                setPlayerOnlineInfo: (e, t) => {
                     e.playerOnlineInfo = {
                         isVisible: !0,
                         ...t.payload
                     }
                 }
                 ,
-                unsetPlayerOnlineInfo: e=>{
+                unsetPlayerOnlineInfo: e => {
                     e.playerOnlineInfo = {
                         isVisible: !1,
                         mid: "",
@@ -18766,26 +19034,26 @@
                     }
                 }
                 ,
-                toggleQuestLog: e=>{
+                toggleQuestLog: e => {
                     e.questLog.isVisible = !e.questLog.isVisible
                 }
                 ,
-                toggleSkills: e=>{
+                toggleSkills: e => {
                     e.showSkills = !e.showSkills
                 }
                 ,
-                setWorld: (e,t)=>{
+                setWorld: (e, t) => {
                     e.room.worldId = t.payload.worldId,
                     e.room.mapId = t.payload.mapId,
                     e.criticalMessage.text = "Loading...",
                     e.criticalMessage.isActive = !0
                 }
                 ,
-                dismissURLDisclaimer: e=>{
+                dismissURLDisclaimer: e => {
                     e.urlDisclaimer.isActive = !1
                 }
                 ,
-                logOut: e=>{
+                logOut: e => {
                     e.loading = !0,
                     e.connected = !1,
                     e.needNfts = !1,
@@ -18800,7 +19068,7 @@
                     e.criticalMessage.isActive = !1
                 }
                 ,
-                updateLookAt: (e,t)=>{
+                updateLookAt: (e, t) => {
                     let {mouse: n, text: r, style: i} = t.payload;
                     e.lookAtText = {
                         isActive: !0,
@@ -18811,27 +19079,27 @@
                     }
                 }
                 ,
-                roomWarpBegan: (e,t)=>{
+                roomWarpBegan: (e, t) => {
                     var n;
                     (null === (n = t.payload) || void 0 === n ? void 0 : n.abort) ? e.warping = !1 : e.warping = !0
                 }
                 ,
-                roomWarpLoading: (e,t)=>{
+                roomWarpLoading: (e, t) => {
                     e.room.mapId = t.payload.mapId,
                     e.loading = !0
                 }
                 ,
-                closeModal: e=>{
+                closeModal: e => {
                     e.currentModal = ""
                 }
                 ,
-                toggleModal: (e,t)=>{
+                toggleModal: (e, t) => {
                     let n = t.payload.dialog;
                     n === e.currentModal ? e.currentModal = "" : (e.currentModal = n,
                     "nftpicker" === n && (e.needNfts = !0))
                 }
                 ,
-                openPetPicker: (e,t)=>{
+                openPetPicker: (e, t) => {
                     var n, r, i, o;
                     (null === (n = e.player) || void 0 === n ? void 0 : n.core.isGuest) || (e.needNfts = !0,
                     e.petPicker.mode = null !== (o = null === (r = t.payload) || void 0 === r ? void 0 : r.mode) && void 0 !== o ? o : "hatched",
@@ -18843,15 +19111,15 @@
                     e.farmDetails.isActive = !1)
                 }
                 ,
-                closePetPicker: e=>{
+                closePetPicker: e => {
                     e.petPicker.isVisible = !1
                 }
                 ,
-                mintedPet: e=>{
+                mintedPet: e => {
                     e.petPicker.refresh = Date.now() + 6e5
                 }
                 ,
-                togglePetDetails: (e,t)=>{
+                togglePetDetails: (e, t) => {
                     var n;
                     (null === (n = t.payload) || void 0 === n ? void 0 : n.petId) ? (e.petDetails.mid = t.payload.petId,
                     e.petDetails.isVisible = !0,
@@ -18861,40 +19129,40 @@
                     e.petDetails.firstReveal = !1)
                 }
                 ,
-                toggleSidePanel: e=>{
+                toggleSidePanel: e => {
                     e.sidePanel.isActive = !e.sidePanel.isActive
                 }
                 ,
-                activateSidePanel: e=>{
+                activateSidePanel: e => {
                     e.sidePanel.isActive = !0
                 }
                 ,
-                activateFarmUpgradePanel: e=>{
+                activateFarmUpgradePanel: e => {
                     e.farmUpgradePanel.isActive = !0
                 }
                 ,
-                deactivateFarmUpgradePanel: e=>{
+                deactivateFarmUpgradePanel: e => {
                     e.farmUpgradePanel.isActive = !1
                 }
                 ,
-                updateTemplateName: (e,t)=>{
+                updateTemplateName: (e, t) => {
                     e.room.templateName = t.payload.newTemplate
                 }
                 ,
-                openSettings: e=>{
+                openSettings: e => {
                     e.showSettings = !0
                 }
                 ,
-                closeSettings: e=>{
+                closeSettings: e => {
                     e.showSettings = !1
                 }
                 ,
-                clearRealmRefresh: e=>{
+                clearRealmRefresh: e => {
                     e.realmrefresh = !1
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LEAVE", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.playerOnlineInfo.isVisible = !1,
                     e.lookAtText.isActive = !1,
                     e.npc_dialog.isActive = !1,
@@ -18908,7 +19176,7 @@
                     e.room.levels = {}
                 }
                 ),
-                e.addCase("game/ROOM_LOADED", (e,t)=>{
+                e.addCase("game/ROOM_LOADED", (e, t) => {
                     e.player = t.payload.player,
                     e.playerOnlineInfo.isVisible = !1,
                     e.lookAtText.isActive = !1,
@@ -18929,7 +19197,7 @@
                     e.petDetails.isVisible = !1
                 }
                 ),
-                e.addCase("game/PLAYER_AVATAR", (e,t)=>{
+                e.addCase("game/PLAYER_AVATAR", (e, t) => {
                     if (t.payload.success)
                         switch (e.currentModal) {
                         case "avatar":
@@ -18940,7 +19208,7 @@
                         }
                 }
                 ),
-                e.addCase("game/ROOM_WARP", e=>{
+                e.addCase("game/ROOM_WARP", e => {
                     e.lookAtText.isActive = !1,
                     e.npc_dialog.isActive = !1,
                     e.sidePanel.isActive = !1,
@@ -18953,14 +19221,14 @@
                     e.room.lastSavedAt = void 0
                 }
                 ),
-                e.addCase("game/SLOW_LOAD", (e,t)=>{
+                e.addCase("game/SLOW_LOAD", (e, t) => {
                     var n;
                     (null === (n = t.payload) || void 0 === n ? void 0 : n.retry) ? (t.payload.retry <= 2 ? e.criticalMessage.text = "Retrying Connection" : e.criticalMessage.text = "Retrying Connection x".concat(t.payload.retry - 1),
                     e.criticalMessage.isActive = !0) : e.criticalMessage.isActive || (e.criticalMessage.text = "Still Loading...",
                     e.criticalMessage.isActive = !0)
                 }
                 ),
-                e.addCase("game/GAME_INITIATED", e=>{
+                e.addCase("game/GAME_INITIATED", e => {
                     e.loading = !1,
                     e.warping = !1,
                     e.connected = !0,
@@ -18968,15 +19236,15 @@
                     e.room.lastSavedAt = void 0
                 }
                 ),
-                e.addCase("game/PLAYER_JOINED", e=>{
+                e.addCase("game/PLAYER_JOINED", e => {
                     e.playersOnline.updated += 1
                 }
                 ),
-                e.addCase("game/PLAYER_REMOVED", e=>{
+                e.addCase("game/PLAYER_REMOVED", e => {
                     e.playersOnline.updated += 1
                 }
                 ),
-                l.rV.soundControl.addReduxCase(e, (e,t)=>{
+                l.rV.soundControl.addReduxCase(e, (e, t) => {
                     let {payload: {soundControlKey: n, mute: r, volume: i}} = t;
                     void 0 !== r && (e.soundState[n].mute = r,
                     (0,
@@ -18987,25 +19255,25 @@
                     s.Ul)("".concat(n, "_volume"), i.toString()))
                 }
                 ),
-                l.rV.enhancedControl.addReduxCase(e, (e,t)=>{
+                l.rV.enhancedControl.addReduxCase(e, (e, t) => {
                     let {payload: {enabled: n}} = t;
                     void 0 !== n && (e.enhancedState.enabled = n,
                     (0,
                     s.Ul)("enhanced_enabled", n ? "1" : "0"),
-                    setTimeout(()=>{
+                    setTimeout( () => {
                         window.location.reload()
                     }
                     , 2e3))
                 }
                 ),
-                l.rV.joystickControl.addReduxCase(e, (e,t)=>{
+                l.rV.joystickControl.addReduxCase(e, (e, t) => {
                     let {payload: {enabled: n}} = t;
                     void 0 !== n && (e.joystickState.enabled = n,
                     (0,
                     s.Ul)("joystick_disabled", n ? "0" : "1"))
                 }
                 ),
-                e.addCase("game/LINK_OPEN", (e,t)=>{
+                e.addCase("game/LINK_OPEN", (e, t) => {
                     let {link: n, msgKey: r} = t.payload;
                     r || (0,
                     s.fI)(n) ? (e.urlDisclaimer.isActive = !0,
@@ -19014,7 +19282,7 @@
                     s.T1)(n) ? window.location.href = n : window.open(n, "_blank")
                 }
                 ),
-                e.addCase("game/GAME_OBJECT_MOUSEOVER", (e,t)=>{
+                e.addCase("game/GAME_OBJECT_MOUSEOVER", (e, t) => {
                     let {mouse: n, text: r, style: i} = t.payload;
                     e.lookAtText = {
                         isActive: !!r,
@@ -19025,14 +19293,14 @@
                     }
                 }
                 ),
-                e.addCase("game/GAME_OBJECT_MOUSEOUT", e=>{
+                e.addCase("game/GAME_OBJECT_MOUSEOUT", e => {
                     e.lookAtText = {
                         ...e.lookAtText,
                         isActive: !1
                     }
                 }
                 ),
-                e.addCase("game/LIBRARY", (e,t)=>{
+                e.addCase("game/LIBRARY", (e, t) => {
                     var n;
                     e.gameLibraryLoaded = !!t.payload,
                     (null === (n = f.Z.getTenants()) || void 0 === n ? void 0 : n[(0,
@@ -19041,23 +19309,23 @@
                     e.gameLibraryLoaded = !1)
                 }
                 ),
-                l.rV.inventory.serverStateChange.addReduxCase(e, (e,t)=>{
+                l.rV.inventory.serverStateChange.addReduxCase(e, (e, t) => {
                     var n;
                     let {inventory: r} = t.payload;
                     r && (null === (n = e.player) || void 0 === n ? void 0 : n.full.inventory) && (e.player.full.inventory = r)
                 }
                 ),
-                l.rV.wardrobe.serverStateChange.addReduxCase(e, (e,t)=>{
+                l.rV.wardrobe.serverStateChange.addReduxCase(e, (e, t) => {
                     e.player && (e.player.full.wardrobe = t.payload.wardrobe)
                 }
                 ),
-                e.addCase("game/PLAYER_COIN_INVENTORY_CHANGE", (e,t)=>{
+                e.addCase("game/PLAYER_COIN_INVENTORY_CHANGE", (e, t) => {
                     var n;
                     let {coinInventory: r} = t.payload;
                     r && (null === (n = e.player) || void 0 === n ? void 0 : n.full.coinInventory) && (e.player.full.coinInventory = r)
                 }
                 ),
-                e.addCase("game/PLAYER_QUESTPROGRESS_ADDED", (e,t)=>{
+                e.addCase("game/PLAYER_QUESTPROGRESS_ADDED", (e, t) => {
                     var n;
                     let {quests: r} = t.payload;
                     r && (null === (n = e.player) || void 0 === n ? void 0 : n.full.quests) && (e.player.full.quests = r)
@@ -19065,7 +19333,7 @@
                 ),
                 e.addCase("game/PLAYER_LEVEL_ADD", h),
                 e.addCase("game/PLAYER_LEVEL_CHANGE", h),
-                e.addCase("game/SVR_CANNOTCONNECT", (e,t)=>{
+                e.addCase("game/SVR_CANNOTCONNECT", (e, t) => {
                     var n, r;
                     e.loading = !0,
                     e.connected = !1,
@@ -19077,46 +19345,46 @@
                     (null === (r = t.payload) || void 0 === r ? void 0 : r.message) && (e.criticalMessage.isActive = !0)
                 }
                 ),
-                e.addCase("game/NPC_SPEAKS", (e,t)=>{
+                e.addCase("game/NPC_SPEAKS", (e, t) => {
                     let n = t.payload;
                     "function" != typeof n.forEach && (n = [n]),
-                    n.reduce((t,n)=>g(e, n) || t, !1) ? d.ZP.reloadResources().then(()=>{
+                    n.reduce( (t, n) => g(e, n) || t, !1) ? d.ZP.reloadResources().then( () => {
                         e.npc_dialog.isActive || m(e)
                     }
                     ).catch(console.error) : e.npc_dialog.isActive || m(e)
                 }
                 ),
-                e.addCase("game/PLAYER_ENERGY_CHANGE", (e,t)=>{
+                e.addCase("game/PLAYER_ENERGY_CHANGE", (e, t) => {
                     var n;
                     let {energy: r} = t.payload;
                     r && (null === (n = e.player) || void 0 === n ? void 0 : n.full.energy) && (e.player.full.energy = r)
                 }
                 ),
-                e.addCase(a.b.fulfilled, (e,t)=>{
+                e.addCase(a.b.fulfilled, (e, t) => {
                     e.worlds = t.payload
                 }
                 ),
-                e.addCase("game/PRESENT_FARM_DETAILS", e=>{
+                e.addCase("game/PRESENT_FARM_DETAILS", e => {
                     e.farmDetails.isActive = !0
                 }
                 ),
-                e.addCase("game/DISMISS_FARM_DETAILS", e=>{
+                e.addCase("game/DISMISS_FARM_DETAILS", e => {
                     e.farmDetails.isActive = !1
                 }
                 ),
-                e.addCase("game/PLAYER_EXP_CHANGE", (e,t)=>{
+                e.addCase("game/PLAYER_EXP_CHANGE", (e, t) => {
                     e.player && (e.player.full.levels = {
                         ...t.payload.levels
                     })
                 }
                 ),
-                e.addCase("game/PLAYER_MEMBERSHIPS_CHANGE", (e,t)=>{
+                e.addCase("game/PLAYER_MEMBERSHIPS_CHANGE", (e, t) => {
                     e.player && (e.player.core.memberships = t.payload.memberships)
                 }
                 ),
                 e.addCase("game/ROOM_LEVEL_ADD", v),
                 e.addCase("game/ROOM_LEVEL_CHANGED", v),
-                e.addCase("game/BOOKMARK_MAP", (e,t)=>{
+                e.addCase("game/BOOKMARK_MAP", (e, t) => {
                     var n;
                     let {mapId: r, bookmark: i, environ: o} = t.payload
                       , a = null === (n = e.player) || void 0 === n ? void 0 : n.full.bookmarks;
@@ -19124,18 +19392,18 @@
                     i && r ? a.bookmarkedMaps.push({
                         mapId: r,
                         environ: o
-                    }) : !i && r && (a.bookmarkedMaps = a.bookmarkedMaps.filter(e=>{
+                    }) : !i && r && (a.bookmarkedMaps = a.bookmarkedMaps.filter(e => {
                         var t;
                         return (null !== (t = null == e ? void 0 : e.mapId) && void 0 !== t ? t : e) !== r
                     }
                     )))
                 }
                 ),
-                e.addCase("game/".concat(l.fb.SET_TOS_ACCEPTED), e=>{
+                e.addCase("game/".concat(l.fb.SET_TOS_ACCEPTED), e => {
                     e.player && (e.player.full.tosVersion = c.sV)
                 }
                 ),
-                e.addCase("game/".concat(l.fb.PLAYER_PET_CHANGE), (e,t)=>{
+                e.addCase("game/".concat(l.fb.PLAYER_PET_CHANGE), (e, t) => {
                     if (e.player) {
                         var n, r, i, o;
                         ((null === (n = e.player.full.pet) || void 0 === n ? void 0 : n.tokenId) !== (null === (r = t.payload.full.pet) || void 0 === r ? void 0 : r.tokenId) || (null === (i = e.player.full.pet) || void 0 === i ? void 0 : i.avatar.id) !== (null === (o = t.payload.full.pet) || void 0 === o ? void 0 : o.avatar.id)) && (e.petDetails.isVisible = !1),
@@ -19144,14 +19412,14 @@
                     }
                 }
                 ),
-                e.addCase("game/".concat(l.fb.CLIENT_CMD), (e,t)=>{
+                e.addCase("game/".concat(l.fb.CLIENT_CMD), (e, t) => {
                     let n = t.payload;
                     "petmint" === n.detail ? e.petPicker.refresh = Date.now() + 9e5 : "realmmint" === n.detail && (e.realmrefresh = !0)
                 }
                 )
             }
         })
-          , {mapSelected: b, roomWarpBegan: E, roomWarpLoading: _, dialogNext: w, dialogBack: O, togglePlayersOnline: A, setPlayerOnlineInfo: S, unsetPlayerOnlineInfo: P, setWorld: I, logOut: R, updateLookAt: k, dismissURLDisclaimer: x, toggleModal: N, closeModal: T, toggleQuestLog: C, toggleSkills: L, toggleSidePanel: M, togglePetDetails: j, closePetPicker: D, openPetPicker: U, activateSidePanel: $, activateFarmUpgradePanel: V, deactivateFarmUpgradePanel: B, openSettings: F, closeSettings: q, clearRealmRefresh: Z, updateTemplateName: G} = y.actions;
+          , {mapSelected: b, roomWarpBegan: E, roomWarpLoading: _, dialogNext: w, dialogBack: O, togglePlayersOnline: A, setPlayerOnlineInfo: S, unsetPlayerOnlineInfo: P, setWorld: I, logOut: R, updateLookAt: k, dismissURLDisclaimer: T, toggleModal: x, closeModal: N, toggleQuestLog: C, toggleSkills: L, toggleSidePanel: M, togglePetDetails: j, closePetPicker: D, openPetPicker: U, activateSidePanel: $, activateFarmUpgradePanel: V, deactivateFarmUpgradePanel: B, openSettings: F, closeSettings: q, clearRealmRefresh: Z, updateTemplateName: G} = y.actions;
         t.ZP = y.reducer
     },
     60943: function(e, t, n) {
@@ -19187,7 +19455,7 @@
         });
         var r = n(7406)
           , i = n(80919)
-          , o = n(49922);
+          , o = n(73913);
         let a = (0,
         r.oM)({
             name: "storage",
@@ -19201,11 +19469,11 @@
                 activeRow: 0
             },
             reducers: {
-                closeStorage: e=>{
+                closeStorage: e => {
                     e.openStorage.isOpen = !1
                 }
                 ,
-                setActiveRow: (e,t)=>{
+                setActiveRow: (e, t) => {
                     let {payload: n} = t;
                     e.activeRow = n,
                     i.rV.inventory.changeActiveRow.emit({
@@ -19213,27 +19481,29 @@
                     })
                 }
                 ,
-                selectEquipment: (e,t)=>{
-                    var n, r;
-                    e.selectedEquipment = t.payload.selectedEquipment,
+                selectEquipment: (e, t) => {
+                    var n, r, i, o, a;
+                    e.selectedEquipment = null !== (o = null === (n = t.payload.slot) || void 0 === n ? void 0 : n.slot) && void 0 !== o ? o : -1,
                     e.storageMid = t.payload.mid,
                     e.selectedItem = t.payload.item,
-                    e.selectedQty = null !== (r = t.payload.quantity) && void 0 !== r ? r : 1,
-                    (null === (n = e.selectedItem) || void 0 === n ? void 0 : n.id) === e.highlightedItem && (e.highlightedItem = void 0)
+                    e.selectedSlot = t.payload.slot,
+                    e.selectedQty = null !== (a = null === (r = t.payload.slot) || void 0 === r ? void 0 : r.quantity) && void 0 !== a ? a : 0,
+                    (null === (i = e.selectedItem) || void 0 === i ? void 0 : i.id) === e.highlightedItem && (e.highlightedItem = void 0)
                 }
                 ,
-                resetEquipment: e=>{
+                resetEquipment: e => {
                     i.ZP.emitEventNow(i.qM.RELEASE_FROM_CURSOR),
                     e.selectedEquipment = -1,
                     e.storageMid = void 0,
-                    e.selectedItem = void 0
+                    e.selectedItem = void 0,
+                    e.selectedSlot = void 0
                 }
                 ,
-                closeInventoryWindow: e=>{
+                closeInventoryWindow: e => {
                     e.openStorage.isOpen = !1
                 }
                 ,
-                toggleInventoryWindow: e=>{
+                toggleInventoryWindow: e => {
                     e.openStorage.isOpen && !e.openStorage.mid ? e.openStorage.isOpen = !1 : e.openStorage = {
                         isOpen: !0,
                         mid: void 0,
@@ -19241,14 +19511,15 @@
                     }
                 }
                 ,
-                moveEquipmentSlot: (e,t)=>{}
+                moveEquipmentSlot: (e, t) => {}
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LOADED", (e,t)=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LOADED", (e, t) => {
                     var n, r, i, o, a, s;
                     e.selectedEquipment = -1,
                     e.storageMid = void 0,
                     e.selectedItem = void 0,
+                    e.selectedSlot = void 0,
                     (null === (i = t.payload.player) || void 0 === i ? void 0 : null === (r = i.full) || void 0 === r ? void 0 : null === (n = r.inventory) || void 0 === n ? void 0 : n.activeRow) >= 0 && (e.activeRow = null === (s = t.payload.player) || void 0 === s ? void 0 : null === (a = s.full) || void 0 === a ? void 0 : null === (o = a.inventory) || void 0 === o ? void 0 : o.activeRow),
                     e.openStorage = {
                         isOpen: !1,
@@ -19256,14 +19527,14 @@
                     }
                 }
                 ),
-                e.addCase("game/".concat(i.fb.PLAYER_PET_CHANGE), e=>{
+                e.addCase("game/".concat(i.fb.PLAYER_PET_CHANGE), e => {
                     e.openStorage = {
                         isOpen: !1,
                         updated: 0
                     }
                 }
                 ),
-                e.addCase("game/PLAYER_OPEN_STORAGE", (e,t)=>{
+                e.addCase("game/PLAYER_OPEN_STORAGE", (e, t) => {
                     let n = t.payload.storageId;
                     n ? e.openStorage = {
                         isOpen: !0,
@@ -19275,7 +19546,7 @@
                     }
                 }
                 ),
-                e.addCase("game/ENTITY_ADD", (e,t)=>{
+                e.addCase("game/ENTITY_ADD", (e, t) => {
                     let n = t.payload
                       , r = n.mapEntity_id;
                     e.openStorage.mid && r === e.openStorage.mid && (e.openStorage = {
@@ -19285,29 +19556,30 @@
                     })
                 }
                 ),
-                e.addCase("game/ROOM_LEAVE", e=>{
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.openStorage = {
                         isOpen: !1,
                         updated: 0
                     },
                     e.selectedEquipment = -1,
                     e.selectedItem = void 0,
+                    e.selectedSlot = void 0,
                     e.storageMid = void 0,
                     e.highlightedItem = void 0
                 }
                 ),
-                e.addCase("game/ENTITY_UPDATE", (e,t)=>{
+                e.addCase("game/ENTITY_UPDATE", (e, t) => {
                     t.payload.mid === e.openStorage.mid && (e.openStorage.updated += 1)
                 }
                 ),
-                e.addCase("game/ENTITY_REMOVE", (e,t)=>{
+                e.addCase("game/ENTITY_REMOVE", (e, t) => {
                     t.payload.mid === e.openStorage.mid && (e.openStorage = {
                         isOpen: !1,
                         updated: 0
                     })
                 }
                 ),
-                e.addCase("game/SERVER_BUILD_NODE", (e,t)=>{
+                e.addCase("game/SERVER_BUILD_NODE", (e, t) => {
                     if (e.openStorage.mid && "entity" === t.payload.type && "remove" === t.payload.action) {
                         let n = t.payload._id
                           , r = o.l.getInstance().getEntityByUniqueId(e.openStorage.mid);
@@ -19318,7 +19590,7 @@
                     }
                 }
                 ),
-                e.addCase("game/".concat(i.fb.CLIENT_CMD), (e,t)=>{
+                e.addCase("game/".concat(i.fb.CLIENT_CMD), (e, t) => {
                     let n = t.payload;
                     if ("itemhighlight" === n.detail) {
                         var r;
@@ -19326,7 +19598,7 @@
                     }
                 }
                 ),
-                i.rV.inventory.serverStateChange.addReduxCase(e, (e,t)=>{
+                i.rV.inventory.serverStateChange.addReduxCase(e, (e, t) => {
                     let {inventory: n} = t.payload;
                     e.activeRow = n.activeRow,
                     function(e) {
@@ -19350,6 +19622,7 @@
                                         e.selectedEquipment = -1,
                                         e.storageMid = void 0,
                                         e.selectedItem = void 0,
+                                        e.selectedSlot = void 0,
                                         i.ZP.sendEventDelayed(i.qM.RELEASE_FROM_CURSOR);
                                         return
                                     }
@@ -19358,34 +19631,37 @@
                         } else
                             t = n.currentPlayer.full.inventory;
                         if (null == t ? void 0 : t.slots) {
-                            let n = Object.values((t = JSON.parse(JSON.stringify(t))).slots).find(t=>t.slot === e.selectedEquipment);
-                            (null == n ? void 0 : n.quantity) ? e.selectedQty = n.quantity : (e.selectedEquipment = -1,
+                            let n = Object.values((t = JSON.parse(JSON.stringify(t))).slots).find(t => t.slot === e.selectedEquipment);
+                            (null == n ? void 0 : n.quantity) ? (e.selectedQty = n.quantity,
+                            e.selectedSlot = n) : (e.selectedEquipment = -1,
                             e.storageMid = void 0,
                             e.selectedItem = void 0,
+                            e.selectedSlot = void 0,
                             i.ZP.sendEventDelayed(i.qM.RELEASE_FROM_CURSOR))
                         }
                     }(e)
                 }
                 ),
-                e.addCase("game/PLAYER_INVENTORY_NEW", (e,t)=>{
+                e.addCase("game/PLAYER_INVENTORY_NEW", (e, t) => {
                     let {item: n} = t.payload;
                     e.highlightedItem = n
                 }
                 )
             }
         })
-          , s = e=>({
+          , s = e => ({
             slot: e.storage.selectedEquipment,
             storage: e.storage.storageMid,
             quantity: e.storage.selectedQty,
-            attention: e.storage.highlightedItem
+            attention: e.storage.highlightedItem,
+            invslot: e.storage.selectedSlot
         })
-          , u = e=>{
+          , u = e => {
             if (e.game.player)
                 return e.storage.selectedItem
         }
-          , l = e=>e.storage.openStorage
-          , c = e=>e.storage.activeRow
+          , l = e => e.storage.openStorage
+          , c = e => e.storage.activeRow
           , {closeStorage: f, closeInventoryWindow: d, toggleInventoryWindow: p, resetEquipment: h, selectEquipment: v, setActiveRow: g, moveEquipmentSlot: m} = a.actions;
         t.ZP = a.reducer
     },
@@ -19393,7 +19669,7 @@
         "use strict";
         n.d(t, {
             $b: function() {
-                return N
+                return x
             },
             $v: function() {
                 return V
@@ -19435,7 +19711,7 @@
                 return C
             },
             Qk: function() {
-                return H
+                return Y
             },
             RG: function() {
                 return O
@@ -19450,7 +19726,7 @@
                 return S
             },
             TR: function() {
-                return T
+                return N
             },
             U7: function() {
                 return D
@@ -19459,7 +19735,7 @@
                 return M
             },
             VQ: function() {
-                return Y
+                return W
             },
             Wj: function() {
                 return F
@@ -19471,7 +19747,7 @@
                 return f
             },
             b_: function() {
-                return x
+                return T
             },
             cV: function() {
                 return Z
@@ -19483,7 +19759,7 @@
                 return U
             },
             h2: function() {
-                return W
+                return H
             },
             iN: function() {
                 return q
@@ -19529,15 +19805,15 @@
             }
         });
         var r = n(68697)
-          , i = n(14715);
-        let o = e=>e.game.gameLibraryLoaded
-          , a = e=>e.game.npc_dialog.isActive
-          , s = e=>e.game.playersOnline
-          , u = e=>e.game.questLog
-          , l = e=>"nftpicker" === e.game.currentModal
-          , c = e=>e.game.petPicker
-          , f = e=>e.game.petDetails
-          , d = e=>{
+          , i = n(4152);
+        let o = e => e.game.gameLibraryLoaded
+          , a = e => e.game.npc_dialog.isActive
+          , s = e => e.game.playersOnline
+          , u = e => e.game.questLog
+          , l = e => "nftpicker" === e.game.currentModal
+          , c = e => e.game.petPicker
+          , f = e => e.game.petDetails
+          , d = e => {
             var t;
             let {npc_dialog: n} = e.game;
             return {
@@ -19546,36 +19822,36 @@
                 isFirstDialog: 0 === n.currentMessageIndex
             }
         }
-          , p = e=>{
+          , p = e => {
             var t;
             return e.game.npc_dialog.isActive || e.game.currentModal || e.game.questLog.isVisible || e.game.petPicker.isVisible || (null === (t = e.game.urlDisclaimer) || void 0 === t ? void 0 : t.isActive) && e.game.urlDisclaimer.URL || e.ui.confirmDialog.isVisible || e.game.petDetails.isVisible && e.game.petDetails.firstReveal || e.generalStore.isOpen || e.ui.imageDialog.isVisible && !e.ui.imageDialog.modeless || "none" !== e.marketplace.mode
         }
-          , h = e=>e.game.lookAtText
-          , v = e=>e.game.npc_dialog
-          , g = e=>e.game.criticalMessage
-          , m = e=>e.game.player
-          , y = e=>{
+          , h = e => e.game.lookAtText
+          , v = e => e.game.npc_dialog
+          , g = e => e.game.criticalMessage
+          , m = e => e.game.player
+          , y = e => {
             var t;
             let n = null === (t = e.game.player) || void 0 === t ? void 0 : t.full.bookmarks;
             return (null == n ? void 0 : n.bookmarkedMaps) || []
         }
-          , b = e=>{
+          , b = e => {
             var t, n;
-            return (null === (n = e.game.player) || void 0 === n ? void 0 : null === (t = n.full.bookmarks) || void 0 === t ? void 0 : t.size) || i.vn
+            return (null === (n = e.game.player) || void 0 === n ? void 0 : null === (t = n.full.bookmarks) || void 0 === t ? void 0 : t.size) || i.DEFAULT_BOOKMARKS
         }
-          , E = e=>e.game.loading || !e.auth.authenticated
-          , _ = e=>e.game.warping
-          , w = e=>e.game.needNfts
-          , O = e=>!!e.game.connected && e.game.sessionId
-          , A = e=>{
+          , E = e => e.game.loading || !e.auth.authenticated
+          , _ = e => e.game.warping
+          , w = e => e.game.needNfts
+          , O = e => !!e.game.connected && e.game.sessionId
+          , A = e => {
             var t;
             return null === (t = e.game.player) || void 0 === t ? void 0 : t.full.inventory
         }
-          , S = e=>{
+          , S = e => {
             var t;
             return null === (t = e.game.player) || void 0 === t ? void 0 : t.full.wardrobe
         }
-          , P = e=>{
+          , P = e => {
             var t;
             let n = new Date
               , r = e.game.player
@@ -19583,36 +19859,36 @@
             return !!i && n < i
         }
           , I = (0,
-        r.P1)([A], e=>t=>{
+        r.P1)([A], e => t => {
             if (!e || !e || !e.slots || 0 === Object.keys(e.slots).length)
                 return 0;
-            let n = Object.values(e.slots).filter(e=>e.item === t);
-            return n.length ? n.reduce((e,t)=>e + t.quantity, 0) : 0
+            let n = Object.values(e.slots).filter(e => e.item === t);
+            return n.length ? n.reduce( (e, t) => e + t.quantity, 0) : 0
         }
         )
-          , R = e=>e.game.soundState
-          , k = e=>e.game.enhancedState
-          , x = e=>e.game.joystickState
-          , N = e=>e.game.playersOnline.updated
-          , T = e=>e.game.playerOnlineInfo
-          , C = e=>e.game.currentModal
-          , L = e=>t=>{
+          , R = e => e.game.soundState
+          , k = e => e.game.enhancedState
+          , T = e => e.game.joystickState
+          , x = e => e.game.playersOnline.updated
+          , N = e => e.game.playerOnlineInfo
+          , C = e => e.game.currentModal
+          , L = e => t => {
             var n;
             return (null === (n = e.game.player) || void 0 === n ? void 0 : n.full.levels)[t]
         }
-          , M = e=>t=>e.game.room.levels[t]
-          , j = e=>e.auth.authenticated && e.auth.username && e.auth.playerAvatar && !e.game.room.worldId
-          , D = e=>!e.game.room.worldId
-          , U = e=>e.game.worlds
-          , $ = e=>e.game.room.mapId
-          , V = e=>e.game.room.roomType
-          , B = e=>e.game.room.worldId
-          , F = e=>e.game.room.templateName
-          , q = e=>e.game.urlDisclaimer
-          , Z = e=>e.game.showSkills
-          , G = e=>e.game.showSettings
+          , M = e => t => e.game.room.levels[t]
+          , j = e => e.auth.authenticated && e.auth.username && e.auth.playerAvatar && !e.game.room.worldId
+          , D = e => !e.game.room.worldId
+          , U = e => e.game.worlds
+          , $ = e => e.game.room.mapId
+          , V = e => e.game.room.roomType
+          , B = e => e.game.room.worldId
+          , F = e => e.game.room.templateName
+          , q = e => e.game.urlDisclaimer
+          , Z = e => e.game.showSkills
+          , G = e => e.game.showSettings
           , z = (0,
-        r.P1)([e=>e.game.farmDetails, e=>e.mapEditor.roomSettings], (e,t)=>({
+        r.P1)([e => e.game.farmDetails, e => e.mapEditor.roomSettings], (e, t) => ({
             ...e,
             farmName: t.name,
             ownership: t.ownership,
@@ -19620,9 +19896,9 @@
             guild: t.guild,
             labels: t.labels
         }))
-          , H = e=>e.game.sidePanel.isActive
-          , W = e=>e.game.farmUpgradePanel.isActive
-          , Y = e=>e.game.realmrefresh
+          , Y = e => e.game.sidePanel.isActive
+          , H = e => e.game.farmUpgradePanel.isActive
+          , W = e => e.game.realmrefresh
     },
     72936: function(e, t, n) {
         "use strict";
@@ -19642,7 +19918,7 @@
           , o = n(80919);
         function a(e) {
             let t = Date.now()
-              , n = (e = e.filter(e=>"sys" !== e.creator_id || t - e.createdAt < 3e4)).length - 1500;
+              , n = (e = e.filter(e => "sys" !== e.creator_id || t - e.createdAt < 3e4)).length - 1500;
             return n > 0 && (e = e.slice(n)),
             e
         }
@@ -19696,23 +19972,23 @@
                 }]
             },
             reducers: {
-                closeChat: e=>{
+                closeChat: e => {
                     e.isVisible = !1
                 }
                 ,
-                toggleChat: e=>{
+                toggleChat: e => {
                     e.isVisible ? (e.isVisible = !1,
                     e.openedNow = !1) : (e.isVisible = !0,
                     e.openedNow = !0,
                     e.newMessage = !1)
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/roomWarpBegan", e=>{
+            extraReducers: e => {
+                e.addCase("game/roomWarpBegan", e => {
                     e.openedNow = !1
                 }
                 ),
-                e.addCase("game/ROOM_LOADED", (e,t)=>{
+                e.addCase("game/ROOM_LOADED", (e, t) => {
                     e.messages = [{
                         createdAt: 0,
                         creator_id: "sys",
@@ -19720,13 +19996,13 @@
                         creatorName: ""
                     }],
                     e.openedNow = !1,
-                    t.payload.messages && t.payload.messages.filter(e=>!s(e) || (u(e),
-                    !1)).forEach(t=>e.messages.push(t)),
+                    t.payload.messages && t.payload.messages.filter(e => !s(e) || (u(e),
+                    !1)).forEach(t => e.messages.push(t)),
                     e.chatEnabled = "private" !== t.payload.roomType && "tutorial" !== t.payload.roomType
                 }
                 ),
-                e.addCase("game/PLAYER_REMOVED", (e,t)=>{
-                    if (e.messages.slice(-20).some(e=>e.creator_id === t.payload.id)) {
+                e.addCase("game/PLAYER_REMOVED", (e, t) => {
+                    if (e.messages.slice(-20).some(e => e.creator_id === t.payload.id)) {
                         let n = {
                             creator_id: "sys",
                             createdAt: new Date().getTime(),
@@ -19738,7 +20014,7 @@
                     }
                 }
                 ),
-                e.addCase("game/CHAT_MESSAGE_RCV", (e,t)=>{
+                e.addCase("game/CHAT_MESSAGE_RCV", (e, t) => {
                     let n = t.payload;
                     (!s(n) || (n = u(n))) && (!e.isVisible && n.creatorName && (e.newMessage = !0),
                     e.messages = a(e.messages),
@@ -19747,7 +20023,7 @@
                 )
             }
         })
-          , c = e=>e.chat
+          , c = e => e.chat
           , {toggleChat: f, closeChat: d} = l.actions;
         t.ZP = l.reducer
     },
@@ -19778,31 +20054,31 @@
                 isLoading: !1
             },
             reducers: {
-                openStoreModal: (e,t)=>{
+                openStoreModal: (e, t) => {
                     e.storeId = t.payload,
                     e.isOpen = !0
                 }
                 ,
-                closeStoreModal: e=>{
+                closeStoreModal: e => {
                     e.isOpen = !1
                 }
                 ,
-                buyStoreItem: (e,t)=>{
+                buyStoreItem: (e, t) => {
                     e.isLoading = !0
                 }
                 ,
-                sellStoreItem: (e,t)=>{
+                sellStoreItem: (e, t) => {
                     e.isLoading = !0
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LEAVE", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.isOpen = !1
                 }
                 )
             }
         })
-          , i = e=>e.generalStore
+          , i = e => e.generalStore
           , {openStoreModal: o, closeStoreModal: a, buyStoreItem: s, sellStoreItem: u} = r.actions;
         t.ZP = r.reducer
     },
@@ -19825,7 +20101,7 @@
         var r = n(7406)
           , i = n(53059);
         function o(e) {
-            return e.filter(e=>{
+            return e.filter(e => {
                 let t = e.itemId ? i.Z.getGameItem(e.itemId) : void 0
                   , n = e.currencyId ? i.Z.getGameCurrency(e.currencyId) : void 0;
                 return !("item" === e.kind && e.itemId && !t || "coins" === e.kind && e.currencyId && !n)
@@ -19842,34 +20118,34 @@
                 mailCount: 0
             },
             reducers: {
-                openMailbox: e=>{
+                openMailbox: e => {
                     e.isVisible = !0
                 }
                 ,
-                closeMailbox: e=>{
+                closeMailbox: e => {
                     e.isVisible = !1
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LOADED", (e,t)=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LOADED", (e, t) => {
                     var n, r;
                     (null === (n = t.payload.player) || void 0 === n ? void 0 : n.full) && (e.mailCount = null !== (r = t.payload.player.full.messages) && void 0 !== r ? r : 0)
                 }
                 ),
-                e.addCase("game/MAIL_UPDATE", (e,t)=>{
+                e.addCase("game/MAIL_UPDATE", (e, t) => {
                     void 0 !== t.payload.messages && (e.mailCount = t.payload.messages)
                 }
                 ),
-                e.addCase("game/RECEIVE_MAIL", (e,t)=>{
+                e.addCase("game/RECEIVE_MAIL", (e, t) => {
                     e.isLoading = !1;
                     let n = o(t.payload.mail);
                     e.mail = n
                 }
                 ),
-                e.addCase("game/COLLECT_MAIL_ITEM_RESPONSE", (e,t)=>{
+                e.addCase("game/COLLECT_MAIL_ITEM_RESPONSE", (e, t) => {
                     if (t.payload.success) {
                         let n = t.payload.mailId
-                          , r = o(e.mail.filter(e=>e._id != n));
+                          , r = o(e.mail.filter(e => e._id != n));
                         e.mail = r
                     }
                 }
@@ -19877,8 +20153,8 @@
             }
         })
           , {openMailbox: s, closeMailbox: u} = a.actions
-          , l = e=>e.mailbox
-          , c = e=>e.mailbox.mailCount;
+          , l = e => e.mailbox
+          , c = e => e.mailbox.mailCount;
         t.ZP = a.reducer
     },
     52677: function(e, t, n) {
@@ -19906,7 +20182,7 @@
                 return B
             },
             Mt: function() {
-                return x
+                return T
             },
             Mz: function() {
                 return g
@@ -19927,13 +20203,13 @@
                 return U
             },
             Vb: function() {
-                return T
+                return N
             },
             Y7: function() {
                 return A
             },
             _0: function() {
-                return N
+                return x
             },
             a0: function() {
                 return I
@@ -20004,17 +20280,17 @@
                 ...c
             },
             reducers: {
-                setMode: (e,t)=>{
+                setMode: (e, t) => {
                     e.mode = t.payload,
                     e.selectedItem = void 0
                 }
                 ,
-                setCategory: (e,t)=>{
+                setCategory: (e, t) => {
                     e.category = t.payload,
                     e.selectedItem = void 0
                 }
                 ,
-                paintObject: (e,t)=>{
+                paintObject: (e, t) => {
                     t.payload ? e.selectedItem = {
                         type: "object",
                         object: {
@@ -20031,7 +20307,7 @@
                     } : void 0)
                 }
                 ,
-                paintEntity: (e,t)=>{
+                paintEntity: (e, t) => {
                     t.payload ? e.selectedItem = {
                         type: "entity",
                         entity: {
@@ -20048,7 +20324,7 @@
                     } : void 0)
                 }
                 ,
-                selectObject: (e,t)=>{
+                selectObject: (e, t) => {
                     if (null == t ? void 0 : t.payload) {
                         let n = t.payload.object;
                         e.category = (null == n ? void 0 : n.wall) ? "walls" : "objects",
@@ -20068,7 +20344,7 @@
                         e.selectedItem = void 0
                 }
                 ,
-                patchObjectConfig: (e,t)=>{
+                patchObjectConfig: (e, t) => {
                     var n, r;
                     (null === (n = e.selectedItem) || void 0 === n ? void 0 : n.type) === "object" ? (e.selectedItem.object.config = {
                         ...e.selectedItem.object.config,
@@ -20080,12 +20356,12 @@
                     })
                 }
                 ,
-                updateObject: (e,t)=>{
+                updateObject: (e, t) => {
                     var n;
                     (null === (n = e.selectedItem) || void 0 === n ? void 0 : n.type) === "object" && t.payload && (e.selectedItem.object.configDirty = !1)
                 }
                 ,
-                selectEntity: (e,t)=>{
+                selectEntity: (e, t) => {
                     if (!t.payload) {
                         e.selectedItem = void 0;
                         return
@@ -20101,7 +20377,7 @@
                     }
                 }
                 ,
-                selectTile: (e,t)=>{
+                selectTile: (e, t) => {
                     if (!t.payload) {
                         e.selectedItem = void 0;
                         return
@@ -20121,7 +20397,7 @@
                     } : void 0)
                 }
                 ,
-                updateRoomSettings: (e,t)=>{
+                updateRoomSettings: (e, t) => {
                     let n = {
                         ...e.roomSettings
                     };
@@ -20129,19 +20405,19 @@
                     e.roomSettings = n
                 }
             },
-            extraReducers: e=>{
-                l.rV.editor.on.addReduxCase(e, e=>{
+            extraReducers: e => {
+                l.rV.editor.on.addReduxCase(e, e => {
                     e.isActive = !0,
                     e.category = "objects"
                 }
                 ),
-                l.rV.editor.off.addReduxCase(e, e=>{
+                l.rV.editor.off.addReduxCase(e, e => {
                     e.isActive = !1,
                     e.mode = "off",
                     e.selectedItem = void 0
                 }
                 ),
-                e.addCase("game/SERVER_BUILD_NODE", (e,t)=>{
+                e.addCase("game/SERVER_BUILD_NODE", (e, t) => {
                     var n, r, i, o, a, s;
                     let l = t.payload;
                     if ("object" === l.type && (null === (n = e.selectedItem) || void 0 === n ? void 0 : n.type) === "object" && (null === (i = e.selectedItem.object) || void 0 === i ? void 0 : null === (r = i.config) || void 0 === r ? void 0 : r._id) === l._id) {
@@ -20157,7 +20433,7 @@
                     e.updateVersion += 1
                 }
                 ),
-                e.addCase("game/ENTITY_UPDATE", (e,t)=>{
+                e.addCase("game/ENTITY_UPDATE", (e, t) => {
                     var n, r, i;
                     if ((null === (n = e.selectedItem) || void 0 === n ? void 0 : n.type) === "entity") {
                         let n = t.payload;
@@ -20165,41 +20441,41 @@
                     }
                 }
                 ),
-                e.addCase("game/ROOM_NAME_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_NAME_CHANGED", (e, t) => {
                     e.roomSettings.name = t.payload,
                     e.updateVersion += 1
                 }
                 ),
-                e.addCase("game/ROOM_OWNER_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_OWNER_CHANGED", (e, t) => {
                     var n;
                     e.roomSettings.ownerAddress = null === (n = t.payload) || void 0 === n ? void 0 : n.toLowerCase()
                 }
                 ),
-                e.addCase("game/ROOM_LABELS_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_LABELS_CHANGED", (e, t) => {
                     e.roomSettings.labels = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_PERMISSIONS_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_PERMISSIONS_CHANGED", (e, t) => {
                     e.roomSettings.permissions = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_GUILD_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_GUILD_CHANGED", (e, t) => {
                     e.roomSettings.guild = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_RESTRICTIONS_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_RESTRICTIONS_CHANGED", (e, t) => {
                     e.roomSettings.restrictions = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_OWNERSHIP_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_OWNERSHIP_CHANGED", (e, t) => {
                     e.roomSettings.ownership = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_MEMBERS_CHANGED", (e,t)=>{
+                e.addCase("game/ROOM_MEMBERS_CHANGED", (e, t) => {
                     e.roomSettings.members = t.payload
                 }
                 ),
-                e.addCase("game/ROOM_LEAVE", e=>{
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.roomSettings = {
                         ...c.roomSettings
                     },
@@ -20213,59 +20489,59 @@
         })
           , {setMode: d, setCategory: p, paintObject: h, selectObject: v, paintEntity: g, selectEntity: m, patchObjectConfig: y, updateObject: b, selectTile: E, updateRoomSettings: _} = f.actions;
         t.ZP = f.reducer;
-        let w = e=>e.mapEditor.isActive
-          , O = e=>t=>t === e.mapEditor.mode
-          , A = e=>e.mapEditor.category
-          , S = e=>t=>t === e.mapEditor.category
-          , P = e=>{
+        let w = e => e.mapEditor.isActive
+          , O = e => t => t === e.mapEditor.mode
+          , A = e => e.mapEditor.category
+          , S = e => t => t === e.mapEditor.category
+          , P = e => {
             let {selectedItem: t} = e.mapEditor;
             return {
                 selectedItem: t
             }
         }
-          , I = e=>e.mapEditor.updateVersion
-          , R = e=>{
+          , I = e => e.mapEditor.updateVersion
+          , R = e => {
             var t;
             return !!(null === (t = e.game.player) || void 0 === t ? void 0 : t.full.godmode)
         }
         ;
         function k(e, t) {
-            return !!e && !!t && 0 !== t.length && e.some(e=>t.includes(e.toUpperCase()))
+            return !!e && !!t && 0 !== t.length && e.some(e => t.includes(e.toUpperCase()))
         }
-        let x = e=>{
+        let T = e => {
             var t;
             let n = D(e);
             return k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.editFarmConfig, n)
         }
-          , N = e=>{
+          , x = e => {
             var t;
             let n = D(e);
             return k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.editMapMembers, n)
         }
-          , T = e=>{
+          , N = e => {
             var t;
             let n = D(e);
             return k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.build, n)
         }
-          , C = e=>{
+          , C = e => {
             var t;
             let n = D(e);
             return k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.remove, n)
         }
-          , L = e=>{
+          , L = e => {
             var t;
             let n = D(e);
             return !!n && 0 !== n.length && (!!n.includes("OWNER") || k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.surplusAccess, n))
         }
-          , M = e=>{
+          , M = e => {
             var t;
             let n = D(e);
             return !!n && 0 !== n.length && (!!n.includes("OWNER") || k(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.storageAccess, n))
         }
-          , j = e=>{
+          , j = e => {
             var t, n, r;
             if (!s()(e.mapEditor.roomSettings.ownerAddress)) {
-                let t = !!(null === (r = e.game.player) || void 0 === r ? void 0 : r.full.cryptoWallets.find(t=>{
+                let t = !!(null === (r = e.game.player) || void 0 === r ? void 0 : r.full.cryptoWallets.find(t => {
                     var n;
                     return t.address.toLowerCase() === (null === (n = e.mapEditor.roomSettings.ownerAddress) || void 0 === n ? void 0 : n.toLowerCase())
                 }
@@ -20275,7 +20551,7 @@
             }
             return !!((null === (t = e.game.room) || void 0 === t ? void 0 : t.mapId) && (null === (n = e.game.player) || void 0 === n ? void 0 : n.full.farms) && e.game.player.full.farms.includes(e.game.room.mapId))
         }
-          , D = e=>{
+          , D = e => {
             var t, n, r;
             if (null === (t = e.game.player) || void 0 === t ? void 0 : t.full.godmode)
                 return ["GOD", "OWNER", "MANAGER", "ANY"];
@@ -20283,30 +20559,30 @@
                 return ["OWNER", "MANAGER", "ANY"];
             if (e.mapEditor.roomSettings.members && e.mapEditor.roomSettings.members.length > 0) {
                 let t = null === (r = e.game.player) || void 0 === r ? void 0 : null === (n = r.core.mid) || void 0 === n ? void 0 : n.toLowerCase()
-                  , i = e.mapEditor.roomSettings.members.find(n=>{
+                  , i = e.mapEditor.roomSettings.members.find(n => {
                     var r, i;
                     return (null === (r = e.game.player) || void 0 === r ? void 0 : r.core.mid) && (null === (i = n.member) || void 0 === i ? void 0 : i.toLowerCase()) === t
                 }
                 );
                 if (null == i ? void 0 : i.roles)
-                    return [...i.roles.map(e=>e.toUpperCase()), "ANY"]
+                    return [...i.roles.map(e => e.toUpperCase()), "ANY"]
             }
             return ["ANY"]
         }
-          , U = e=>{
+          , U = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "object" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.object : void 0
         }
-          , $ = e=>{
+          , $ = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "tile" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.tile : void 0
         }
-          , V = e=>{
+          , V = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "entity" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.entity : void 0
         }
-          , B = e=>e.mapEditor.roomSettings
-          , F = e=>e.mapEditor.roomSettings.restrictions
+          , B = e => e.mapEditor.roomSettings
+          , F = e => e.mapEditor.roomSettings.restrictions
     },
     71936: function(e, t, n) {
         "use strict";
@@ -20351,34 +20627,34 @@
                 mode: "none"
             },
             reducers: {
-                openMarketplace: (e,t)=>{
+                openMarketplace: (e, t) => {
                     e.mode = "marketplace",
                     e.initialCategory = t.payload.initialCategory
                 }
                 ,
-                openListings: e=>{
+                openListings: e => {
                     e.mode = "listings"
                 }
                 ,
-                close: e=>{
+                close: e => {
                     e.mode = "none"
                 }
                 ,
-                reloadListings: e=>{
+                reloadListings: e => {
                     e.reload = Date.now()
                 }
                 ,
-                handlePurchaseSuccess: e=>{
+                handlePurchaseSuccess: e => {
                     delete e.purchase
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/".concat(i.fb.MARKETPLACE_SEND), (e,t)=>{
+            extraReducers: e => {
+                e.addCase("game/".concat(i.fb.MARKETPLACE_SEND), (e, t) => {
                     let {payload: n} = t;
                     "purchase" === n.subcommand && (e.purchase = "pending")
                 }
                 ),
-                e.addCase("game/".concat(i.fb.MARKETPLACE_RECEIVE), (e,t)=>{
+                e.addCase("game/".concat(i.fb.MARKETPLACE_RECEIVE), (e, t) => {
                     let {payload: n} = t;
                     switch (n.type) {
                     case "purchase-success":
@@ -20400,11 +20676,11 @@
                 )
             }
         })
-          , a = e=>"marketplace" === e.marketplace.mode
-          , s = e=>e.marketplace.initialCategory
-          , u = e=>"listings" === e.marketplace.mode
-          , l = e=>e.marketplace.purchase
-          , c = e=>e.marketplace.reload
+          , a = e => "marketplace" === e.marketplace.mode
+          , s = e => e.marketplace.initialCategory
+          , u = e => "listings" === e.marketplace.mode
+          , l = e => e.marketplace.purchase
+          , c = e => e.marketplace.reload
           , {openMarketplace: f, openListings: d, reloadListings: p, close: h, handlePurchaseSuccess: v} = o.actions;
         t.ZP = o.reducer
     },
@@ -20422,7 +20698,7 @@
             }
         });
         var r = n(80919)
-          , i = n(49922)
+          , i = n(73913)
           , o = n(28466)
           , a = n(15103)
           , s = n(15624)
@@ -20431,12 +20707,12 @@
         a.cn)([])
           , c = 1
           , f = (0,
-        a.cn)(null, (e,t,n)=>{
+        a.cn)(null, (e, t, n) => {
             let r = e(l).slice();
-            n.forEach(e=>{
+            n.forEach(e => {
                 var t, n, i;
                 if (e.deduplicationKey) {
-                    let t = r.findIndex(t=>{
+                    let t = r.findIndex(t => {
                         let {deduplicationKey: n} = t;
                         return e.deduplicationKey === n
                     }
@@ -20454,7 +20730,7 @@
                     let {key: t, textPropertyName: n} = e.stacking
                       , o = null === (i = e.text) || void 0 === i ? void 0 : i[n];
                     if (void 0 !== o) {
-                        let e = r.findIndex(e=>{
+                        let e = r.findIndex(e => {
                             let {stacking: n} = e;
                             return (null == n ? void 0 : n.key) === t
                         }
@@ -20483,24 +20759,24 @@
         }
         )
           , d = (0,
-        a.cn)(e=>e(l).find(t=>"trade" !== t.source || e(o.eH)))
+        a.cn)(e => e(l).find(t => "trade" !== t.source || e(o.eH)))
           , p = (0,
-        a.cn)(null, (e,t,n)=>{
+        a.cn)(null, (e, t, n) => {
             let r = e(l)
-              , i = n ? r.findIndex(e=>e.reactKey === n.reactKey) : -1;
+              , i = n ? r.findIndex(e => e.reactKey === n.reactKey) : -1;
             t(l, r.slice(Math.max(i + 1, 1)))
         }
         );
         (0,
-        u.H)("game/".concat(r.fb.ROOM_LEAVE), ()=>{
+        u.H)("game/".concat(r.fb.ROOM_LEAVE), () => {
             s.e.set(l, [])
         }
         ),
         (0,
-        u.H)("game/".concat(r.fb.TRADE_RECEIVE), e=>{
+        u.H)("game/".concat(r.fb.TRADE_RECEIVE), e => {
             if ("request" === e.subcommand) {
                 let t = i.l.getInstance().getSessionId()
-                  , n = Object.keys(e.trade.players).find(e=>e !== t)
+                  , n = Object.keys(e.trade.players).find(e => e !== t)
                   , r = n ? i.l.getInstance().getPlayerCoreBySessionId(n) : void 0;
                 s.e.set(f, [{
                     source: "trade",
@@ -20534,22 +20810,22 @@
                 isVisible: !1
             },
             reducers: {
-                openPlot: e=>{
+                openPlot: e => {
                     e.isVisible = !0
                 }
                 ,
-                closePlot: e=>{
+                closePlot: e => {
                     e.isVisible = !1
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LEAVE", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LEAVE", e => {
                     e.isVisible = !1
                 }
                 )
             }
         })
-          , i = e=>e.plot.isVisible
+          , i = e => e.plot.isVisible
           , {openPlot: o, closePlot: a} = r.actions;
         t.ZP = r.reducer
     },
@@ -20577,20 +20853,20 @@
                 mid: ""
             },
             reducers: {
-                openReportPlayerWindow: (e,t)=>{
+                openReportPlayerWindow: (e, t) => {
                     let {payload: n} = t;
                     e.open = !0,
                     e.mid = n.mid
                 }
                 ,
-                closeReportPlayerWindow: e=>{
+                closeReportPlayerWindow: e => {
                     e.open = !1,
                     e.mid = ""
                 }
             }
         })
-          , i = e=>e.report.open
-          , o = e=>e.report.mid
+          , i = e => e.report.open
+          , o = e => e.report.mid
           , {openReportPlayerWindow: a, closeReportPlayerWindow: s} = r.actions;
         t.ZP = r.reducer
     },
@@ -20605,7 +20881,7 @@
           , i = n(80919)
           , o = n(15624);
         let a = (0,
-        r.cn)({}, (e,t,n)=>{
+        r.cn)({}, (e, t, n) => {
             if ("clear" === n) {
                 t(a, {});
                 return
@@ -20616,7 +20892,7 @@
             })
         }
         );
-        i.rV.sellOrders.fill.subscribe(e=>{
+        i.rV.sellOrders.fill.subscribe(e => {
             var t;
             let {storeId: n, sellOrderIndex: r} = e
               , i = null !== (t = o.e.get(a)[n]) && void 0 !== t ? t : {
@@ -20637,7 +20913,7 @@
         }
         );
         let s = [];
-        i.rV.sellOrders.fetch.subscribe(e=>{
+        i.rV.sellOrders.fetch.subscribe(e => {
             let {storeId: t} = e;
             o.e.set(a, {
                 [t]: {
@@ -20690,16 +20966,16 @@
                 otherTradeValue: null
             },
             reducers: {
-                acceptTrade: e=>{
+                acceptTrade: e => {
                     o.e.set(a, !1)
                 }
                 ,
-                adjustTrade: (e,t)=>{}
+                adjustTrade: (e, t) => {}
                 ,
-                dropTradeItem: (e,t)=>{}
+                dropTradeItem: (e, t) => {}
             },
-            extraReducers: e=>{
-                e.addCase("game/".concat(i.fb.TRADE_RECEIVE), (e,t)=>{
+            extraReducers: e => {
+                e.addCase("game/".concat(i.fb.TRADE_RECEIVE), (e, t) => {
                     let {payload: n} = t;
                     switch (n.subcommand) {
                     case "request":
@@ -20724,12 +21000,12 @@
                 )
             }
         })
-          , u = e=>e.trade.trade
-          , l = e=>({
+          , u = e => e.trade.trade
+          , l = e => ({
             tradeValue: e.trade.tradeValue,
             otherTradeValue: e.trade.otherTradeValue
         })
-          , c = e=>e.trade.tradeId
+          , c = e => e.trade.tradeId
           , {acceptTrade: f, adjustTrade: d, dropTradeItem: p} = s.actions;
         t.ZP = s.reducer
     },
@@ -20822,11 +21098,11 @@
                 expandHUD: !1
             },
             reducers: {
-                gameDimension: (e,t)=>{
+                gameDimension: (e, t) => {
                     e.dimension = t.payload
                 }
                 ,
-                portalConfig: (e,t)=>{
+                portalConfig: (e, t) => {
                     e.portalDialog = {
                         isVisible: !0,
                         mid_portal: t.payload.source,
@@ -20835,19 +21111,19 @@
                     }
                 }
                 ,
-                showHUD: (e,t)=>{
+                showHUD: (e, t) => {
                     e.hideHUD = !t.payload
                 }
                 ,
-                expandHUD: (e,t)=>{
+                expandHUD: (e, t) => {
                     void 0 === t.payload ? e.expandHUD = !e.expandHUD : e.expandHUD = !!t.payload
                 }
                 ,
-                clearHighlight: (e,t)=>{
+                clearHighlight: (e, t) => {
                     e.highlightButton === t.payload && (e.highlightButton = void 0)
                 }
                 ,
-                portalClose: e=>{
+                portalClose: e => {
                     e.portalDialog = {
                         isVisible: !1,
                         mid_portal: "",
@@ -20855,7 +21131,7 @@
                     }
                 }
                 ,
-                entityInput: (e,t)=>{
+                entityInput: (e, t) => {
                     e.entityInput = {
                         isVisible: !0,
                         mid_portal: t.payload.source,
@@ -20864,26 +21140,26 @@
                     }
                 }
                 ,
-                entityInputClose: e=>{
+                entityInputClose: e => {
                     e.entityInput = {
                         isVisible: !1
                     }
                 }
                 ,
-                confirmDialog: (e,t)=>{
+                confirmDialog: (e, t) => {
                     e.confirmDialog = {
                         isVisible: !0,
                         ...t.payload
                     }
                 }
                 ,
-                confirmDialogClose: e=>{
+                confirmDialogClose: e => {
                     e.confirmDialog = {
                         isVisible: !1
                     }
                 }
                 ,
-                imagePopup: (e,t)=>{
+                imagePopup: (e, t) => {
                     e.imageDialog = {
                         isVisible: !0,
                         url: t.payload.url,
@@ -20893,15 +21169,15 @@
                     }
                 }
                 ,
-                imagePopupClose: e=>{
+                imagePopupClose: e => {
                     e.imageDialog = {
                         isVisible: !1,
                         isIframe: !1
                     }
                 }
             },
-            extraReducers: e=>{
-                e.addCase("game/ROOM_LOADED", e=>{
+            extraReducers: e => {
+                e.addCase("game/ROOM_LOADED", e => {
                     e.portalDialog = {
                         isVisible: !1,
                         mid_portal: "",
@@ -20913,7 +21189,7 @@
                     e.hideHUD = !1
                 }
                 ),
-                e.addCase("game/".concat(i.fb.CLIENT_CMD), (e,t)=>{
+                e.addCase("game/".concat(i.fb.CLIENT_CMD), (e, t) => {
                     let n = t.payload;
                     if ("buttonhighlight" === n.detail) {
                         var r;
@@ -20924,14 +21200,14 @@
             }
         })
           , {gameDimension: a, showHUD: s, expandHUD: u, portalConfig: l, portalClose: c, imagePopup: f, imagePopupClose: d, entityInput: p, entityInputClose: h, confirmDialog: v, confirmDialogClose: g, clearHighlight: m} = o.actions
-          , y = e=>e.ui.portalDialog
-          , b = e=>e.ui.imageDialog
-          , E = e=>e.ui.entityInput
-          , _ = e=>e.ui.confirmDialog
-          , w = e=>e.ui.hideHUD
-          , O = e=>e.ui.expandHUD
-          , A = e=>e.ui.highlightButton
-          , S = e=>e.ui.dimension;
+          , y = e => e.ui.portalDialog
+          , b = e => e.ui.imageDialog
+          , E = e => e.ui.entityInput
+          , _ = e => e.ui.confirmDialog
+          , w = e => e.ui.hideHUD
+          , O = e => e.ui.expandHUD
+          , A = e => e.ui.highlightButton
+          , S = e => e.ui.dimension;
         t.ZP = o.reducer
     },
     15624: function(e, t, n) {
@@ -20970,10 +21246,10 @@
             [f.v4.type]: {
                 event: u.qM.BUILD_OBJECT
             }
-        }).forEach(e=>{
+        }).forEach(e => {
             let[t,n] = e;
             (0,
-            s.H)(t, e=>{
+            s.H)(t, e => {
                 u.ZP.emitEventNow(n.event, n.adapter ? n.adapter(e) : e)
             }
             )
@@ -20982,11 +21258,11 @@
         var d = n(74800)
           , p = n(51309)
           , h = n(97790)
-          , v = n(49922)
+          , v = n(73913)
           , g = n(35466);
         (0,
-        s.H)(d.uy.type, (e,t)=>{
-            (async()=>{
+        s.H)(d.uy.type, (e, t) => {
+            (async () => {
                 await u.ZP.init(),
                 await h.Z.initGame(),
                 await h.Z.initRoom({
@@ -20998,8 +21274,8 @@
         }
         ),
         (0,
-        s.H)(d.Hi.type, (e,t)=>{
-            (async()=>{
+        s.H)(d.Hi.type, (e, t) => {
+            (async () => {
                 try {
                     let n = await h.Z.loadLibraries(e.mapId);
                     t.dispatch({
@@ -21019,7 +21295,7 @@
         }
         ),
         (0,
-        s.H)(p.iM.type, (e,t)=>{
+        s.H)(p.iM.type, (e, t) => {
             e.mapId && t.dispatch((0,
             d.Hi)({
                 mapId: e.mapId,
@@ -21028,7 +21304,7 @@
         }
         ),
         (0,
-        s.H)(p.z1.type, (e,t)=>{
+        s.H)(p.z1.type, (e, t) => {
             e.mapId && t.dispatch((0,
             d.Hi)({
                 mapId: e.mapId,
@@ -21037,8 +21313,8 @@
         }
         ),
         (0,
-        s.H)(d.ni.type, ()=>{
-            (async()=>{
+        s.H)(d.ni.type, () => {
+            (async () => {
                 (0,
                 g.r$)(),
                 await h.Z.killScene();
@@ -21052,8 +21328,8 @@
           , y = n(60922)
           , b = n(53059)
           , E = n(84252);
-        let _ = e=>"left" === e ? v.l.getInstance().peekLeftMap() : "right" === e ? v.l.getInstance().peekRightMap() : e
-          , w = (e,t,n)=>{
+        let _ = e => "left" === e ? v.l.getInstance().peekLeftMap() : "right" === e ? v.l.getInstance().peekRightMap() : e
+          , w = (e, t, n) => {
             let r = null == e ? void 0 : e.match(/\d+$/)
               , i = null == t ? void 0 : t.match(/\d+$/);
             if (!r && !i)
@@ -21065,20 +21341,20 @@
             }
             return r && i && r[0] === i[0] ? "quick" : o
         }
-          , O = (e,t)=>{
+          , O = (e, t) => {
             let n = null == e ? void 0 : e.match(/\d+$/);
             return (null == t ? void 0 : t.indexOf("*")) !== -1 ? t = t.replace("*", n ? n[0] : "") : ["left", "right"].includes(t) && (t = _(t)),
             (0,
             g.En)(t)
         }
-          , A = async e=>{
+          , A = async e => {
             (0,
             y.q4)(e) && (await (0,
             E.W)(!0),
             b.Z.clearGameLibrary(),
             await b.Z.loadLibraries())
         }
-          , S = async(e,t)=>{
+          , S = async (e, t) => {
             var n, r, i;
             let o = (0,
             y.GU)()
@@ -21092,7 +21368,7 @@
             }
             return e.id
         }
-          , P = (e,t)=>{
+          , P = (e, t) => {
             clearTimeout(r),
             e.dispatch((0,
             d.tD)({
@@ -21102,7 +21378,7 @@
         }
         ;
         (0,
-        s.H)("game/ROOM_WARP", (e,t)=>{
+        s.H)("game/ROOM_WARP", (e, t) => {
             let n = t.getState()
               , o = (0,
             m.Xt)(n)
@@ -21124,7 +21400,7 @@
                     i = e.source;
                     let n = b.Z.loadMap(l);
                     n.catch(console.warn),
-                    r = setTimeout(async()=>{
+                    r = setTimeout(async () => {
                         let a;
                         r = void 0,
                         i = void 0;
@@ -21180,18 +21456,18 @@
         );
         var I = n(60943)
           , R = n(96808)
-          , k = n(11335)
-          , x = n(16497);
-        let N = 0;
+          , k = n(96721)
+          , T = n(16497);
+        let x = 0;
 		window.lemonGOC = u.rV.gameObjectClicked;
 		window.lemonN = n;
-        u.rV.gameObjectClicked.subscribe(e=>{
+        u.rV.gameObjectClicked.subscribe(e => {
 		if(window.logGOC) console.log(e)
             var t, n, r, i, o, a;
             let s = Date.now();
-            if (s - N < 150)
+            if (s - x < 150)
                 return;
-            N = s;
+            x = s;
             let l = ea.getState()
               , c = (0,
             f.pT)(l)
@@ -21288,7 +21564,7 @@
                 return
             }
             if ("generic" === e.entityType && e.clickable) {
-                u.ZP.emitEventNow(k.m.clickEntity, {
+                u.ZP.emitEventNow(k.mY.clickEntity, {
                     mid: e.targetId,
                     entity: e.entityId,
                     impact: "click",
@@ -21323,7 +21599,7 @@
                 }),
                 t.sound && u.rV.playSound.emit(t.sound),
                 t.sharelink && (0,
-                x.Bf)(t.sharelink, "Play Pixels.xyz")
+                T.Bf)(t.sharelink, "Play Pixels.xyz")
             } else
                 "self" === e.useType || ("pet" === e.useType ? ea.dispatch((0,
                 d.zR)({})) : "otherPlayer" === e.useType ? ea.dispatch((0,
@@ -21333,11 +21609,11 @@
                 })) : console.log("nothing to do", e))
         }
         );
-        var T = n(27361)
-          , C = n.n(T);
+        var N = n(27361)
+          , C = n.n(N);
         let L = 0;
         (0,
-        s.H)("game/PLAYER_CLICKED", (e,t)=>{
+        s.H)("game/PLAYER_CLICKED", (e, t) => {
             let n = Date.now();
             if (n - L < 150)
                 return;
@@ -21397,7 +21673,7 @@
         var M = n(36968)
           , j = n.n(M);
         (0,
-        s.H)(f.r5.type, (e,t)=>{
+        s.H)(f.r5.type, (e, t) => {
             switch (e.path) {
             case "restrictions.bannedAddresses":
                 let n = {
@@ -21434,12 +21710,12 @@
         }
         ),
         (0,
-        s.H)("mapEditor/addMember", e=>{
+        s.H)("mapEditor/addMember", e => {
             u.ZP.emitEventNow(u.qM.ROOM_MEMBERS, e)
         }
         ),
         (0,
-        s.H)("game/PLAYER_COLLIDED_WITH_OBJECT", e=>{
+        s.H)("game/PLAYER_COLLIDED_WITH_OBJECT", e => {
             if (null == e ? void 0 : e.onCollide) {
                 let t = e.onCollide;
                 t.teleport && u.ZP.emitEventNow(u.fb.ROOM_WARP, {
@@ -21460,7 +21736,7 @@
         }
         ),
         (0,
-        s.H)("game/PLAYER_UNCOLLIDED_WITH_OBJECT", e=>{
+        s.H)("game/PLAYER_UNCOLLIDED_WITH_OBJECT", e => {
             if (null == e ? void 0 : e.onCollide) {
                 let t = e.onCollide;
                 t.teleport && u.ZP.emitEventNow(u.fb.ROOM_WARP, {
@@ -21480,7 +21756,7 @@
             if (navigator.serviceWorker && "PushManager"in window)
                 return navigator.serviceWorker.register("/workers/push-worker.js?v=1").then(function(e) {
                     return o = e
-                }).catch(()=>{
+                }).catch( () => {
                     o = void 0
                 }
                 )
@@ -21534,11 +21810,11 @@
         async function G() {
             return !await q() && !!await F()
         }
-        var z = n(27709);
-        let H = "craft:"
-          , W = !1;
+        var z = n(30908);
+        let Y = "craft:"
+          , H = !1;
         (0,
-        s.H)("game/PRESENT_UI", (e,t)=>{
+        s.H)("game/PRESENT_UI", (e, t) => {
             var n, r, i, o, a, s, p, h, g, m, y;
             let {ui: E, source: _} = e
               , w = e.params;
@@ -21714,15 +21990,15 @@
                 V.I_)());
                 break;
             case "webpush":
-                if (W)
+                if (H)
                     break;
-                G().then(e=>{
+                G().then(e => {
                     e && t.dispatch((0,
                     l.VG)({
                         prompt: null == w ? void 0 : w[0],
                         yesno: !0,
-                        callback: e=>{
-                            "yes" === e ? Z().then(e=>{
+                        callback: e => {
+                            "yes" === e ? Z().then(e => {
                                 if (e) {
                                     let t = JSON.parse(JSON.stringify(e));
                                     u.ZP.emitEventNow(u.Yi.PUSH_SUBSCRIBE, {
@@ -21736,18 +22012,18 @@
                                     })
                                 }
                             }
-                            ).catch(e=>{
+                            ).catch(e => {
                                 console.log(e)
                             }
-                            ) : "no" === e && (W = !0)
+                            ) : "no" === e && (H = !0)
                         }
                     }))
                 }
                 );
                 break;
             default:
-                if (E.startsWith(H) || z.nA.includes(E)) {
-                    let e = E.replace(H, "")
+                if (E.startsWith(Y) || z.Skills.includes(E)) {
+                    let e = E.replace(Y, "")
                       , n = null !== (p = null == w ? void 0 : w[1]) && void 0 !== p ? p : "";
                     (null == n ? void 0 : n.startsWith("update:")) || t.dispatch((0,
                     I.aq)()),
@@ -21770,16 +22046,16 @@
         }
         ),
         (0,
-        s.H)(I.oi.type, e=>{
+        s.H)(I.oi.type, e => {
             let {sourceIndex: t, targetIndex: n, sourceContainer: r, targetContainer: i} = e;
             (t !== n || r !== i) && u.rV.inventory.swapItems.emit(e)
         }
         );
-        var Y = n(75268)
+        var W = n(75268)
           , J = n(11941)
-          , K = n(17784);
+          , K = n(25904);
         (0,
-        s.H)("game/".concat(u.fb.PLAYER_EXP_CHANGE), (e,t)=>{
+        s.H)("game/".concat(u.fb.PLAYER_EXP_CHANGE), (e, t) => {
             var n, r, i;
             let o = null === (n = t.getState().game.player) || void 0 === n ? void 0 : n.full;
             if (!o)
@@ -21788,49 +22064,49 @@
               , s = e.levels
               , u = []
               , l = o.quests;
-            !z.nA.every(e=>{
+            !z.Skills.every(e => {
                 var t, n;
                 return ((null === (t = a[e]) || void 0 === t ? void 0 : t.level) || 0) === ((null === (n = s[e]) || void 0 === n ? void 0 : n.level) || 0)
             }
-            ) && (null === (r = Object.values(b.Z.getGameItems() || {}).filter(e=>{
+            ) && (null === (r = Object.values(b.Z.getGameItems() || {}).filter(e => {
                 var t, n;
-                return null == e ? void 0 : null === (n = e.requirements) || void 0 === n ? void 0 : null === (t = n.levels) || void 0 === t ? void 0 : t.some(e=>{
+                return null == e ? void 0 : null === (n = e.requirements) || void 0 === n ? void 0 : null === (t = n.levels) || void 0 === t ? void 0 : t.some(e => {
                     let {levelType: t, level: n} = e;
-                    return !!z.nA.includes(t) && n >= 0
+                    return !!z.Skills.includes(t) && n >= 0
                 }
                 )
             }
-            )) || void 0 === r || r.filter(e=>{
+            )) || void 0 === r || r.filter(e => {
                 var t, n;
-                return (null === (t = e.requirements.levels) || void 0 === t ? void 0 : t.some(e=>{
+                return (null === (t = e.requirements.levels) || void 0 === t ? void 0 : t.some(e => {
                     var t;
                     return e.level > ((null === (t = a[e.levelType]) || void 0 === t ? void 0 : t.level) || 0)
                 }
-                )) && e.requirements.levels.every(e=>{
+                )) && e.requirements.levels.every(e => {
                     var t;
                     return ((null === (t = s[e.levelType]) || void 0 === t ? void 0 : t.level) || 0) >= e.level
                 }
-                ) && (!(null === (n = e.requirements) || void 0 === n ? void 0 : n.quests) || e.requirements.quests.every(e=>{
+                ) && (!(null === (n = e.requirements) || void 0 === n ? void 0 : n.quests) || e.requirements.quests.every(e => {
                     var t;
                     return null === (t = l[e]) || void 0 === t ? void 0 : t.isComplete
                 }
                 ))
             }
-            ).forEach(e=>u.push({
+            ).forEach(e => u.push({
                 source: "item",
                 icon: e.image,
                 text: {
                     id: "notifications.itemUnlocked",
                     name: (0,
-                    x.sA)(e.id)
+                    T.sA)(e.id)
                 },
                 deduplicationKey: "notifications.itemUnlocked-".concat(e.id)
             })),
-            null === (i = Object.values(b.Z.getGameAchievements() || {}).filter(e=>{
+            null === (i = Object.values(b.Z.getGameAchievements() || {}).filter(e => {
                 var t;
                 return (null === (t = e.craftable) || void 0 === t ? void 0 : t.autoGrant) && e.craftable.requiredLevel > 0
             }
-            )) || void 0 === i || i.filter(e=>{
+            )) || void 0 === i || i.filter(e => {
                 var t, n;
                 if (!e.craftable || (0,
                 K.aG)(o.achievements, e.id))
@@ -21842,15 +22118,15 @@
                 let u = (null === (t = a[i]) || void 0 === t ? void 0 : t.level) || 0;
                 return ((null === (n = s[i]) || void 0 === n ? void 0 : n.level) || 0) >= r && u < r
             }
-            ).forEach(e=>{
+            ).forEach(e => {
                 let t = e.craftable.requiredSkill;
                 u.push({
                     source: "achievement",
-                    icon: "".concat(Y.fd).concat(t, ".png"),
+                    icon: "".concat(W.fd).concat(t, ".png"),
                     text: {
                         id: "notifications.globalAchievementUnlocked",
                         name: (0,
-                        x.sA)(e.id)
+                        T.sA)(e.id)
                     },
                     deduplicationKey: "notifications.globalAchievementUnlocked-".concat(e.id)
                 })
@@ -21861,7 +22137,7 @@
         ),
         n(69980),
         (0,
-        s.H)(I.$Z.type, (e,t)=>{
+        s.H)(I.$Z.type, (e, t) => {
             let {mid: n, item: r} = e;
             !n && r && function(e, t) {
                 if (e) {
@@ -21912,7 +22188,7 @@
                             if (!(null == e ? void 0 : null === (t = e.useTargets) || void 0 === t ? void 0 : t.types.includes("mapLabels")) || !e.useTargets.mapLabels)
                                 return !0;
                             let n = v.l.getInstance().mapLabels;
-                            return e.useTargets.mapLabels.every(e=>n.includes(e))
+                            return e.useTargets.mapLabels.every(e => n.includes(e))
                         }(e),
                         removing: (0,
                         R.hD)(e)
@@ -21924,17 +22200,17 @@
         );
         var X = n(44945);
         (0,
-        s.H)("game/CLIENT_CMD", e=>{
+        s.H)("game/CLIENT_CMD", e => {
             let {detail: t, source: n, params: r} = e;
             switch (t) {
             case "petHatch":
-                n && X.Z.hatchPet(n).then(e=>{
+                n && X.Z.hatchPet(n).then(e => {
                     var t, i;
-                    "success" === e ? u.ZP.sendEventDelayed(k.m.clickEntity, {
+                    "success" === e ? u.ZP.sendEventDelayed(k.mY.clickEntity, {
                         mid: n,
                         impact: "hatched",
                         entity: null !== (t = null == r ? void 0 : r[0]) && void 0 !== t ? t : "ent_growthlab"
-                    }) : u.ZP.sendEventDelayed(k.m.clickEntity, {
+                    }) : u.ZP.sendEventDelayed(k.mY.clickEntity, {
                         mid: n,
                         impact: "failed",
                         entity: null !== (i = null == r ? void 0 : r[0]) && void 0 !== i ? i : "ent_growthlab"
@@ -21947,14 +22223,14 @@
                     var i, o, a, s, l, c, f, d, p;
                     let e = ea.getState()
                       , t = null !== (p = null == r ? void 0 : r[0]) && void 0 !== p ? p : "cbRoninCall"
-                      , n = null === (a = e.game.player) || void 0 === a ? void 0 : null === (o = a.full) || void 0 === o ? void 0 : null === (i = o.cryptoWallets) || void 0 === i ? void 0 : i.map(e=>e.address);
+                      , n = null === (a = e.game.player) || void 0 === a ? void 0 : null === (o = a.full) || void 0 === o ? void 0 : null === (i = o.cryptoWallets) || void 0 === i ? void 0 : i.map(e => e.address);
                     null === (d = window.ronin) || void 0 === d || null === (f = d.provider) || void 0 === f || null === (c = f[t]) || void 0 === c || c.call(f, {
                         userId: null === (l = e.game.player) || void 0 === l ? void 0 : null === (s = l.core) || void 0 === s ? void 0 : s.mid,
                         addresses: n
-                    }).then(e=>{
+                    }).then(e => {
                         console.log("Ronin injected function result: ", e)
                     }
-                    ).catch(e=>{
+                    ).catch(e => {
                         console.log("Ronin injected function ERROR: ", e)
                     }
                     )
@@ -21966,7 +22242,7 @@
         );
         var Q = n(32701);
         (0,
-        s.H)("game/PLAYER_COIN_INVENTORY_CHANGE", e=>{
+        s.H)("game/PLAYER_COIN_INVENTORY_CHANGE", e => {
             e.added > 0 && ((null == e ? void 0 : e.currencyId) === "cur_pixel" && (0,
             Q.T)("pixel"),
             (null == e ? void 0 : e.currencyId) === "cur_coins" && (0,
@@ -21996,9 +22272,9 @@
                 mapEditor: f.ZP,
                 crafting: D.ZP
             },
-            middleware: e=>e().concat(e=>t=>n=>{
+            middleware: e => e().concat(e => t => n => {
                 if (n.type === p.Kx.type)
-                    (async()=>{
+                    (async () => {
                         try {
                             var t, r, i, o;
                             let a = null !== (i = (0,
@@ -22048,7 +22324,7 @@
                     ;
                 else if (p.MD.match(n)) {
                     let {username: t, avatar: r} = n.payload;
-                    (async()=>{
+                    (async () => {
                         if (ee.Z.sessionToken) {
                             var n, i, o, a;
                             try {
@@ -22078,8 +22354,8 @@
                     }
                     )()
                 } else
-                    n.type === d.ni.type && (async()=>{
-                        ee.Z.sessionToken && ee.Z.signOut().catch(e=>{
+                    n.type === d.ni.type && (async () => {
+                        ee.Z.sessionToken && ee.Z.signOut().catch(e => {
                             console.log("error signing out", e)
                         }
                         ),
@@ -22089,7 +22365,7 @@
                     )();
                 return t(n)
             }
-            ).concat(e=>t=>n=>{
+            ).concat(e => t => n => {
                 let r = s.q[n.type];
                 return r && r(n.payload, e),
                 t(n)
@@ -22293,7 +22569,7 @@
                                     (!t || t < 0) && (t = 0),
                                     (!n || n < 0 || n > r) && (n = r);
                                     for (var i = "", o = t; o < n; ++o)
-                                        i += x[e[o]];
+                                        i += T[e[o]];
                                     return i
                                 }(this, t, n);
                             case "utf8":
@@ -23217,7 +23493,7 @@
                     function k(e, t) {
                         return e instanceof t || null != e && null != e.constructor && null != e.constructor.name && e.constructor.name === t.name
                     }
-                    var x = function() {
+                    var T = function() {
                         for (var e = "0123456789abcdef", t = Array(256), n = 0; n < 16; ++n)
                             for (var r = 16 * n, i = 0; i < 16; ++i)
                                 t[r + i] = e[n] + e[i];
@@ -24218,7 +24494,7 @@
             }
         });
         var r, i, o, a, s = n(67294), u = Object.defineProperty, l = {};
-        ((e,t)=>{
+        ( (e, t) => {
             for (var n in t)
                 u(e, n, {
                     get: t[n],
@@ -24226,28 +24502,28 @@
                 })
         }
         )(l, {
-            assign: ()=>B,
-            colors: ()=>U,
-            createStringInterpolator: ()=>i,
-            skipAnimation: ()=>$,
-            to: ()=>o,
-            willAdvance: ()=>V
+            assign: () => B,
+            colors: () => U,
+            createStringInterpolator: () => i,
+            skipAnimation: () => $,
+            to: () => o,
+            willAdvance: () => V
         });
         var c = P()
-          , f = e=>w(e, c)
+          , f = e => w(e, c)
           , d = P();
-        f.write = e=>w(e, d);
+        f.write = e => w(e, d);
         var p = P();
-        f.onStart = e=>w(e, p);
+        f.onStart = e => w(e, p);
         var h = P();
-        f.onFrame = e=>w(e, h);
+        f.onFrame = e => w(e, h);
         var v = P();
-        f.onFinish = e=>w(e, v);
+        f.onFinish = e => w(e, v);
         var g = [];
-        f.setTimeout = (e,t)=>{
+        f.setTimeout = (e, t) => {
             let n = f.now() + t
-              , r = ()=>{
-                let e = g.findIndex(e=>e.cancel == r);
+              , r = () => {
+                let e = g.findIndex(e => e.cancel == r);
                 ~e && g.splice(e, 1),
                 E -= ~e ? 1 : 0
             }
@@ -24262,8 +24538,8 @@
             i
         }
         ;
-        var m = e=>~(~g.findIndex(t=>t.time > e) || ~g.length);
-        f.cancel = e=>{
+        var m = e => ~(~g.findIndex(t => t.time > e) || ~g.length);
+        f.cancel = e => {
             p.delete(e),
             h.delete(e),
             v.delete(e),
@@ -24271,13 +24547,13 @@
             d.delete(e)
         }
         ,
-        f.sync = e=>{
+        f.sync = e => {
             _ = !0,
             f.batchedUpdates(e),
             _ = !1
         }
         ,
-        f.throttle = e=>{
+        f.throttle = e => {
             let t;
             function n() {
                 try {
@@ -24291,7 +24567,7 @@
                 f.onStart(n)
             }
             return r.handler = e,
-            r.cancel = ()=>{
+            r.cancel = () => {
                 p.delete(n),
                 t = null
             }
@@ -24299,14 +24575,14 @@
             r
         }
         ;
-        var y = "undefined" != typeof window ? window.requestAnimationFrame : ()=>{}
+        var y = "undefined" != typeof window ? window.requestAnimationFrame : () => {}
         ;
-        f.use = e=>y = e,
-        f.now = "undefined" != typeof performance ? ()=>performance.now() : Date.now,
-        f.batchedUpdates = e=>e(),
+        f.use = e => y = e,
+        f.now = "undefined" != typeof performance ? () => performance.now() : Date.now,
+        f.batchedUpdates = e => e(),
         f.catch = console.error,
         f.frameLoop = "always",
-        f.advance = ()=>{
+        f.advance = () => {
             "demand" !== f.frameLoop ? console.warn("Cannot call the manual advancement of rafz whilst frameLoop is not set as demand") : S()
         }
         ;
@@ -24329,7 +24605,7 @@
         function S() {
             let e = b
               , t = m(b = f.now());
-            if (t && (I(g.splice(0, t), e=>e.handler()),
+            if (t && (I(g.splice(0, t), e => e.handler()),
             E -= t),
             !E) {
                 b = -1;
@@ -24349,19 +24625,19 @@
                     E += t != e || e.has(n) ? 0 : 1,
                     e.add(n)
                 },
-                delete: n=>(E -= t == e && e.has(n) ? 1 : 0,
+                delete: n => (E -= t == e && e.has(n) ? 1 : 0,
                 e.delete(n)),
                 flush(n) {
                     t.size && (e = new Set,
                     E -= t.size,
-                    I(t, t=>t(n) && e.add(t)),
+                    I(t, t => t(n) && e.add(t)),
                     E += e.size,
                     t = e)
                 }
             }
         }
         function I(e, t) {
-            e.forEach(e=>{
+            e.forEach(e => {
                 try {
                     t(e)
                 } catch (e) {
@@ -24371,22 +24647,22 @@
             )
         }
         function R() {}
-        var k = (e,t,n)=>Object.defineProperty(e, t, {
+        var k = (e, t, n) => Object.defineProperty(e, t, {
             value: n,
             writable: !0,
             configurable: !0
         })
-          , x = {
+          , T = {
             arr: Array.isArray,
-            obj: e=>!!e && "Object" === e.constructor.name,
-            fun: e=>"function" == typeof e,
-            str: e=>"string" == typeof e,
-            num: e=>"number" == typeof e,
-            und: e=>void 0 === e
+            obj: e => !!e && "Object" === e.constructor.name,
+            fun: e => "function" == typeof e,
+            str: e => "string" == typeof e,
+            num: e => "number" == typeof e,
+            und: e => void 0 === e
         };
-        function N(e, t) {
-            if (x.arr(e)) {
-                if (!x.arr(t) || e.length !== t.length)
+        function x(e, t) {
+            if (T.arr(e)) {
+                if (!T.arr(t) || e.length !== t.length)
                     return !1;
                 for (let n = 0; n < e.length; n++)
                     if (e[n] !== t[n])
@@ -24395,9 +24671,9 @@
             }
             return e === t
         }
-        var T = (e,t)=>e.forEach(t);
+        var N = (e, t) => e.forEach(t);
         function C(e, t, n) {
-            if (x.arr(e)) {
+            if (T.arr(e)) {
                 for (let r = 0; r < e.length; r++)
                     t.call(n, e[r], `${r}`);
                 return
@@ -24405,20 +24681,20 @@
             for (let r in e)
                 e.hasOwnProperty(r) && t.call(n, e[r], r)
         }
-        var L = e=>x.und(e) ? [] : x.arr(e) ? e : [e];
+        var L = e => T.und(e) ? [] : T.arr(e) ? e : [e];
         function M(e, t) {
             if (e.size) {
                 let n = Array.from(e);
                 e.clear(),
-                T(n, t)
+                N(n, t)
             }
         }
-        var j = (e,...t)=>M(e, e=>e(...t))
-          , D = ()=>"undefined" == typeof window || !window.navigator || /ServerSideRendering|^Deno\//.test(window.navigator.userAgent)
+        var j = (e, ...t) => M(e, e => e(...t))
+          , D = () => "undefined" == typeof window || !window.navigator || /ServerSideRendering|^Deno\//.test(window.navigator.userAgent)
           , U = null
           , $ = !1
           , V = R
-          , B = e=>{
+          , B = e => {
             e.to && (o = e.to),
             e.now && (f.now = e.now),
             void 0 !== e.colors && (U = e.colors),
@@ -24439,17 +24715,17 @@
             },
             start(e) {
                 G > e.priority ? (F.add(e),
-                f.onStart(H)) : (W(e),
+                f.onStart(Y)) : (H(e),
                 f(J))
             },
             advance: J,
             sort(e) {
                 if (G)
-                    f.onFrame(()=>z.sort(e));
+                    f.onFrame( () => z.sort(e));
                 else {
                     let t = q.indexOf(e);
                     ~t && (q.splice(t, 1),
-                    Y(e))
+                    W(e))
                 }
             },
             clear() {
@@ -24457,19 +24733,19 @@
                 F.clear()
             }
         };
-        function H() {
-            F.forEach(W),
+        function Y() {
+            F.forEach(H),
             F.clear(),
             f(J)
         }
-        function W(e) {
-            q.includes(e) || Y(e)
+        function H(e) {
+            q.includes(e) || W(e)
         }
-        function Y(e) {
+        function W(e) {
             q.splice(function(e, t) {
                 let n = e.findIndex(t);
                 return n < 0 ? e.length : n
-            }(q, t=>t.priority > e.priority), 0, e)
+            }(q, t => t.priority > e.priority), 0, e)
         }
         function J(e) {
             let t = Z;
@@ -24533,23 +24809,23 @@
               , a = (255 & n) / 255;
             return `rgba(${r}, ${i}, ${o}, ${a})`
         }
-        var ev = (e,t,n)=>{
-            if (x.fun(e))
+        var ev = (e, t, n) => {
+            if (T.fun(e))
                 return e;
-            if (x.arr(e))
+            if (T.arr(e))
                 return ev({
                     range: e,
                     output: t,
                     extrapolate: n
                 });
-            if (x.str(e.output[0]))
+            if (T.str(e.output[0]))
                 return i(e);
             let r = e.output
               , o = e.range || [0, 1]
               , a = e.extrapolateLeft || e.extrapolate || "extend"
               , s = e.extrapolateRight || e.extrapolate || "extend"
-              , u = e.easing || (e=>e);
-            return t=>{
+              , u = e.easing || (e => e);
+            return t => {
                 let n = function(e, t) {
                     for (var n = 1; n < t.length - 1 && !(t[n] >= e); ++n)
                         ;
@@ -24576,12 +24852,12 @@
         }
           , eg = Symbol.for("FluidValue.get")
           , em = Symbol.for("FluidValue.observers")
-          , ey = e=>!!(e && e[eg])
-          , eb = e=>e && e[eg] ? e[eg]() : e
-          , eE = e=>e[em] || null;
+          , ey = e => !!(e && e[eg])
+          , eb = e => e && e[eg] ? e[eg]() : e
+          , eE = e => e[em] || null;
         function e_(e, t) {
             let n = e[em];
-            n && n.forEach(e=>{
+            n && n.forEach(e => {
                 e.eventObserved ? e.eventObserved(t) : e(t)
             }
             )
@@ -24593,7 +24869,7 @@
                 eO(this, e)
             }
         }
-          , eO = (e,t)=>eP(e, eg, t);
+          , eO = (e, t) => eP(e, eg, t);
         function eA(e, t) {
             if (e[eg]) {
                 let n = e[em];
@@ -24611,7 +24887,7 @@
                 e.observerRemoved && e.observerRemoved(r, t)
             }
         }
-        var eP = (e,t,n)=>Object.defineProperty(e, t, {
+        var eP = (e, t, n) => Object.defineProperty(e, t, {
             value: n,
             writable: !0,
             configurable: !0
@@ -24619,9 +24895,9 @@
           , eI = /[+\-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?/g
           , eR = /(#(?:[0-9a-f]{2}){2,4}|(#[0-9a-f]{3})|(rgb|hsl)a?\((-?\d+%?[,\s]+){2,3}\s*[\d\.]+%?\))/gi
           , ek = RegExp(`(${eI.source})(%|[a-z]+)`, "i")
-          , ex = /rgba\(([0-9\.-]+), ([0-9\.-]+), ([0-9\.-]+), ([0-9\.-]+)\)/gi
-          , eN = /var\((--[a-zA-Z0-9-_]+),? ?([a-zA-Z0-9 ()%#.,-]+)?\)/
-          , eT = e=>{
+          , eT = /rgba\(([0-9\.-]+), ([0-9\.-]+), ([0-9\.-]+), ([0-9\.-]+)\)/gi
+          , ex = /var\((--[a-zA-Z0-9-_]+),? ?([a-zA-Z0-9 ()%#.,-]+)?\)/
+          , eN = e => {
             let[t,n] = eC(e);
             if (!t || D())
                 return e;
@@ -24632,45 +24908,45 @@
                 let e = window.getComputedStyle(document.documentElement).getPropertyValue(n);
                 if (e)
                     return e
-            } else if (n && eN.test(n))
-                return eT(n);
+            } else if (n && ex.test(n))
+                return eN(n);
             else if (n)
                 return n;
             return e
         }
-          , eC = e=>{
-            let t = eN.exec(e);
+          , eC = e => {
+            let t = ex.exec(e);
             if (!t)
                 return [, ];
             let[,n,r] = t;
             return [n, r]
         }
-          , eL = (e,t,n,r,i)=>`rgba(${Math.round(t)}, ${Math.round(n)}, ${Math.round(r)}, ${i})`
-          , eM = e=>{
+          , eL = (e, t, n, r, i) => `rgba(${Math.round(t)}, ${Math.round(n)}, ${Math.round(r)}, ${i})`
+          , eM = e => {
             a || (a = U ? RegExp(`(${Object.keys(U).join("|")})(?!\\w)`, "g") : /^\b$/);
-            let t = e.output.map(e=>eb(e).replace(eN, eT).replace(eR, eh).replace(a, eh))
-              , n = t.map(e=>e.match(eI).map(Number))
-              , r = n[0].map((e,t)=>n.map(e=>{
+            let t = e.output.map(e => eb(e).replace(ex, eN).replace(eR, eh).replace(a, eh))
+              , n = t.map(e => e.match(eI).map(Number))
+              , r = n[0].map( (e, t) => n.map(e => {
                 if (!(t in e))
                     throw Error('The arity of each "output" value must be equal');
                 return e[t]
             }
-            )).map(t=>ev({
+            )).map(t => ev({
                 ...e,
                 output: t
             }));
-            return e=>{
-                let n = !ek.test(t[0]) && t.find(e=>ek.test(e))?.replace(eI, "")
+            return e => {
+                let n = !ek.test(t[0]) && t.find(e => ek.test(e))?.replace(eI, "")
                   , i = 0;
-                return t[0].replace(eI, ()=>`${r[i++](e)}${n || ""}`).replace(ex, eL)
+                return t[0].replace(eI, () => `${r[i++](e)}${n || ""}`).replace(eT, eL)
             }
         }
           , ej = "react-spring: "
-          , eD = e=>{
+          , eD = e => {
             let t = !1;
             if ("function" != typeof e)
                 throw TypeError(`${ej}once requires a function parameter`);
-            return (...n)=>{
+            return (...n) => {
                 t || (e(...n),
                 t = !0)
             }
@@ -24678,14 +24954,14 @@
           , eU = eD(console.warn)
           , e$ = eD(console.warn);
         function eV(e) {
-            return x.str(e) && ("#" == e[0] || /\d/.test(e) || !D() && eN.test(e) || e in (U || {}))
+            return T.str(e) && ("#" == e[0] || /\d/.test(e) || !D() && ex.test(e) || e in (U || {}))
         }
         var eB = D() ? s.useEffect : s.useLayoutEffect
-          , eF = ()=>{
+          , eF = () => {
             let e = (0,
             s.useRef)(!1);
-            return eB(()=>(e.current = !0,
-            ()=>{
+            return eB( () => (e.current = !0,
+            () => {
                 e.current = !1
             }
             ), []),
@@ -24696,28 +24972,28 @@
             let e = (0,
             s.useState)()[1]
               , t = eF();
-            return ()=>{
+            return () => {
                 t.current && e(Math.random())
             }
         }
-        var eZ = e=>(0,
+        var eZ = e => (0,
         s.useEffect)(e, eG)
           , eG = [];
         function ez(e) {
             let t = (0,
             s.useRef)();
             return (0,
-            s.useEffect)(()=>{
+            s.useEffect)( () => {
                 t.current = e
             }
             ),
             t.current
         }
-        var eH = Symbol.for("Animated:node")
-          , eW = e=>!!e && e[eH] === e
-          , eY = e=>e && e[eH]
-          , eJ = (e,t)=>k(e, eH, t)
-          , eK = e=>e && e[eH] && e[eH].getPayload()
+        var eY = Symbol.for("Animated:node")
+          , eH = e => !!e && e[eY] === e
+          , eW = e => e && e[eY]
+          , eJ = (e, t) => k(e, eY, t)
+          , eK = e => e && e[eY] && e[eY].getPayload()
           , eX = class {
             constructor() {
                 eJ(this, this)
@@ -24732,7 +25008,7 @@
                 this._value = e,
                 this.done = !0,
                 this.durationProgress = 0,
-                x.num(this._value) && (this.lastPosition = this._value)
+                T.num(this._value) && (this.lastPosition = this._value)
             }
             static create(e) {
                 return new eQ(e)
@@ -24744,7 +25020,7 @@
                 return this._value
             }
             setValue(e, t) {
-                return x.num(e) && (this.lastPosition = e,
+                return T.num(e) && (this.lastPosition = e,
                 t && (e = Math.round(e / t) * t,
                 this.done && (this.lastPosition = e))),
                 this._value !== e && (this._value = e,
@@ -24753,7 +25029,7 @@
             reset() {
                 let {done: e} = this;
                 this.done = !1,
-                x.num(this._value) && (this.elapsedTime = 0,
+                T.num(this._value) && (this.elapsedTime = 0,
                 this.durationProgress = 0,
                 this.lastPosition = this._value,
                 e && (this.lastVelocity = null),
@@ -24776,7 +25052,7 @@
                 return null == e ? this._string = this._toString(this._value) : e
             }
             setValue(e) {
-                if (x.str(e)) {
+                if (T.str(e)) {
                     if (e == this._string)
                         return !1;
                     this._string = e,
@@ -24807,8 +25083,8 @@
             }
             getValue(e) {
                 let t = {};
-                return C(this.source, (n,r)=>{
-                    eW(n) ? t[r] = n.getValue(e) : ey(n) ? t[r] = eb(n) : e || (t[r] = n)
+                return C(this.source, (n, r) => {
+                    eH(n) ? t[r] = n.getValue(e) : ey(n) ? t[r] = eb(n) : e || (t[r] = n)
                 }
                 ),
                 t
@@ -24818,7 +25094,7 @@
                 this.payload = this._makePayload(e)
             }
             reset() {
-                this.payload && T(this.payload, e=>e.reset())
+                this.payload && N(this.payload, e => e.reset())
             }
             _makePayload(e) {
                 if (e) {
@@ -24830,7 +25106,7 @@
             _addToPayload(e) {
                 e1.dependencies && ey(e) && e1.dependencies.add(e);
                 let t = eK(e);
-                t && T(t, e=>this.add(e))
+                t && N(t, e => this.add(e))
             }
         }
           , e4 = class extends e2 {
@@ -24841,11 +25117,11 @@
                 return new e4(e)
             }
             getValue() {
-                return this.source.map(e=>e.getValue())
+                return this.source.map(e => e.getValue())
             }
             setValue(e) {
                 let t = this.getPayload();
-                return e.length == t.length ? t.map((t,n)=>t.setValue(e[n])).some(Boolean) : (super.setValue(e.map(e3)),
+                return e.length == t.length ? t.map( (t, n) => t.setValue(e[n])).some(Boolean) : (super.setValue(e.map(e3)),
                 !0)
             }
         }
@@ -24854,18 +25130,18 @@
             return (eV(e) ? e0 : eQ).create(e)
         }
         function e5(e) {
-            let t = eY(e);
-            return t ? t.constructor : x.arr(e) ? e4 : eV(e) ? e0 : eQ
+            let t = eW(e);
+            return t ? t.constructor : T.arr(e) ? e4 : eV(e) ? e0 : eQ
         }
-        var e6 = (e,t)=>{
-            let n = !x.fun(e) || e.prototype && e.prototype.isReactComponent;
+        var e6 = (e, t) => {
+            let n = !T.fun(e) || e.prototype && e.prototype.isReactComponent;
             return (0,
-            s.forwardRef)((r,i)=>{
+            s.forwardRef)( (r, i) => {
                 let o = (0,
                 s.useRef)(null)
                   , a = n && (0,
-                s.useCallback)(e=>{
-                    o.current = (i && (x.fun(i) ? i(e) : i.current = e),
+                s.useCallback)(e => {
+                    o.current = (i && (T.fun(i) ? i(e) : i.current = e),
                     e)
                 }
                 , [i])
@@ -24881,25 +25157,25 @@
                     [e, n]
                 }(r, t)
                   , c = eq()
-                  , d = ()=>{
+                  , d = () => {
                     let e = o.current;
                     (!n || e) && !1 === (!!e && t.applyAnimatedValues(e, u.getValue(!0))) && c()
                 }
                   , p = new e8(d,l)
                   , h = (0,
                 s.useRef)();
-                eB(()=>(h.current = p,
-                T(l, e=>eA(e, p)),
-                ()=>{
-                    h.current && (T(h.current.deps, e=>eS(e, h.current)),
+                eB( () => (h.current = p,
+                N(l, e => eA(e, p)),
+                () => {
+                    h.current && (N(h.current.deps, e => eS(e, h.current)),
                     f.cancel(h.current.update))
                 }
                 )),
                 (0,
                 s.useEffect)(d, []),
-                eZ(()=>()=>{
+                eZ( () => () => {
                     let e = h.current;
-                    T(e.deps, t=>eS(t, e))
+                    N(e.deps, t => eS(t, e))
                 }
                 );
                 let v = t.getComponentProps(u.getValue());
@@ -24920,21 +25196,21 @@
             }
         }
           , e9 = Symbol.for("AnimatedComponent")
-          , e7 = e=>x.str(e) ? e : e && x.str(e.displayName) ? e.displayName : x.fun(e) && e.name || null;
+          , e7 = e => T.str(e) ? e : e && T.str(e.displayName) ? e.displayName : T.fun(e) && e.name || null;
         function te(e, ...t) {
-            return x.fun(e) ? e(...t) : e
+            return T.fun(e) ? e(...t) : e
         }
-        var tt = (e,t)=>!0 === e || !!(t && e && (x.fun(e) ? e(t) : L(e).includes(t)))
-          , tn = (e,t)=>x.obj(e) ? t && e[t] : e
-          , tr = (e,t)=>!0 === e.default ? e[t] : e.default ? e.default[t] : void 0
-          , ti = e=>e
-          , to = (e,t=ti)=>{
+        var tt = (e, t) => !0 === e || !!(t && e && (T.fun(e) ? e(t) : L(e).includes(t)))
+          , tn = (e, t) => T.obj(e) ? t && e[t] : e
+          , tr = (e, t) => !0 === e.default ? e[t] : e.default ? e.default[t] : void 0
+          , ti = e => e
+          , to = (e, t=ti) => {
             let n = ta;
             e.default && !0 !== e.default && (n = Object.keys(e = e.default));
             let r = {};
             for (let i of n) {
                 let n = t(e[i], i);
-                x.und(n) || (r[i] = n)
+                T.und(n) || (r[i] = n)
             }
             return r
         }
@@ -24977,7 +25253,7 @@
             let t = function(e) {
                 let t = {}
                   , n = 0;
-                if (C(e, (e,r)=>{
+                if (C(e, (e, r) => {
                     !ts[r] && (t[r] = e,
                     n++)
                 }
@@ -24989,7 +25265,7 @@
                 let n = {
                     to: t
                 };
-                return C(e, (e,r)=>r in t || (n[r] = e)),
+                return C(e, (e, r) => r in t || (n[r] = e)),
                 n
             }
             return {
@@ -24998,20 +25274,20 @@
         }
         function tl(e) {
             return e = eb(e),
-            x.arr(e) ? e.map(tl) : eV(e) ? l.createStringInterpolator({
+            T.arr(e) ? e.map(tl) : eV(e) ? l.createStringInterpolator({
                 range: [0, 1],
                 output: [e, e]
             })(1) : e
         }
         function tc(e) {
-            return x.fun(e) || x.arr(e) && x.obj(e[0])
+            return T.fun(e) || T.arr(e) && T.obj(e[0])
         }
         var tf = {
             tension: 170,
             friction: 26,
             mass: 1,
             damping: 1,
-            easing: e=>e,
+            easing: e => e,
             clamp: !1
         }
           , td = class {
@@ -25022,9 +25298,9 @@
         }
         ;
         function tp(e, t) {
-            if (x.und(t.decay)) {
-                let n = !x.und(t.tension) || !x.und(t.friction);
-                !n && x.und(t.frequency) && x.und(t.damping) && x.und(t.mass) || (e.duration = void 0,
+            if (T.und(t.decay)) {
+                let n = !T.und(t.tension) || !T.und(t.friction);
+                !n && T.und(t.frequency) && T.und(t.damping) && T.und(t.mass) || (e.duration = void 0,
                 e.decay = void 0),
                 n && (e.frequency = void 0)
             } else
@@ -25043,13 +25319,13 @@
         }
         ;
         function tg(e, {key: t, props: n, defaultProps: r, state: i, actions: o}) {
-            return new Promise((a,s)=>{
+            return new Promise( (a, s) => {
                 let u, c;
                 let d = tt(n.cancel ?? r?.cancel, t);
                 if (d)
                     v();
                 else {
-                    x.und(n.pause) || (i.paused = tt(n.pause, t));
+                    T.und(n.pause) || (i.paused = tt(n.pause, t));
                     let e = r?.pause;
                     !0 !== e && (e = i.paused || tt(e, t)),
                     u = te(n.delay || 0, t),
@@ -25087,19 +25363,19 @@
             }
             )
         }
-        var tm = (e,t)=>1 == t.length ? t[0] : t.some(e=>e.cancelled) ? tE(e.get()) : t.every(e=>e.noop) ? ty(e.get()) : tb(e.get(), t.every(e=>e.finished))
-          , ty = e=>({
+        var tm = (e, t) => 1 == t.length ? t[0] : t.some(e => e.cancelled) ? tE(e.get()) : t.every(e => e.noop) ? ty(e.get()) : tb(e.get(), t.every(e => e.finished))
+          , ty = e => ({
             value: e,
             noop: !0,
             finished: !0,
             cancelled: !1
         })
-          , tb = (e,t,n=!1)=>({
+          , tb = (e, t, n=!1) => ({
             value: e,
             finished: t,
             cancelled: n
         })
-          , tE = e=>({
+          , tE = e => ({
             value: e,
             cancelled: !0,
             finished: !1
@@ -25107,44 +25383,44 @@
         function t_(e, t, n, r) {
             let {callId: i, parentId: o, onRest: a} = t
               , {asyncTo: s, promise: u} = n;
-            return o || e !== s || t.reset ? n.promise = (async()=>{
+            return o || e !== s || t.reset ? n.promise = (async () => {
                 let c, d, p;
                 n.asyncId = i,
                 n.asyncTo = e;
-                let h = to(t, (e,t)=>"onRest" === t ? void 0 : e)
-                  , v = new Promise((e,t)=>(c = e,
+                let h = to(t, (e, t) => "onRest" === t ? void 0 : e)
+                  , v = new Promise( (e, t) => (c = e,
                 d = t))
-                  , g = e=>{
+                  , g = e => {
                     let t = i <= (n.cancelId || 0) && tE(r) || i !== n.asyncId && tb(r, !1);
                     if (t)
                         throw e.result = t,
                         d(e),
                         e
                 }
-                  , m = (e,t)=>{
+                  , m = (e, t) => {
                     let o = new tO
                       , a = new tA;
-                    return (async()=>{
+                    return (async () => {
                         if (l.skipAnimation)
                             throw tw(n),
                             a.result = tb(r, !1),
                             d(a),
                             a;
                         g(o);
-                        let s = x.obj(e) ? {
+                        let s = T.obj(e) ? {
                             ...e
                         } : {
                             ...t,
                             to: e
                         };
                         s.parentId = i,
-                        C(h, (e,t)=>{
-                            x.und(s[t]) && (s[t] = e)
+                        C(h, (e, t) => {
+                            T.und(s[t]) && (s[t] = e)
                         }
                         );
                         let u = await r.start(s);
                         return g(o),
-                        n.paused && await new Promise(e=>{
+                        n.paused && await new Promise(e => {
                             n.resumeQueue.add(e)
                         }
                         ),
@@ -25158,7 +25434,7 @@
                     tb(r, !1);
                 try {
                     let t;
-                    t = x.arr(e) ? (async e=>{
+                    t = T.arr(e) ? (async e => {
                         for (let t of e)
                             await m(t)
                     }
@@ -25177,7 +25453,7 @@
                     n.asyncTo = o ? s : void 0,
                     n.promise = o ? u : void 0)
                 }
-                return x.fun(a) && f.batchedUpdates(()=>{
+                return T.fun(a) && f.batchedUpdates( () => {
                     a(p, r, r.item)
                 }
                 ),
@@ -25186,7 +25462,7 @@
             )() : u
         }
         function tw(e, t) {
-            M(e.timeouts, e=>e.cancel()),
+            M(e.timeouts, e => e.cancel()),
             e.pauseQueue.clear(),
             e.resumeQueue.clear(),
             e.asyncId = e.asyncTo = e.promise = void 0,
@@ -25202,7 +25478,7 @@
                 super("SkipAnimationSignal")
             }
         }
-          , tS = e=>e instanceof tI
+          , tS = e => e instanceof tI
           , tP = 1
           , tI = class extends ew {
             constructor() {
@@ -25218,7 +25494,7 @@
                 this._onPriorityChange(e))
             }
             get() {
-                let e = eY(this);
+                let e = eW(this);
                 return e && e.getValue()
             }
             to(...e) {
@@ -25257,11 +25533,11 @@
             }
         }
           , tR = Symbol.for("SpringPhase")
-          , tk = e=>(1 & e[tR]) > 0
-          , tx = e=>(2 & e[tR]) > 0
-          , tN = e=>(4 & e[tR]) > 0
-          , tT = (e,t)=>t ? e[tR] |= 3 : e[tR] &= -3
-          , tC = (e,t)=>t ? e[tR] |= 4 : e[tR] &= -5
+          , tk = e => (1 & e[tR]) > 0
+          , tT = e => (2 & e[tR]) > 0
+          , tx = e => (4 & e[tR]) > 0
+          , tN = (e, t) => t ? e[tR] |= 3 : e[tR] &= -3
+          , tC = (e, t) => t ? e[tR] |= 4 : e[tR] &= -5
           , tL = class extends tI {
             constructor(e, t) {
                 if (super(),
@@ -25278,35 +25554,35 @@
                 this._lastCallId = 0,
                 this._lastToId = 0,
                 this._memoizedDuration = 0,
-                !x.und(e) || !x.und(t)) {
-                    let n = x.obj(e) ? {
+                !T.und(e) || !T.und(t)) {
+                    let n = T.obj(e) ? {
                         ...e
                     } : {
                         ...t,
                         from: e
                     };
-                    x.und(n.default) && (n.default = !0),
+                    T.und(n.default) && (n.default = !0),
                     this.start(n)
                 }
             }
             get idle() {
-                return !(tx(this) || this._state.asyncTo) || tN(this)
+                return !(tT(this) || this._state.asyncTo) || tx(this)
             }
             get goal() {
                 return eb(this.animation.to)
             }
             get velocity() {
-                let e = eY(this);
-                return e instanceof eQ ? e.lastVelocity || 0 : e.getPayload().map(e=>e.lastVelocity || 0)
+                let e = eW(this);
+                return e instanceof eQ ? e.lastVelocity || 0 : e.getPayload().map(e => e.lastVelocity || 0)
             }
             get hasAnimated() {
                 return tk(this)
             }
             get isAnimating() {
-                return tx(this)
+                return tT(this)
             }
             get isPaused() {
-                return tN(this)
+                return tx(this)
             }
             get isDelayed() {
                 return this._state.delayed
@@ -25319,7 +25595,7 @@
                   , {config: o} = r
                   , a = eK(r.to);
                 !a && ey(r.to) && (i = L(eb(r.to))),
-                r.values.forEach((s,u)=>{
+                r.values.forEach( (s, u) => {
                     if (s.done)
                         return;
                     let l = s.constructor == e0 ? 1 : a ? a[u].lastPosition : i[u]
@@ -25334,9 +25610,9 @@
                         }
                         let n = s.elapsedTime += e
                           , i = r.fromValues[u]
-                          , a = null != s.v0 ? s.v0 : s.v0 = x.arr(o.velocity) ? o.velocity[u] : o.velocity
+                          , a = null != s.v0 ? s.v0 : s.v0 = T.arr(o.velocity) ? o.velocity[u] : o.velocity
                           , d = o.precision || (i == l ? .005 : Math.min(1, .001 * Math.abs(l - i)));
-                        if (x.und(o.duration)) {
+                        if (T.und(o.duration)) {
                             if (o.decay) {
                                 let e = !0 === o.decay ? .998 : o.decay
                                   , r = Math.exp(-(1 - e) * n);
@@ -25347,7 +25623,7 @@
                                 t = null == s.lastVelocity ? a : s.lastVelocity;
                                 let n = o.restVelocity || d / 10
                                   , r = o.clamp ? 0 : o.bounce
-                                  , u = !x.und(r)
+                                  , u = !T.und(r)
                                   , p = i == l ? s.v0 > 0 : i < l
                                   , h = Math.ceil(e / 1);
                                 for (let e = 0; e < h && !(!(Math.abs(t) > n) && (c = Math.abs(l - f) <= d)); ++e) {
@@ -25377,7 +25653,7 @@
                     s.setValue(f, o.round) && (n = !0)
                 }
                 );
-                let s = eY(this)
+                let s = eW(this)
                   , u = s.getValue();
                 if (t) {
                     let e = eb(r.to);
@@ -25388,7 +25664,7 @@
                     n && this._onChange(u)
             }
             set(e) {
-                return f.batchedUpdates(()=>{
+                return f.batchedUpdates( () => {
                     this._stop(),
                     this._focus(e),
                     this._set(e)
@@ -25407,9 +25683,9 @@
                 })
             }
             finish() {
-                if (tx(this)) {
+                if (tT(this)) {
                     let {to: e, config: t} = this.animation;
-                    f.batchedUpdates(()=>{
+                    f.batchedUpdates( () => {
                         this._onStart(),
                         t.decay || this._set(e, !1),
                         this._stop()
@@ -25424,18 +25700,18 @@
             }
             start(e, t) {
                 let n;
-                return x.und(e) ? (n = this.queue || [],
-                this.queue = []) : n = [x.obj(e) ? e : {
+                return T.und(e) ? (n = this.queue || [],
+                this.queue = []) : n = [T.obj(e) ? e : {
                     ...t,
                     to: e
                 }],
-                Promise.all(n.map(e=>this._update(e))).then(e=>tm(this, e))
+                Promise.all(n.map(e => this._update(e))).then(e => tm(this, e))
             }
             stop(e) {
                 let {to: t} = this.animation;
                 return this._focus(this.get()),
                 tw(this._state, e && this._lastCallId),
-                f.batchedUpdates(()=>this._stop(t, e)),
+                f.batchedUpdates( () => this._stop(t, e)),
                 this
             }
             reset() {
@@ -25449,20 +25725,20 @@
             _prepareNode(e) {
                 let t = this.key || ""
                   , {to: n, from: r} = e;
-                (null == (n = x.obj(n) ? n[t] : n) || tc(n)) && (n = void 0),
-                null == (r = x.obj(r) ? r[t] : r) && (r = void 0);
+                (null == (n = T.obj(n) ? n[t] : n) || tc(n)) && (n = void 0),
+                null == (r = T.obj(r) ? r[t] : r) && (r = void 0);
                 let i = {
                     to: n,
                     from: r
                 };
                 return tk(this) || (e.reverse && ([n,r] = [r, n]),
                 r = eb(r),
-                x.und(r) ? eY(this) || this._set(n) : this._set(r)),
+                T.und(r) ? eW(this) || this._set(n) : this._set(r)),
                 i
             }
             _update({...e}, t) {
                 let {key: n, defaultProps: r} = this;
-                e.default && Object.assign(r, to(e, (e,t)=>/^on/.test(t) ? tn(e, n) : e)),
+                e.default && Object.assign(r, to(e, (e, t) => /^on/.test(t) ? tn(e, n) : e)),
                 tV(this, e, "onProps"),
                 tB(this, "onProps", e, this);
                 let i = this._prepareNode(e);
@@ -25475,22 +25751,22 @@
                     defaultProps: r,
                     state: o,
                     actions: {
-                        pause: ()=>{
-                            tN(this) || (tC(this, !0),
+                        pause: () => {
+                            tx(this) || (tC(this, !0),
                             j(o.pauseQueue),
                             tB(this, "onPause", tb(this, tM(this, this.animation.to)), this))
                         }
                         ,
-                        resume: ()=>{
-                            tN(this) && (tC(this, !1),
-                            tx(this) && this._resume(),
+                        resume: () => {
+                            tx(this) && (tC(this, !1),
+                            tT(this) && this._resume(),
                             j(o.resumeQueue),
                             tB(this, "onResume", tb(this, tM(this, this.animation.to)), this))
                         }
                         ,
                         start: this._merge.bind(this, i)
                     }
-                }).then(n=>{
+                }).then(n => {
                     if (e.loop && n.finished && !(t && n.noop)) {
                         let t = tj(e);
                         if (t)
@@ -25504,8 +25780,8 @@
                 if (t.cancel)
                     return this.stop(!0),
                     n(tE(this));
-                let r = !x.und(e.to)
-                  , i = !x.und(e.from);
+                let r = !T.und(e.to)
+                  , i = !T.und(e.from);
                 if (r || i) {
                     if (!(t.callId > this._lastToId))
                         return n(tE(this));
@@ -25514,12 +25790,12 @@
                 let {key: o, defaultProps: a, animation: s} = this
                   , {to: u, from: l} = s
                   , {to: c=u, from: d=l} = e;
-                i && !r && (!t.default || x.und(c)) && (c = d),
+                i && !r && (!t.default || T.und(c)) && (c = d),
                 t.reverse && ([c,d] = [d, c]);
-                let p = !N(d, l);
+                let p = !x(d, l);
                 p && (s.from = d),
                 d = eb(d);
-                let h = !N(c, u);
+                let h = !x(c, u);
                 h && this._focus(c);
                 let v = tc(t.to)
                   , {config: g} = s
@@ -25539,18 +25815,18 @@
                         null == e[r] && (e[r] = tf[r]);
                     let {frequency: r, damping: i} = e
                       , {mass: o} = e;
-                    x.und(r) || (r < .01 && (r = .01),
+                    T.und(r) || (r < .01 && (r = .01),
                     i < 0 && (i = 0),
                     e.tension = Math.pow(2 * Math.PI / r, 2) * o,
                     e.friction = 4 * Math.PI * i * o / r)
                 }(g, te(t.config, o), t.config !== a.config ? te(a.config, o) : void 0);
-                let b = eY(this);
-                if (!b || x.und(c))
+                let b = eW(this);
+                if (!b || T.und(c))
                     return n(tb(this, !0));
-                let E = x.und(t.reset) ? i && !t.default : !x.und(d) && tt(t.reset, o)
+                let E = T.und(t.reset) ? i && !t.default : !T.und(d) && tt(t.reset, o)
                   , _ = E ? d : this.get()
                   , w = tl(c)
-                  , O = x.num(w) || x.arr(w) || eV(w)
+                  , O = T.num(w) || T.arr(w) || eV(w)
                   , A = !v && (!O || tt(a.immediate || t.immediate, o));
                 if (h) {
                     let e = e5(c);
@@ -25566,21 +25842,21 @@
                   , I = !1;
                 if (!P) {
                     let e = E || !tk(this) && p;
-                    (h || e) && (P = !(I = N(tl(_), w))),
-                    (N(s.immediate, A) || A) && N(g.decay, m) && N(g.velocity, y) || (P = !0)
+                    (h || e) && (P = !(I = x(tl(_), w))),
+                    (x(s.immediate, A) || A) && x(g.decay, m) && x(g.velocity, y) || (P = !0)
                 }
-                if (I && tx(this) && (s.changed && !E ? P = !0 : P || this._stop(u)),
+                if (I && tT(this) && (s.changed && !E ? P = !0 : P || this._stop(u)),
                 !v && ((P || ey(u)) && (s.values = b.getPayload(),
                 s.toValues = ey(c) ? null : S == e0 ? [1] : L(w)),
                 s.immediate == A || (s.immediate = A,
                 A || E || this._set(u)),
                 P)) {
                     let {onRest: e} = s;
-                    T(t$, e=>tV(this, t, e));
+                    N(t$, e => tV(this, t, e));
                     let r = tb(this, tM(this, u));
                     j(this._pendingCalls, r),
                     this._pendingCalls.add(n),
-                    s.changed && f.batchedUpdates(()=>{
+                    s.changed && f.batchedUpdates( () => {
                         s.changed = !E,
                         e?.(r, this),
                         E ? te(a.onRest, r) : s.onStart?.(r, this)
@@ -25588,7 +25864,7 @@
                     )
                 }
                 E && this._set(_),
-                v ? n(t_(t.to, t, this._state, this)) : P ? this._start() : tx(this) && !h ? this._pendingCalls.add(n) : n(ty(_))
+                v ? n(t_(t.to, t, this._state, this)) : P ? this._start() : tT(this) && !h ? this._pendingCalls.add(n) : n(ty(_))
             }
             _focus(e) {
                 let t = this.animation;
@@ -25609,18 +25885,18 @@
             }
             _set(e, t=!0) {
                 let n = eb(e);
-                if (!x.und(n)) {
-                    let e = eY(this);
-                    if (!e || !N(n, e.getValue())) {
+                if (!T.und(n)) {
+                    let e = eW(this);
+                    if (!e || !x(n, e.getValue())) {
                         let r = e5(n);
                         e && e.constructor == r ? e.setValue(n) : eJ(this, r.create(n)),
-                        e && f.batchedUpdates(()=>{
+                        e && f.batchedUpdates( () => {
                             this._onChange(n, t)
                         }
                         )
                     }
                 }
-                return eY(this)
+                return eW(this)
             }
             _onStart() {
                 let e = this.animation;
@@ -25635,19 +25911,19 @@
             }
             _start() {
                 let e = this.animation;
-                eY(this).reset(eb(e.to)),
-                e.immediate || (e.fromValues = e.values.map(e=>e.lastPosition)),
-                tx(this) || (tT(this, !0),
-                tN(this) || this._resume())
+                eW(this).reset(eb(e.to)),
+                e.immediate || (e.fromValues = e.values.map(e => e.lastPosition)),
+                tT(this) || (tN(this, !0),
+                tx(this) || this._resume())
             }
             _resume() {
                 l.skipAnimation ? this.finish() : z.start(this)
             }
             _stop(e, t) {
-                if (tx(this)) {
-                    tT(this, !1);
+                if (tT(this)) {
+                    tN(this, !1);
                     let n = this.animation;
-                    T(n.values, e=>{
+                    N(n.values, e => {
                         e.done = !0
                     }
                     ),
@@ -25666,7 +25942,7 @@
         ;
         function tM(e, t) {
             let n = tl(t);
-            return N(tl(e.get()), n)
+            return x(tl(e.get()), n)
         }
         function tj(e, t=e.loop, n=e.to) {
             let r = te(t);
@@ -25689,13 +25965,13 @@
         function tD(e) {
             let {to: t, from: n} = e = tu(e)
               , r = new Set;
-            return x.obj(t) && tU(t, r),
-            x.obj(n) && tU(n, r),
+            return T.obj(t) && tU(t, r),
+            T.obj(n) && tU(n, r),
             e.keys = r.size ? Array.from(r) : null,
             e
         }
         function tU(e, t) {
-            C(e, (e,n)=>null != e && t.add(n))
+            C(e, (e, n) => null != e && t.add(n))
         }
         var t$ = ["onStart", "onRest", "onChange", "onPause", "onResume"];
         function tV(e, t, n) {
@@ -25735,7 +26011,7 @@
                 })
             }
             get idle() {
-                return !this._state.asyncTo && Object.values(this.springs).every(e=>e.idle && !e.isDelayed && !e.isPaused)
+                return !this._state.asyncTo && Object.values(this.springs).every(e => e.idle && !e.isDelayed && !e.isPaused)
             }
             get item() {
                 return this._item
@@ -25745,13 +26021,13 @@
             }
             get() {
                 let e = {};
-                return this.each((t,n)=>e[n] = t.get()),
+                return this.each( (t, n) => e[n] = t.get()),
                 e
             }
             set(e) {
                 for (let t in e) {
                     let n = e[t];
-                    x.und(n) || this.springs[t].set(n)
+                    T.und(n) || this.springs[t].set(n)
                 }
             }
             update(e) {
@@ -25768,31 +26044,31 @@
                 if (!!e !== e && (t = e),
                 t) {
                     let n = this.springs;
-                    T(L(t), t=>n[t].stop(!!e))
+                    N(L(t), t => n[t].stop(!!e))
                 } else
                     tw(this._state, this._lastAsyncId),
-                    this.each(t=>t.stop(!!e));
+                    this.each(t => t.stop(!!e));
                 return this
             }
             pause(e) {
-                if (x.und(e))
+                if (T.und(e))
                     this.start({
                         pause: !0
                     });
                 else {
                     let t = this.springs;
-                    T(L(e), e=>t[e].pause())
+                    N(L(e), e => t[e].pause())
                 }
                 return this
             }
             resume(e) {
-                if (x.und(e))
+                if (T.und(e))
                     this.start({
                         pause: !1
                     });
                 else {
                     let t = this.springs;
-                    T(L(e), e=>t[e].resume())
+                    N(L(e), e => t[e].resume())
                 }
                 return this
             }
@@ -25804,20 +26080,20 @@
                   , r = this._active.size > 0
                   , i = this._changed.size > 0;
                 (r && !this._started || i && !this._started) && (this._started = !0,
-                M(e, ([e,t])=>{
+                M(e, ([e,t]) => {
                     t.value = this.get(),
                     e(t, this, this._item)
                 }
                 ));
                 let o = !r && this._started
                   , a = i || o && n.size ? this.get() : null;
-                i && t.size && M(t, ([e,t])=>{
+                i && t.size && M(t, ([e,t]) => {
                     t.value = a,
                     e(t, this, this._item)
                 }
                 ),
                 o && (this._started = !1,
-                M(n, ([e,t])=>{
+                M(n, ([e,t]) => {
                     t.value = a,
                     e(t, this, this._item)
                 }
@@ -25837,22 +26113,22 @@
         }
         ;
         function tG(e, t) {
-            return Promise.all(t.map(t=>tz(e, t))).then(t=>tm(e, t))
+            return Promise.all(t.map(t => tz(e, t))).then(t => tm(e, t))
         }
         async function tz(e, t, n) {
             let {keys: r, to: i, from: o, loop: a, onRest: s, onResolve: u} = t
-              , l = x.obj(t.default) && t.default;
+              , l = T.obj(t.default) && t.default;
             a && (t.loop = !1),
             !1 === i && (t.to = null),
             !1 === o && (t.from = null);
-            let c = x.arr(i) || x.fun(i) ? i : void 0;
+            let c = T.arr(i) || T.fun(i) ? i : void 0;
             c ? (t.to = void 0,
             t.onRest = void 0,
-            l && (l.onRest = void 0)) : T(tF, n=>{
+            l && (l.onRest = void 0)) : N(tF, n => {
                 let r = t[n];
-                if (x.fun(r)) {
+                if (T.fun(r)) {
                     let i = e._events[n];
-                    t[n] = ({finished: e, cancelled: t})=>{
+                    t[n] = ({finished: e, cancelled: t}) => {
                         let n = i.get(r);
                         n ? (e || (n.finished = !1),
                         t && (n.cancelled = !0)) : i.set(r, {
@@ -25869,7 +26145,7 @@
             let d = e._state;
             !d.paused === t.pause ? (d.paused = t.pause,
             j(t.pause ? d.pauseQueue : d.resumeQueue)) : d.paused && (t.pause = !0);
-            let p = (r || Object.keys(e.springs)).map(n=>e.springs[n].start(t))
+            let p = (r || Object.keys(e.springs)).map(n => e.springs[n].start(t))
               , h = !0 === t.cancel || !0 === tr(t, "cancel");
             (c || h && d.asyncId) && p.push(tg(++e._lastAsyncId, {
                 props: t,
@@ -25884,7 +26160,7 @@
                     }
                 }
             })),
-            d.paused && await new Promise(e=>{
+            d.paused && await new Promise(e => {
                 d.resumeQueue.add(e)
             }
             );
@@ -25895,58 +26171,58 @@
                     return tK(e, [n]),
                     tz(e, n, !0)
             }
-            return u && f.batchedUpdates(()=>u(v, e, e.item)),
+            return u && f.batchedUpdates( () => u(v, e, e.item)),
             v
         }
-        function tH(e, t) {
+        function tY(e, t) {
             let n = {
                 ...e.springs
             };
-            return t && T(L(t), e=>{
-                x.und(e.keys) && (e = tD(e)),
-                x.obj(e.to) || (e = {
+            return t && N(L(t), e => {
+                T.und(e.keys) && (e = tD(e)),
+                T.obj(e.to) || (e = {
                     ...e,
                     to: void 0
                 }),
-                tJ(n, e, e=>tY(e))
+                tJ(n, e, e => tW(e))
             }
             ),
-            tW(e, n),
+            tH(e, n),
             n
         }
-        function tW(e, t) {
-            C(t, (t,n)=>{
+        function tH(e, t) {
+            C(t, (t, n) => {
                 e.springs[n] || (e.springs[n] = t,
                 eA(t, e))
             }
             )
         }
-        function tY(e, t) {
+        function tW(e, t) {
             let n = new tL;
             return n.key = e,
             t && eA(n, t),
             n
         }
         function tJ(e, t, n) {
-            t.keys && T(t.keys, r=>{
+            t.keys && N(t.keys, r => {
                 (e[r] || (e[r] = n(r)))._prepareNode(t)
             }
             )
         }
         function tK(e, t) {
-            T(t, t=>{
-                tJ(e.springs, t, t=>tY(t, e))
+            N(t, t => {
+                tJ(e.springs, t, t => tW(t, e))
             }
             )
         }
-        var tX = ({children: e, ...t})=>{
+        var tX = ({children: e, ...t}) => {
             let n = (0,
             s.useContext)(tQ)
               , r = t.pause || !!n.pause
               , i = t.immediate || !!n.immediate;
             t = function(e, t) {
                 let[n] = (0,
-                s.useState)(()=>({
+                s.useState)( () => ({
                     inputs: t,
                     result: e()
                 }))
@@ -25966,13 +26242,13 @@
                     result: e()
                 }) : o = n,
                 (0,
-                s.useEffect)(()=>{
+                s.useEffect)( () => {
                     r.current = o,
                     i == n && (n.inputs = n.result = void 0)
                 }
                 , [o]),
                 o.result
-            }(()=>({
+            }( () => ({
                 pause: r,
                 immediate: i
             }), [r, i]);
@@ -25988,13 +26264,13 @@
         tX);
         tX.Provider = tQ.Provider,
         tX.Consumer = tQ.Consumer;
-        var t0 = ()=>{
+        var t0 = () => {
             let e = []
               , t = function(t) {
                 e$(`${ej}Directly calling start instead of using the api object is deprecated in v9 (use ".start" instead), this will be removed in later 0.X.0 versions`);
                 let r = [];
-                return T(e, (e,i)=>{
-                    if (x.und(t))
+                return N(e, (e, i) => {
+                    if (T.und(t))
                         r.push(e.start());
                     else {
                         let o = n(t, e, i);
@@ -26015,18 +26291,18 @@
             }
             ,
             t.pause = function() {
-                return T(e, e=>e.pause(...arguments)),
+                return N(e, e => e.pause(...arguments)),
                 this
             }
             ,
             t.resume = function() {
-                return T(e, e=>e.resume(...arguments)),
+                return N(e, e => e.resume(...arguments)),
                 this
             }
             ,
             t.set = function(t) {
-                T(e, (e,n)=>{
-                    let r = x.fun(t) ? t(n, e) : t;
+                N(e, (e, n) => {
+                    let r = T.fun(t) ? t(n, e) : t;
                     r && e.set(r)
                 }
                 )
@@ -26034,8 +26310,8 @@
             ,
             t.start = function(t) {
                 let n = [];
-                return T(e, (e,r)=>{
-                    if (x.und(t))
+                return N(e, (e, r) => {
+                    if (T.und(t))
                         n.push(e.start());
                     else {
                         let i = this._getProps(t, e, r);
@@ -26047,41 +26323,41 @@
             }
             ,
             t.stop = function() {
-                return T(e, e=>e.stop(...arguments)),
+                return N(e, e => e.stop(...arguments)),
                 this
             }
             ,
             t.update = function(t) {
-                return T(e, (e,n)=>e.update(this._getProps(t, e, n))),
+                return N(e, (e, n) => e.update(this._getProps(t, e, n))),
                 this
             }
             ;
             let n = function(e, t, n) {
-                return x.fun(e) ? e(n, t) : e
+                return T.fun(e) ? e(n, t) : e
             };
             return t._getProps = n,
             t
         }
         ;
         function t1(e, t) {
-            let n = x.fun(e)
+            let n = T.fun(e)
               , [[r],i] = function(e, t, n) {
-                let r = x.fun(t) && t;
+                let r = T.fun(t) && t;
                 r && !n && (n = []);
                 let i = (0,
-                s.useMemo)(()=>r || 3 == arguments.length ? t0() : void 0, [])
+                s.useMemo)( () => r || 3 == arguments.length ? t0() : void 0, [])
                   , o = (0,
                 s.useRef)(0)
                   , a = eq()
                   , u = (0,
-                s.useMemo)(()=>({
+                s.useMemo)( () => ({
                     ctrls: [],
                     queue: [],
                     flush(e, t) {
-                        let n = tH(e, t);
-                        return !(o.current > 0) || u.queue.length || Object.keys(n).some(t=>!e.springs[t]) ? new Promise(r=>{
-                            tW(e, n),
-                            u.queue.push(()=>{
+                        let n = tY(e, t);
+                        return !(o.current > 0) || u.queue.length || Object.keys(n).some(t => !e.springs[t]) ? new Promise(r => {
+                            tH(e, n),
+                            u.queue.push( () => {
                                 r(tG(e, t))
                             }
                             ),
@@ -26100,14 +26376,14 @@
                           , n = r ? r(i, e) : t[i];
                         n && (c[i] = function(e) {
                             let t = tD(e);
-                            return x.und(t.default) && (t.default = to(t)),
+                            return T.und(t.default) && (t.default = to(t)),
                             t
                         }(n))
                     }
                 }
                 (0,
-                s.useMemo)(()=>{
-                    T(l.current.slice(e, f), e=>{
+                s.useMemo)( () => {
+                    N(l.current.slice(e, f), e => {
                         e.ref?.delete(e),
                         i?.delete(e),
                         e.stop(!0)
@@ -26118,11 +26394,11 @@
                 }
                 , [e]),
                 (0,
-                s.useMemo)(()=>{
+                s.useMemo)( () => {
                     d(0, Math.min(f, e))
                 }
                 , n);
-                let p = l.current.map((e,t)=>tH(e, c[t]))
+                let p = l.current.map( (e, t) => tY(e, c[t]))
                   , h = (0,
                 s.useContext)(tX)
                   , v = ez(h)
@@ -26131,13 +26407,13 @@
                         return !0;
                     return !1
                 }(h);
-                eB(()=>{
+                eB( () => {
                     o.current++,
                     u.ctrls = l.current;
                     let {queue: e} = u;
                     e.length && (u.queue = [],
-                    T(e, e=>e())),
-                    T(l.current, (e,t)=>{
+                    N(e, e => e())),
+                    N(l.current, (e, t) => {
                         i?.add(e),
                         g && e.start({
                             default: h
@@ -26154,11 +26430,11 @@
                     )
                 }
                 ),
-                eZ(()=>()=>{
-                    T(u.ctrls, e=>e.stop(!0))
+                eZ( () => () => {
+                    N(u.ctrls, e => e.stop(!0))
                 }
                 );
-                let m = p.map(e=>({
+                let m = p.map(e => ({
                     ...e
                 }));
                 return i ? [m, i] : m
@@ -26177,26 +26453,26 @@
             }
             advance(e) {
                 let t = this._get();
-                N(t, this.get()) || (eY(this).setValue(t),
+                x(t, this.get()) || (eW(this).setValue(t),
                 this._onChange(t, this.idle)),
                 !this.idle && t3(this._active) && t5(this)
             }
             _get() {
-                let e = x.arr(this.source) ? this.source.map(eb) : L(eb(this.source));
+                let e = T.arr(this.source) ? this.source.map(eb) : L(eb(this.source));
                 return this.calc(...e)
             }
             _start() {
                 this.idle && !t3(this._active) && (this.idle = !1,
-                T(eK(this), e=>{
+                N(eK(this), e => {
                     e.done = !1
                 }
                 ),
-                l.skipAnimation ? (f.batchedUpdates(()=>this.advance()),
+                l.skipAnimation ? (f.batchedUpdates( () => this.advance()),
                 t5(this)) : z.start(this))
             }
             _attach() {
                 let e = 1;
-                T(L(this.source), t=>{
+                N(L(this.source), t => {
                     ey(t) && eA(t, this),
                     tS(t) && (t.idle || this._active.add(t),
                     e = Math.max(e, t.priority + 1))
@@ -26206,7 +26482,7 @@
                 this._start()
             }
             _detach() {
-                T(L(this.source), e=>{
+                N(L(this.source), e => {
                     ey(e) && eS(e, this)
                 }
                 ),
@@ -26215,7 +26491,7 @@
             }
             eventObserved(e) {
                 "change" == e.type ? e.idle ? this.advance() : (this._active.add(e.parent),
-                this._start()) : "idle" == e.type ? this._active.delete(e.parent) : "priority" == e.type && (this.priority = L(this.source).reduce((e,t)=>Math.max(e, (tS(t) ? t.priority : 0) + 1), 0))
+                this._start()) : "idle" == e.type ? this._active.delete(e.parent) : "priority" == e.type && (this.priority = L(this.source).reduce( (e, t) => Math.max(e, (tS(t) ? t.priority : 0) + 1), 0))
             }
         }
         ;
@@ -26227,7 +26503,7 @@
         }
         function t5(e) {
             e.idle || (e.idle = !0,
-            T(eK(e), e=>{
+            N(eK(e), e => {
                 e.done = !0
             }
             ),
@@ -26238,7 +26514,7 @@
         }
         l.assign({
             createStringInterpolator: eM,
-            to: (e,t)=>new t2(e,t)
+            to: (e, t) => new t2(e,t)
         }),
         z.advance;
         var t6 = n(73935)
@@ -26287,32 +26563,32 @@
             strokeOpacity: !0,
             strokeWidth: !0
         }
-          , ne = (e,t)=>e + t.charAt(0).toUpperCase() + t.substring(1)
+          , ne = (e, t) => e + t.charAt(0).toUpperCase() + t.substring(1)
           , nt = ["Webkit", "Ms", "Moz", "O"];
-        t7 = Object.keys(t7).reduce((e,t)=>(nt.forEach(n=>e[ne(n, t)] = e[t]),
+        t7 = Object.keys(t7).reduce( (e, t) => (nt.forEach(n => e[ne(n, t)] = e[t]),
         e), t7);
         var nn = /^(matrix|translate|scale|rotate|skew)/
           , nr = /^(translate)/
           , ni = /^(rotate|skew)/
-          , no = (e,t)=>x.num(e) && 0 !== e ? e + t : e
-          , na = (e,t)=>x.arr(e) ? e.every(e=>na(e, t)) : x.num(e) ? e === t : parseFloat(e) === t
+          , no = (e, t) => T.num(e) && 0 !== e ? e + t : e
+          , na = (e, t) => T.arr(e) ? e.every(e => na(e, t)) : T.num(e) ? e === t : parseFloat(e) === t
           , ns = class extends e2 {
             constructor({x: e, y: t, z: n, ...r}) {
                 let i = []
                   , o = [];
                 (e || t || n) && (i.push([e || 0, t || 0, n || 0]),
-                o.push(e=>[`translate3d(${e.map(e=>no(e, "px")).join(",")})`, na(e, 0)])),
-                C(r, (e,t)=>{
+                o.push(e => [`translate3d(${e.map(e => no(e, "px")).join(",")})`, na(e, 0)])),
+                C(r, (e, t) => {
                     if ("transform" === t)
                         i.push([e || ""]),
-                        o.push(e=>[e, "" === e]);
+                        o.push(e => [e, "" === e]);
                     else if (nn.test(t)) {
                         if (delete r[t],
-                        x.und(e))
+                        T.und(e))
                             return;
                         let n = nr.test(t) ? "px" : ni.test(t) ? "deg" : "";
                         i.push(L(e)),
-                        o.push("rotate3d" === t ? ([e,t,r,i])=>[`rotate3d(${e},${t},${r},${no(i, n)})`, na(i, 0)] : e=>[`${t}(${e.map(e=>no(e, n)).join(",")})`, na(e, t.startsWith("scale") ? 1 : 0)])
+                        o.push("rotate3d" === t ? ([e,t,r,i]) => [`rotate3d(${e},${t},${r},${no(i, n)})`, na(i, 0)] : e => [`${t}(${e.map(e => no(e, n)).join(",")})`, na(e, t.startsWith("scale") ? 1 : 0)])
                     }
                 }
                 ),
@@ -26333,9 +26609,9 @@
             _get() {
                 let e = ""
                   , t = !0;
-                return T(this.inputs, (n,r)=>{
+                return N(this.inputs, (n, r) => {
                     let i = eb(n[0])
-                      , [o,a] = this.transforms[r](x.arr(i) ? i : n.map(eb));
+                      , [o,a] = this.transforms[r](T.arr(i) ? i : n.map(eb));
                     e += " " + o,
                     t = t && a
                 }
@@ -26343,10 +26619,10 @@
                 t ? "none" : e
             }
             observerAdded(e) {
-                1 == e && T(this.inputs, e=>T(e, e=>ey(e) && eA(e, this)))
+                1 == e && N(this.inputs, e => N(e, e => ey(e) && eA(e, this)))
             }
             observerRemoved(e) {
-                0 == e && T(this.inputs, e=>T(e, e=>ey(e) && eS(e, this)))
+                0 == e && N(this.inputs, e => N(e, e => ey(e) && eS(e, this)))
             }
             eventObserved(e) {
                 "change" == e.type && (this._value = null),
@@ -26510,20 +26786,20 @@
                 yellowgreen: 2597139199
             }
         });
-        var nl = ((e,{applyAnimatedValues: t=()=>!1, createAnimatedStyle: n=e=>new e2(e), getComponentProps: r=e=>e}={})=>{
+        var nl = ( (e, {applyAnimatedValues: t= () => !1, createAnimatedStyle: n=e => new e2(e), getComponentProps: r=e => e}={}) => {
             let i = {
                 applyAnimatedValues: t,
                 createAnimatedStyle: n,
                 getComponentProps: r
             }
-              , o = e=>{
+              , o = e => {
                 let t = e7(e) || "Anonymous";
-                return (e = x.str(e) ? o[e] || (o[e] = e6(e, i)) : e[e9] || (e[e9] = e6(e, i))).displayName = `Animated(${t})`,
+                return (e = T.str(e) ? o[e] || (o[e] = e6(e, i)) : e[e9] || (e[e9] = e6(e, i))).displayName = `Animated(${t})`,
                 e
             }
             ;
-            return C(e, (t,n)=>{
-                x.arr(e) && (n = e7(t)),
+            return C(e, (t, n) => {
+                T.arr(e) && (n = e7(t)),
                 o[n] = o(t)
             }
             ),
@@ -26538,7 +26814,7 @@
                 let n = "filter" === e.nodeName || e.parentNode && "filter" === e.parentNode.nodeName
                   , {style: r, children: i, scrollTop: o, scrollLeft: a, viewBox: s, ...u} = t
                   , l = Object.values(u)
-                  , c = Object.keys(u).map(t=>n || e.hasAttribute(t) ? t : t9[t] || (t9[t] = t.replace(/([A-Z])/g, e=>"-" + e.toLowerCase())));
+                  , c = Object.keys(u).map(t => n || e.hasAttribute(t) ? t : t9[t] || (t9[t] = t.replace(/([A-Z])/g, e => "-" + e.toLowerCase())));
                 for (let t in void 0 !== i && (e.textContent = i),
                 r)
                     if (r.hasOwnProperty(t)) {
@@ -26546,7 +26822,7 @@
                         let n = null == (f = r[t]) || "boolean" == typeof f || "" === f ? "" : "number" != typeof f || 0 === f || t8.test(t) || t7.hasOwnProperty(t) && t7[t] ? ("" + f).trim() : f + "px";
                         t8.test(t) ? e.style.setProperty(t, n) : e.style[t] = n
                     }
-                c.forEach((t,n)=>{
+                c.forEach( (t, n) => {
                     e.setAttribute(t, l[n])
                 }
                 ),
@@ -26554,8 +26830,8 @@
                 void 0 !== a && (e.scrollLeft = a),
                 void 0 !== s && e.setAttribute("viewBox", s)
             },
-            createAnimatedStyle: e=>new ns(e),
-            getComponentProps: ({scrollTop: e, scrollLeft: t, ...n})=>n
+            createAnimatedStyle: e => new ns(e),
+            getComponentProps: ({scrollTop: e, scrollLeft: t, ...n}) => n
         }).animated
     },
     76629: function(e, t, n) {
@@ -26894,8 +27170,8 @@
             }) : e
         }
         var k = "undefined" != typeof window && window.navigator && void 0 === window.navigator.userAgentData && window.navigator.userAgent && window.navigator.userAgent.indexOf("MSIE") > -1
-          , x = [" ", ",", "?", "!", ";"];
-        function N(e, t) {
+          , T = [" ", ",", "?", "!", ";"];
+        function x(e, t) {
             var n = Object.keys(e);
             if (Object.getOwnPropertySymbols) {
                 var r = Object.getOwnPropertySymbols(e);
@@ -26906,13 +27182,13 @@
             }
             return n
         }
-        function T(e) {
+        function N(e) {
             for (var t = 1; t < arguments.length; t++) {
                 var n = null != arguments[t] ? arguments[t] : {};
-                t % 2 ? N(Object(n), !0).forEach(function(t) {
+                t % 2 ? x(Object(n), !0).forEach(function(t) {
                     (0,
                     f.Z)(e, t, n[t])
-                }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : N(Object(n)).forEach(function(t) {
+                }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : x(Object(n)).forEach(function(t) {
                     Object.defineProperty(e, t, Object.getOwnPropertyDescriptor(n, t))
                 })
             }
@@ -27056,7 +27332,7 @@
                         for (var i in n)
                             "__proto__" !== i && "constructor" !== i && (i in t ? "string" == typeof t[i] || t[i]instanceof String || "string" == typeof n[i] || n[i]instanceof String ? r && (t[i] = n[i]) : e(t[i], n[i], r) : t[i] = n[i]);
                         return t
-                    }(s, n, i) : s = T(T({}, s), n),
+                    }(s, n, i) : s = N(N({}, s), n),
                     O(this.data, a, s),
                     o.silent || this.emit("added", e, t, n)
                 }
@@ -27076,7 +27352,7 @@
                 key: "getResourceBundle",
                 value: function(e, t) {
                     return (t || (t = this.options.defaultNS),
-                    "v1" === this.options.compatibilityAPI) ? T(T({}, {}), this.getResource(e, t)) : this.getResource(e, t)
+                    "v1" === this.options.compatibilityAPI) ? N(N({}, {}), this.getResource(e, t)) : this.getResource(e, t)
                 }
             }, {
                 key: "getDataByLanguage",
@@ -27202,7 +27478,7 @@
                       , a = !this.options.userDefinedKeySeparator && !t.keySeparator && !this.options.userDefinedNsSeparator && !t.nsSeparator && !function(e, t, n) {
                         t = t || "",
                         n = n || "";
-                        var r = x.filter(function(e) {
+                        var r = T.filter(function(e) {
                             return 0 > t.indexOf(e) && 0 > n.indexOf(e)
                         });
                         if (0 === r.length)
@@ -27297,18 +27573,18 @@
                         (g = g.join(E)) && (g = this.extendTranslation(g, e, t, n));
                     else {
                         var k = !1
-                          , x = !1
-                          , N = void 0 !== t.count && "string" != typeof t.count
-                          , T = s.hasDefaultValue(t)
-                          , C = N ? this.pluralResolver.getSuffix(d, t.count, t) : ""
+                          , T = !1
+                          , x = void 0 !== t.count && "string" != typeof t.count
+                          , N = s.hasDefaultValue(t)
+                          , C = x ? this.pluralResolver.getSuffix(d, t.count, t) : ""
                           , L = t["defaultValue".concat(C)] || t.defaultValue;
-                        !this.isValidLookup(g) && T && (k = !0,
+                        !this.isValidLookup(g) && N && (k = !0,
                         g = L),
-                        this.isValidLookup(g) || (x = !0,
+                        this.isValidLookup(g) || (T = !0,
                         g = l);
-                        var M = (t.missingKeyNoValueFallbackToKey || this.options.missingKeyNoValueFallbackToKey) && x ? void 0 : g
-                          , D = T && L !== g && this.options.updateMissing;
-                        if (x || k || D) {
+                        var M = (t.missingKeyNoValueFallbackToKey || this.options.missingKeyNoValueFallbackToKey) && T ? void 0 : g
+                          , D = N && L !== g && this.options.updateMissing;
+                        if (T || k || D) {
                             if (this.logger.log(D ? "updateKey" : "missingKey", d, f, l, D ? L : g),
                             a) {
                                 var U = this.resolve(l, j(j({}, t), {}, {
@@ -27324,19 +27600,19 @@
                             else
                                 "all" === this.options.saveMissingTo ? $ = this.languageUtils.toResolveHierarchy(t.lng || this.language) : $.push(t.lng || this.language);
                             var F = function(e, n, r) {
-                                var o = T && r !== g ? r : M;
+                                var o = N && r !== g ? r : M;
                                 i.options.missingKeyHandler ? i.options.missingKeyHandler(e, f, n, o, D, t) : i.backendConnector && i.backendConnector.saveMissing && i.backendConnector.saveMissing(e, f, n, o, D, t),
                                 i.emit("missingKey", e, f, n, g)
                             };
-                            this.options.saveMissing && (this.options.saveMissingPlurals && N ? $.forEach(function(e) {
+                            this.options.saveMissing && (this.options.saveMissingPlurals && x ? $.forEach(function(e) {
                                 i.pluralResolver.getSuffixes(e, t).forEach(function(n) {
                                     F([e], l + n, t["defaultValue".concat(n)] || L)
                                 })
                             }) : F($, l, L))
                         }
                         g = this.extendTranslation(g, e, t, v, n),
-                        x && g === l && this.options.appendNamespaceToMissingKey && (g = "".concat(f, ":").concat(l)),
-                        (x || k) && this.options.parseMissingKeyHandler && (g = "v1" !== this.options.compatibilityAPI ? this.options.parseMissingKeyHandler(this.options.appendNamespaceToMissingKey ? "".concat(f, ":").concat(l) : l, k ? g : void 0) : this.options.parseMissingKeyHandler(g))
+                        T && g === l && this.options.appendNamespaceToMissingKey && (g = "".concat(f, ":").concat(l)),
+                        (T || k) && this.options.parseMissingKeyHandler && (g = "v1" !== this.options.compatibilityAPI ? this.options.parseMissingKeyHandler(this.options.appendNamespaceToMissingKey ? "".concat(f, ":").concat(l) : l, k ? g : void 0) : this.options.parseMissingKeyHandler(g))
                     }
                     return o ? (v.res = g,
                     v) : g
@@ -27852,7 +28128,7 @@
             }
             return n
         }
-        function H(e) {
+        function Y(e) {
             for (var t = 1; t < arguments.length; t++) {
                 var n = null != arguments[t] ? arguments[t] : {};
                 t % 2 ? z(Object(n), !0).forEach(function(t) {
@@ -27864,7 +28140,7 @@
             }
             return e
         }
-        var W = function() {
+        var H = function() {
             function e() {
                 var t = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : {};
                 (0,
@@ -27926,14 +28202,14 @@
                     var c = function(e) {
                         if (0 > e.indexOf(s.formatSeparator)) {
                             var i = S(t, u, e);
-                            return s.alwaysFormat ? s.format(i, void 0, n, H(H(H({}, r), t), {}, {
+                            return s.alwaysFormat ? s.format(i, void 0, n, Y(Y(Y({}, r), t), {}, {
                                 interpolationkey: e
                             })) : i
                         }
                         var o = e.split(s.formatSeparator)
                           , a = o.shift().trim()
                           , l = o.join(s.formatSeparator).trim();
-                        return s.format(S(t, u, a), l, n, H(H(H({}, r), t), {}, {
+                        return s.format(S(t, u, a), l, n, Y(Y(Y({}, r), t), {}, {
                             interpolationkey: a
                         }))
                     };
@@ -27980,7 +28256,7 @@
             }, {
                 key: "nest",
                 value: function(e, t) {
-                    var n, r, i = this, o = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : {}, a = H({}, o);
+                    var n, r, i = this, o = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : {}, a = Y({}, o);
                     function s(e, t) {
                         var n = this.nestingOptionsSeparator;
                         if (0 > e.indexOf(n))
@@ -27993,7 +28269,7 @@
                         (o && o.length % 2 == 0 && !s || s.length % 2 != 0) && (i = i.replace(/'/g, '"'));
                         try {
                             a = JSON.parse(i),
-                            t && (a = H(H({}, t), a))
+                            t && (a = Y(Y({}, t), a))
                         } catch (t) {
                             return this.logger.warn("failed parsing options string in nesting for key ".concat(e), t),
                             "".concat(e).concat(n).concat(i)
@@ -28019,7 +28295,7 @@
                         r || (this.logger.warn("missed to resolve ".concat(n[1], " for nesting ").concat(e)),
                         r = ""),
                         l && (r = u.reduce(function(e, t) {
-                            return i.format(e, t, o.lng, H(H({}, o), {}, {
+                            return i.format(e, t, o.lng, Y(Y({}, o), {}, {
                                 interpolationkey: n[1].trim()
                             }))
                         }, r.trim())),
@@ -28031,7 +28307,7 @@
             }]),
             e
         }();
-        function Y(e, t) {
+        function W(e, t) {
             var n = Object.keys(e);
             if (Object.getOwnPropertySymbols) {
                 var r = Object.getOwnPropertySymbols(e);
@@ -28045,10 +28321,10 @@
         function J(e) {
             for (var t = 1; t < arguments.length; t++) {
                 var n = null != arguments[t] ? arguments[t] : {};
-                t % 2 ? Y(Object(n), !0).forEach(function(t) {
+                t % 2 ? W(Object(n), !0).forEach(function(t) {
                     (0,
                     f.Z)(e, t, n[t])
-                }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : Y(Object(n)).forEach(function(t) {
+                }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : W(Object(n)).forEach(function(t) {
                     Object.defineProperty(e, t, Object.getOwnPropertyDescriptor(n, t))
                 })
             }
@@ -28591,7 +28867,7 @@
                         a && (!this.options.interpolation.format || this.options.interpolation.format === i.interpolation.format) && (u.formatter = o(a),
                         u.formatter.init(u, this.options),
                         this.options.interpolation.format = u.formatter.format.bind(u.formatter)),
-                        u.interpolator = new W(this.options),
+                        u.interpolator = new H(this.options),
                         u.utils = {
                             hasLoadedNamespace: this.hasLoadedNamespace.bind(this)
                         },
@@ -28952,13 +29228,13 @@
           , i = n(15103);
         let o = (0,
         r.createContext)(void 0)
-          , a = e=>{
+          , a = e => {
             let t = (0,
             r.useContext)(o);
             return (null == e ? void 0 : e.store) || t || (0,
             i.K7)()
         }
-          , s = ({children: e, store: t})=>{
+          , s = ({children: e, store: t}) => {
             let n = (0,
             r.useRef)();
             return t || n.current || (n.current = (0,
@@ -28968,8 +29244,8 @@
                 value: t || n.current
             }, e)
         }
-          , u = e=>"function" == typeof (null == e ? void 0 : e.then)
-          , l = r.use || (e=>{
+          , u = e => "function" == typeof (null == e ? void 0 : e.then)
+          , l = r.use || (e => {
             if ("pending" === e.status)
                 throw e;
             if ("fulfilled" === e.status)
@@ -28977,11 +29253,11 @@
             if ("rejected" === e.status)
                 throw e.reason;
             throw e.status = "pending",
-            e.then(t=>{
+            e.then(t => {
                 e.status = "fulfilled",
                 e.value = t
             }
-            , t=>{
+            , t => {
                 e.status = "rejected",
                 e.reason = t
             }
@@ -28993,18 +29269,18 @@
             return [function(e, t) {
                 let n = a(t)
                   , [[i,o,s],c] = (0,
-                r.useReducer)(t=>{
+                r.useReducer)(t => {
                     let r = n.get(e);
                     return Object.is(t[0], r) && t[1] === n && t[2] === e ? t : [r, n, e]
                 }
-                , void 0, ()=>[n.get(e), n, e])
+                , void 0, () => [n.get(e), n, e])
                   , f = i;
                 (o !== n || s !== e) && (c(),
                 f = n.get(e));
                 let d = null == t ? void 0 : t.delay;
                 return (0,
-                r.useEffect)(()=>{
-                    let t = n.sub(e, ()=>{
+                r.useEffect)( () => {
+                    let t = n.sub(e, () => {
                         if ("number" == typeof d) {
                             setTimeout(c, d);
                             return
@@ -29022,7 +29298,7 @@
             }(e, t), function(e, t) {
                 let n = a(t);
                 return (0,
-                r.useCallback)((...t)=>{
+                r.useCallback)( (...t) => {
                     if (!("write"in e))
                         throw Error("not writable atom");
                     return n.set(e, ...t)
@@ -29049,54 +29325,54 @@
         function o(e, t) {
             let n = `atom${++i}`
               , r = {
-                toString: ()=>n
+                toString: () => n
             };
             return "function" == typeof e ? r.read = e : (r.init = e,
-            r.read = e=>e(r),
-            r.write = (e,t,n)=>t(r, "function" == typeof n ? n(e(r)) : n)),
+            r.read = e => e(r),
+            r.write = (e, t, n) => t(r, "function" == typeof n ? n(e(r)) : n)),
             t && (r.write = t),
             r
         }
-        let a = e=>"init"in e
-          , s = e=>!!e.write
+        let a = e => "init"in e
+          , s = e => !!e.write
           , u = new WeakMap
-          , l = (e,t)=>{
+          , l = (e, t) => {
             u.set(e, t),
-            e.catch(()=>{}
-            ).finally(()=>u.delete(e))
+            e.catch( () => {}
+            ).finally( () => u.delete(e))
         }
-          , c = (e,t)=>{
+          , c = (e, t) => {
             let n = u.get(e);
             n && (u.delete(e),
             n(t))
         }
-          , f = (e,t)=>{
+          , f = (e, t) => {
             e.status = "fulfilled",
             e.value = t
         }
-          , d = (e,t)=>{
+          , d = (e, t) => {
             e.status = "rejected",
             e.reason = t
         }
-          , p = e=>"function" == typeof (null == e ? void 0 : e.then)
-          , h = (e,t)=>"v"in e && "v"in t && Object.is(e.v, t.v)
-          , v = (e,t)=>"e"in e && "e"in t && Object.is(e.e, t.e)
-          , g = e=>"v"in e && e.v instanceof Promise
-          , m = (e,t)=>"v"in e && "v"in t && e.v.orig && e.v.orig === t.v.orig
-          , y = e=>{
+          , p = e => "function" == typeof (null == e ? void 0 : e.then)
+          , h = (e, t) => "v"in e && "v"in t && Object.is(e.v, t.v)
+          , v = (e, t) => "e"in e && "e"in t && Object.is(e.e, t.e)
+          , g = e => "v"in e && e.v instanceof Promise
+          , m = (e, t) => "v"in e && "v"in t && e.v.orig && e.v.orig === t.v.orig
+          , y = e => {
             if ("e"in e)
                 throw e.e;
             return e.v
         }
-          , b = ()=>{
+          , b = () => {
             let e, t;
             let n = new WeakMap
               , r = new WeakMap
               , i = new Map;
             e = new Set,
             t = new Set;
-            let o = e=>n.get(e)
-              , u = (e,t)=>{
+            let o = e => n.get(e)
+              , u = (e, t) => {
                 Object.freeze(t);
                 let r = n.get(e);
                 if (n.set(e, t),
@@ -29106,10 +29382,10 @@
                     c(r.v, e)
                 }
             }
-              , b = (e,t,n)=>{
+              , b = (e, t, n) => {
                 let r = new Map
                   , i = !1;
-                n.forEach((n,o)=>{
+                n.forEach( (n, o) => {
                     n || o !== e || (n = t),
                     n ? (r.set(o, n),
                     t.d.get(o) !== n && (i = !0)) : console.warn("[Bug] atom state not found")
@@ -29117,7 +29393,7 @@
                 ),
                 (i || t.d.size !== r.size) && (t.d = r)
             }
-              , E = (e,t,n)=>{
+              , E = (e, t, n) => {
                 let r = o(e)
                   , i = {
                     d: (null == r ? void 0 : r.d) || new Map,
@@ -29134,42 +29410,42 @@
                 return u(e, i),
                 i
             }
-              , _ = (e,t,n,i)=>{
+              , _ = (e, t, n, i) => {
                 if (p(t)) {
                     let a;
-                    let s = new Promise((i,u)=>{
+                    let s = new Promise( (i, u) => {
                         let l = !1;
-                        t.then(t=>{
+                        t.then(t => {
                             if (!l) {
                                 l = !0;
                                 let a = o(e)
                                   , u = E(e, s, n);
                                 f(s, t),
                                 i(t),
-                                r.has(e) && (null == a ? void 0 : a.d) !== u.d && T(e, u, null == a ? void 0 : a.d)
+                                r.has(e) && (null == a ? void 0 : a.d) !== u.d && N(e, u, null == a ? void 0 : a.d)
                             }
                         }
-                        , t=>{
+                        , t => {
                             if (!l) {
                                 l = !0;
                                 let i = o(e)
                                   , a = E(e, s, n);
                                 d(s, t),
                                 u(t),
-                                r.has(e) && (null == i ? void 0 : i.d) !== a.d && T(e, a, null == i ? void 0 : i.d)
+                                r.has(e) && (null == i ? void 0 : i.d) !== a.d && N(e, a, null == i ? void 0 : i.d)
                             }
                         }
                         ),
-                        a = e=>{
+                        a = e => {
                             l || (l = !0,
-                            e.then(e=>f(s, e), e=>d(s, e)),
+                            e.then(e => f(s, e), e => d(s, e)),
                             i(e))
                         }
                     }
                     );
                     return s.orig = t,
                     s.status = "pending",
-                    l(s, e=>{
+                    l(s, e => {
                         e && a(e),
                         null == i || i()
                     }
@@ -29178,7 +29454,7 @@
                 }
                 return E(e, t, n)
             }
-              , w = (e,t,n)=>{
+              , w = (e, t, n) => {
                 let r = o(e)
                   , i = {
                     d: (null == r ? void 0 : r.d) || new Map,
@@ -29188,15 +29464,15 @@
                 r && v(r, i) && r.d === i.d) ? r : (u(e, i),
                 i)
             }
-              , O = (e,t)=>{
+              , O = (e, t) => {
                 let n, i;
                 let u = o(e);
-                if (!t && u && (r.has(e) || Array.from(u.d).every(([t,n])=>t === e || O(t) === n)))
+                if (!t && u && (r.has(e) || Array.from(u.d).every( ([t,n]) => t === e || O(t) === n)))
                     return u;
                 let l = new Map
                   , c = !0;
                 try {
-                    let t = e.read(t=>{
+                    let t = e.read(t => {
                         if (t === e) {
                             let e = o(t);
                             if (e)
@@ -29218,7 +29494,7 @@
                         },
                         get setSelf() {
                             return s(e) || console.warn("setSelf function cannot be used with read-only atom"),
-                            !i && s(e) && (i = (...t)=>{
+                            !i && s(e) && (i = (...t) => {
                                 if (c && console.warn("setSelf function cannot be called in sync"),
                                 !c)
                                     return k(e, ...t)
@@ -29227,38 +29503,38 @@
                             i
                         }
                     });
-                    return _(e, t, l, ()=>null == n ? void 0 : n.abort())
+                    return _(e, t, l, () => null == n ? void 0 : n.abort())
                 } catch (t) {
                     return w(e, t, l)
                 } finally {
                     c = !1
                 }
             }
-              , A = e=>{
+              , A = e => {
                 let t = r.get(e);
-                return t || (t = x(e)),
+                return t || (t = T(e)),
                 t
             }
-              , S = (e,t)=>!t.l.size && (!t.t.size || 1 === t.t.size && t.t.has(e))
-              , P = e=>{
+              , S = (e, t) => !t.l.size && (!t.t.size || 1 === t.t.size && t.t.has(e))
+              , P = e => {
                 let t = r.get(e);
-                t && S(e, t) && N(e)
+                t && S(e, t) && x(e)
             }
-              , I = e=>{
+              , I = e => {
                 let t = new Map
                   , n = new WeakMap
-                  , a = e=>{
+                  , a = e => {
                     var t;
                     let n = new Set(null == (t = r.get(e)) ? void 0 : t.t);
-                    return i.forEach((t,r)=>{
+                    return i.forEach( (t, r) => {
                         var i;
                         (null == (i = o(r)) ? void 0 : i.d.has(e)) && n.add(r)
                     }
                     ),
                     n
                 }
-                  , s = e=>{
-                    a(e).forEach(r=>{
+                  , s = e => {
+                    a(e).forEach(r => {
                         r !== e && (t.set(r, (t.get(r) || new Set).add(e)),
                         n.set(r, (n.get(r) || 0) + 1),
                         s(r))
@@ -29267,8 +29543,8 @@
                 }
                 ;
                 s(e);
-                let u = e=>{
-                    a(e).forEach(r=>{
+                let u = e => {
+                    a(e).forEach(r => {
                         var i;
                         if (r !== e) {
                             let e = n.get(r);
@@ -29280,7 +29556,7 @@
                                       , n = O(r, !0);
                                     e = !t || !h(t, n)
                                 }
-                                e || t.forEach(e=>e.delete(r))
+                                e || t.forEach(e => e.delete(r))
                             }
                             u(r)
                         }
@@ -29290,9 +29566,9 @@
                 ;
                 u(e)
             }
-              , R = (t,...n)=>{
+              , R = (t, ...n) => {
                 let r = !0
-                  , i = t.write(e=>y(O(e)), (n,...i)=>{
+                  , i = t.write(e => y(O(e)), (n, ...i) => {
                     let s;
                     if (n === t) {
                         if (!a(n))
@@ -29304,7 +29580,7 @@
                         s = R(n, ...i);
                     if (!r) {
                         let t = C();
-                        e.forEach(e=>e({
+                        e.forEach(e => e({
                             type: "async-write",
                             flushed: t
                         }))
@@ -29315,21 +29591,21 @@
                 return r = !1,
                 i
             }
-              , k = (t,...n)=>{
+              , k = (t, ...n) => {
                 let r = R(t, ...n)
                   , i = C();
-                return e.forEach(e=>e({
+                return e.forEach(e => e({
                     type: "write",
                     flushed: i
                 })),
                 r
             }
-              , x = (e,n,i)=>{
+              , T = (e, n, i) => {
                 var a;
                 let u = i || [];
-                null == (a = o(e)) || a.d.forEach((t,n)=>{
+                null == (a = o(e)) || a.d.forEach( (t, n) => {
                     let i = r.get(n);
-                    i ? i.t.add(e) : n !== e && x(n, e, u)
+                    i ? i.t.add(e) : n !== e && T(n, e, u)
                 }
                 ),
                 O(e);
@@ -29341,16 +29617,16 @@
                 t.add(e),
                 s(e) && e.onMount) {
                     let {onMount: t} = e;
-                    u.push(()=>{
-                        let n = t((...t)=>k(e, ...t));
+                    u.push( () => {
+                        let n = t( (...t) => k(e, ...t));
                         n && (l.u = n)
                     }
                     )
                 }
-                return i || u.forEach(e=>e()),
+                return i || u.forEach(e => e()),
                 l
             }
-              , N = e=>{
+              , x = e => {
                 var n;
                 let i = null == (n = r.get(e)) ? void 0 : n.u;
                 i && i(),
@@ -29358,44 +29634,44 @@
                 t.delete(e);
                 let a = o(e);
                 a ? (g(a) && c(a.v),
-                a.d.forEach((t,n)=>{
+                a.d.forEach( (t, n) => {
                     if (n !== e) {
                         let t = r.get(n);
                         t && (t.t.delete(e),
-                        S(n, t) && N(n))
+                        S(n, t) && x(n))
                     }
                 }
                 )) : console.warn("[Bug] could not find atom state to unmount", e)
             }
-              , T = (e,t,n)=>{
+              , N = (e, t, n) => {
                 let i = new Set(t.d.keys());
-                null == n || n.forEach((t,n)=>{
+                null == n || n.forEach( (t, n) => {
                     if (i.has(n)) {
                         i.delete(n);
                         return
                     }
                     let o = r.get(n);
                     o && (o.t.delete(e),
-                    S(n, o) && N(n))
+                    S(n, o) && x(n))
                 }
                 ),
-                i.forEach(t=>{
+                i.forEach(t => {
                     let n = r.get(t);
-                    n ? n.t.add(e) : r.has(e) && x(t, e)
+                    n ? n.t.add(e) : r.has(e) && T(t, e)
                 }
                 )
             }
-              , C = ()=>{
+              , C = () => {
                 let e;
                 for (e = new Set; i.size; ) {
                     let t = Array.from(i);
                     i.clear(),
-                    t.forEach(([t,n])=>{
+                    t.forEach( ([t,n]) => {
                         let i = o(t);
                         if (i) {
                             let o = r.get(t);
-                            o && i.d !== (null == n ? void 0 : n.d) && T(t, i, null == n ? void 0 : n.d),
-                            o && !(n && !g(n) && (h(n, i) || v(n, i))) && (o.l.forEach(e=>e()),
+                            o && i.d !== (null == n ? void 0 : n.d) && N(t, i, null == n ? void 0 : n.d),
+                            o && !(n && !g(n) && (h(n, i) || v(n, i))) && (o.l.forEach(e => e()),
                             e.add(t))
                         } else
                             console.warn("[Bug] no atom state to flush")
@@ -29406,44 +29682,44 @@
             }
             ;
             return {
-                get: e=>y(O(e)),
+                get: e => y(O(e)),
                 set: k,
-                sub: (t,n)=>{
+                sub: (t, n) => {
                     let r = A(t)
                       , i = C()
                       , o = r.l;
                     return o.add(n),
-                    e.forEach(e=>e({
+                    e.forEach(e => e({
                         type: "sub",
                         flushed: i
                     })),
-                    ()=>{
+                    () => {
                         o.delete(n),
                         P(t),
-                        e.forEach(e=>e({
+                        e.forEach(e => e({
                             type: "unsub"
                         }))
                     }
                 }
                 ,
-                dev_subscribe_store: (t,n)=>{
+                dev_subscribe_store: (t, n) => {
                     if (2 !== n)
                         throw Error("The current StoreListener revision is 2.");
                     return e.add(t),
-                    ()=>{
+                    () => {
                         e.delete(t)
                     }
                 }
                 ,
-                dev_get_mounted_atoms: ()=>t.values(),
-                dev_get_atom_state: e=>n.get(e),
-                dev_get_mounted: e=>r.get(e),
-                dev_restore_atoms: t=>{
+                dev_get_mounted_atoms: () => t.values(),
+                dev_get_atom_state: e => n.get(e),
+                dev_get_mounted: e => r.get(e),
+                dev_restore_atoms: t => {
                     for (let[e,n] of t)
                         a(e) && (_(e, n),
                         I(e));
                     let n = C();
-                    e.forEach(e=>e({
+                    e.forEach(e => e({
                         type: "restore",
                         flushed: n
                     }))
@@ -29452,7 +29728,7 @@
         }
         ;
         "number" == typeof globalThis.__NUMBER_OF_JOTAI_INSTANCES__ ? ++globalThis.__NUMBER_OF_JOTAI_INSTANCES__ : globalThis.__NUMBER_OF_JOTAI_INSTANCES__ = 1;
-        let E = ()=>(r || (1 !== globalThis.__NUMBER_OF_JOTAI_INSTANCES__ && console.warn("Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044"),
+        let E = () => (r || (1 !== globalThis.__NUMBER_OF_JOTAI_INSTANCES__ && console.warn("Detected multiple Jotai instances. It may cause unexpected behavior with the default store. https://github.com/pmndrs/jotai/discussions/2044"),
         r = b()),
         r)
     }
