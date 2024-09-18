@@ -22005,7 +22005,7 @@
           , T = n(96721)
           , x = n(16497);
         let k = 0;
-		window.lemonGOC = u.rV.gameObjectClicked;
+		window.lemonGOC = l.rV.gameObjectClicked;
 		window.lemonN = n;
         l.rV.gameObjectClicked.subscribe(e => {
 		if(window.logGOC) console.log(e)
