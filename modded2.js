@@ -12841,7 +12841,6 @@
                                 });
                                 return
                             }
-                            i--
                         }
                         if (e.telemetryId || "need-telemetry" === a || "need-recaptcha" === a) {
                             e.telemetryId = void 0;
@@ -12856,21 +12855,21 @@
                                 });
                                 return
                             }
-                            i--
                         } else
                             i > 1 && o.ZP.sendEventDelayed(o.fb.SLOW_LOAD, {
                                 retry: i
                             });
                         g.Z.getRoomId(e.mapId, e.world).then(o => {
                             console.log("calling joinById"),
-                            this.client.joinById(o, e).then(e => t(e)).catch(e => {
-                                console.error("error from colyseus", JSON.stringify(e)),
-                                a = null == e ? void 0 : e.message,
-                                R.permanentErrors.includes(null == e ? void 0 : e.message) ? n(e) : R.retryErrors.includes(null == e ? void 0 : e.message) && i < 8 ? (r = e,
+                            this.client.joinById(o, e).then(e => t(e)).catch(t => {
+                                console.error("error from colyseus", JSON.stringify(t)),
+                                a = null == t ? void 0 : t.message,
+                                R.permanentErrors.includes(a) ? n(t) : R.retryErrors.includes(a) && i < 8 ? (r = t,
                                 setTimeout(s, 5e3 + 1500 * i),
-                                i += 1) : i >= 2 ? (null == e ? void 0 : e.code) == 1006 && r ? n(r) : n(e) : ((null == e ? void 0 : e.code) != 1006 && (r = e),
+                                i += 1) : ("need-recaptcha" !== a || e.recaptcha) && ("need-telemetry" !== a || e.telemetryId) ? i >= 2 ? (null == t ? void 0 : t.code) == 1006 && r ? n(r) : n(t) : ((null == t ? void 0 : t.code) != 1006 && (r = t),
                                 setTimeout(s, 3e3),
-                                i += 1)
+                                i += 1) : (r = t,
+                                setTimeout(s, 1e3))
                             }
                             )
                         }
@@ -13546,7 +13545,7 @@
                 return u
             }
         });
-        let r = parseFloat("9.21")
+        let r = parseFloat("9.22")
           , i = 1676498533e3
           , o = "game-container"
           , a = "players"
