@@ -2404,7 +2404,7 @@
         }),
         t.ExpressionOperators = t.FunctionNames = t.ActionTypes = t.EventTypes = void 0,
         t.EventTypes = ["click", "input", "timer", "place", "remove"],
-        t.ActionTypes = ["stateChange", "displayChange", "itemChange", "displayTimer", "setTimer", "adjustInventory", "addAchievement", "eventTrigger", "entityTrigger", "itemTrigger", "iteratePlayers", "spawn", "return", "spawnmap", "clientCommand", "adjustSkill", "adjustCoins", "adjustEnergy", "adjustPet", "craft", "collect", "craftCancel", "destroy", "mapDrop", "mailDrop", "scheduleNotice", "setTracker", "incTracker", "decTracker", "insertArray", "loadData", "move", "custom", "call", "broadcast", "globalMessage", "track", "metric", "transient"],
+        t.ActionTypes = ["stateChange", "displayChange", "itemChange", "displayTimer", "setTimer", "adjustInventory", "addAchievement", "eventTrigger", "entityTrigger", "itemTrigger", "iteratePlayers", "spawn", "return", "spawnmap", "clientCommand", "adjustSkill", "adjustCoins", "adjustEnergy", "adjustPet", "craft", "collect", "craftCancel", "destroy", "mapDrop", "mailDrop", "scheduleNotice", "setTracker", "incTracker", "decTracker", "insertArray", "loadData", "move", "custom", "call", "broadcast", "globalMessage", "track", "metric", "boost", "transient"],
         t.FunctionNames = ["time", "rand", "normal", "floor", "ceil", "max", "min", "abs", "log", "round", "evalTracker", "string", "array", "inventory", "space", "environment", "trait", "achievement", "crafttime", "permission", "membership", "tag", "state", "energy", "coins", "quest", "roomfind", "eval", "pet"],
         t.ExpressionOperators = ["or", "<", ">", "=", "<>", ">=", "<=", "and", "+", "*", "-", "/", "not", "mod"]
     },
@@ -2519,6 +2519,12 @@
             value: !0
         })
     },
+    52046: function(e, t) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        })
+    },
     48091: function(e, t) {
         "use strict";
         Object.defineProperty(t, "__esModule", {
@@ -2593,6 +2599,7 @@
         i(n(30908), t),
         i(n(57563), t),
         i(n(13903), t),
+        i(n(52046), t),
         i(n(59112), t),
         i(n(57755), t),
         i(n(12237), t),
@@ -13021,6 +13028,7 @@
                 await s.Z.scanGameLibrary(this.room.state.entities),
                 this.selfPlayer && A) {
                     let e = JSON.parse(JSON.stringify(this.currentPlayer));
+                    console.log("tax rate is ".concat(e.full.feeRate)),
                     (null === (y = e.full.pet) || void 0 === y ? void 0 : y.avatar) || delete e.full.pet,
                     this.initPlayers(),
                     this.setupSelfPlayerListeners(this.selfPlayer, A),
@@ -19035,16 +19043,19 @@
                 return p
             },
             Gp: function() {
-                return O
+                return A
             },
             U1: function() {
                 return b
+            },
+            UV: function() {
+                return w
             },
             Uf: function() {
                 return g
             },
             Up: function() {
-                return S
+                return P
             },
             XU: function() {
                 return m
@@ -19052,14 +19063,14 @@
             _r: function() {
                 return _
             },
+            cd: function() {
+                return v
+            },
             hL: function() {
-                return A
+                return S
             },
             ki: function() {
                 return y
-            },
-            og: function() {
-                return v
             },
             qx: function() {
                 return E
@@ -19068,7 +19079,7 @@
                 return h
             },
             yq: function() {
-                return w
+                return O
             }
         });
         var r = n(66741)
@@ -19165,7 +19176,7 @@
           , {selectCraftable: h, closeCraftingDialog: p, showCraftingWindow: g} = f.actions;
         t.ZP = f.reducer;
         let m = e => e.crafting.showCrafting
-          , v = e => Object.values(e.crafting.achievements)
+          , v = e => e.crafting.achievements
           , y = e => e.crafting.ui
           , b = e => e.crafting.ui.selectedCraftable ? e.crafting.achievements[e.crafting.ui.selectedCraftable] || {
             achievementId: e.crafting.ui.selectedCraftable
@@ -19180,6 +19191,15 @@
         }
         )
           , w = (0,
+        i.P1)([b], e => {
+            var t;
+            if (!e)
+                return [];
+            let n = o.Z.getGameAchievement(e.achievementId);
+            return (null == n ? void 0 : null === (t = n.craftable) || void 0 === t ? void 0 : t.requiredMemberships) || []
+        }
+        )
+          , O = (0,
         i.P1)([b, a.xK], (e, t) => n => {
             let r = Object.values(t.slots);
             if (e) {
@@ -19199,7 +19219,7 @@
             return !!s && (!a.inventory.maxQuantity || a.inventory.maxQuantity - s % a.inventory.maxQuantity > 0)
         }
         )
-          , O = e => {
+          , A = e => {
             let t = b(e);
             if (!t)
                 return [];
@@ -19207,8 +19227,8 @@
             return n && n.craftable ? n.craftable.requiredItems.filter(t => t.unconsumable && t.quantity > (0,
             a.RQ)(e)(t.id)) : []
         }
-          , A = e => e.crafting.ui.craftType
-          , S = e => {
+          , S = e => e.crafting.ui.craftType
+          , P = e => {
             var t;
             return !!((null === (t = e.crafting.ui) || void 0 === t ? void 0 : t.entityState) && ["crafting", "ready"].includes(e.crafting.ui.entityState))
         }
@@ -20216,151 +20236,155 @@
         "use strict";
         n.d(t, {
             $b: function() {
-                return k
-            },
-            $v: function() {
-                return V
-            },
-            $x: function() {
-                return p
-            },
-            Ai: function() {
-                return Y
-            },
-            CO: function() {
-                return c
-            },
-            GO: function() {
-                return E
-            },
-            K7: function() {
-                return _
-            },
-            Kx: function() {
-                return I
-            },
-            NY: function() {
-                return z
-            },
-            Nz: function() {
-                return g
-            },
-            O$: function() {
-                return s
-            },
-            Od: function() {
-                return $
-            },
-            PD: function() {
-                return y
-            },
-            QV: function() {
                 return C
             },
-            Qk: function() {
-                return H
-            },
-            RG: function() {
-                return O
-            },
-            RQ: function() {
-                return R
-            },
-            SP: function() {
-                return o
-            },
-            Sx: function() {
-                return S
-            },
-            TR: function() {
-                return N
-            },
-            U7: function() {
-                return j
-            },
-            V4: function() {
-                return M
-            },
-            VQ: function() {
-                return W
-            },
-            Wj: function() {
+            $v: function() {
                 return F
             },
-            Xt: function() {
-                return B
+            $x: function() {
+                return g
             },
-            _i: function() {
-                return d
-            },
-            b_: function() {
-                return x
-            },
-            cV: function() {
-                return G
-            },
-            ge: function() {
-                return P
-            },
-            gx: function() {
-                return U
-            },
-            h2: function() {
+            Ai: function() {
                 return Z
             },
-            iN: function() {
-                return q
+            CO: function() {
+                return d
             },
-            lA: function() {
-                return v
+            GO: function() {
+                return _
             },
-            o7: function() {
-                return u
-            },
-            oJ: function() {
-                return a
-            },
-            pB: function() {
-                return f
-            },
-            pR: function() {
-                return T
-            },
-            px: function() {
-                return m
-            },
-            qB: function() {
-                return D
-            },
-            qb: function() {
-                return L
-            },
-            wk: function() {
+            K7: function() {
                 return w
             },
-            x6: function() {
-                return h
+            Kx: function() {
+                return x
             },
-            xK: function() {
-                return A
+            NY: function() {
+                return H
             },
-            y4: function() {
+            Nz: function() {
+                return m
+            },
+            O$: function() {
                 return l
             },
-            zY: function() {
+            Od: function() {
+                return B
+            },
+            PD: function() {
                 return b
+            },
+            QV: function() {
+                return M
+            },
+            Qk: function() {
+                return W
+            },
+            RG: function() {
+                return A
+            },
+            RQ: function() {
+                return I
+            },
+            SP: function() {
+                return a
+            },
+            Sx: function() {
+                return P
+            },
+            TR: function() {
+                return L
+            },
+            U7: function() {
+                return $
+            },
+            V4: function() {
+                return j
+            },
+            VQ: function() {
+                return K
+            },
+            Wj: function() {
+                return G
+            },
+            Xt: function() {
+                return q
+            },
+            _i: function() {
+                return f
+            },
+            b_: function() {
+                return N
+            },
+            cV: function() {
+                return Y
+            },
+            ge: function() {
+                return R
+            },
+            gx: function() {
+                return V
+            },
+            h2: function() {
+                return J
+            },
+            iN: function() {
+                return z
+            },
+            lA: function() {
+                return y
+            },
+            o7: function() {
+                return c
+            },
+            oJ: function() {
+                return s
+            },
+            pB: function() {
+                return h
+            },
+            pR: function() {
+                return k
+            },
+            px: function() {
+                return v
+            },
+            qB: function() {
+                return U
+            },
+            qb: function() {
+                return D
+            },
+            wk: function() {
+                return O
+            },
+            x6: function() {
+                return p
+            },
+            xK: function() {
+                return S
+            },
+            y4: function() {
+                return u
+            },
+            yn: function() {
+                return T
+            },
+            zY: function() {
+                return E
             }
         });
         var r = n(68697)
-          , i = n(4152);
-        let o = e => e.game.gameLibraryLoaded
-          , a = e => e.game.npc_dialog.isActive
-          , s = e => e.game.playersOnline
-          , l = e => e.game.questLog
-          , u = e => "nftpicker" === e.game.currentModal
-          , c = e => e.game.petPicker
-          , d = e => e.game.petDetails
-          , f = e => {
+          , i = n(4152)
+          , o = n(25904);
+        let a = e => e.game.gameLibraryLoaded
+          , s = e => e.game.npc_dialog.isActive
+          , l = e => e.game.playersOnline
+          , u = e => e.game.questLog
+          , c = e => "nftpicker" === e.game.currentModal
+          , d = e => e.game.petPicker
+          , f = e => e.game.petDetails
+          , h = e => {
             var t;
             let {npc_dialog: n} = e.game;
             return {
@@ -20369,72 +20393,78 @@
                 isFirstDialog: 0 === n.currentMessageIndex
             }
         }
-          , h = e => {
+          , p = e => {
             var t;
             return e.game.npc_dialog.isActive || e.game.currentModal || e.game.questLog.isVisible || e.game.petPicker.isVisible || (null === (t = e.game.urlDisclaimer) || void 0 === t ? void 0 : t.isActive) && e.game.urlDisclaimer.URL || e.ui.confirmDialog.isVisible || e.game.petDetails.isVisible && e.game.petDetails.firstReveal || e.generalStore.isOpen || e.ui.imageDialog.isVisible && !e.ui.imageDialog.modeless || "none" !== e.marketplace.mode
         }
-          , p = e => e.game.lookAtText
-          , g = e => e.game.npc_dialog
-          , m = e => e.game.criticalMessage
-          , v = e => e.game.player
-          , y = e => {
+          , g = e => e.game.lookAtText
+          , m = e => e.game.npc_dialog
+          , v = e => e.game.criticalMessage
+          , y = e => e.game.player
+          , b = e => {
             var t;
             let n = null === (t = e.game.player) || void 0 === t ? void 0 : t.full.bookmarks;
             return (null == n ? void 0 : n.bookmarkedMaps) || []
         }
-          , b = e => {
+          , E = e => {
             var t, n;
             return (null === (n = e.game.player) || void 0 === n ? void 0 : null === (t = n.full.bookmarks) || void 0 === t ? void 0 : t.size) || i.DEFAULT_BOOKMARKS
         }
-          , E = e => e.game.loading || !e.auth.authenticated
-          , _ = e => e.game.warping
-          , w = e => e.game.needNfts
-          , O = e => !!e.game.connected && e.game.sessionId
-          , A = e => {
+          , _ = e => e.game.loading || !e.auth.authenticated
+          , w = e => e.game.warping
+          , O = e => e.game.needNfts
+          , A = e => !!e.game.connected && e.game.sessionId
+          , S = e => {
             var t;
             return null === (t = e.game.player) || void 0 === t ? void 0 : t.full.inventory
         }
-          , S = e => {
+          , P = e => {
             var t;
             return null === (t = e.game.player) || void 0 === t ? void 0 : t.full.wardrobe
         }
-          , P = e => {
+          , R = e => {
             var t;
             let n = new Date
               , r = e.game.player
               , i = (null == r ? void 0 : r.core.memberships) && (null === (t = r.core.memberships.vip) || void 0 === t ? void 0 : t.expiration) ? new Date(r.core.memberships.vip.expiration) : null;
             return !!i && n < i
         }
-          , R = (0,
-        r.P1)([A], e => t => {
+          , I = (0,
+        r.P1)([S], e => t => {
             if (!e || !e || !e.slots || 0 === Object.keys(e.slots).length)
                 return 0;
             let n = Object.values(e.slots).filter(e => e.item === t);
             return n.length ? n.reduce( (e, t) => e + t.quantity, 0) : 0
         }
         )
-          , I = e => e.game.soundState
-          , T = e => e.game.enhancedState
-          , x = e => e.game.joystickState
-          , k = e => e.game.playersOnline.updated
-          , N = e => e.game.playerOnlineInfo
-          , C = e => e.game.currentModal
-          , L = e => t => {
-            var n;
-            return (null === (n = e.game.player) || void 0 === n ? void 0 : n.full.levels)[t]
+          , T = (0,
+        r.P1)([y], e => t => t.filter(t => !(0,
+        o.aG)(null == e ? void 0 : e.core.memberships, t)))
+          , x = e => e.game.soundState
+          , k = e => e.game.enhancedState
+          , N = e => e.game.joystickState
+          , C = e => e.game.playersOnline.updated
+          , L = e => e.game.playerOnlineInfo
+          , M = e => e.game.currentModal
+          , D = (0,
+        r.P1)([e => {
+            var t;
+            return null === (t = e.game.player) || void 0 === t ? void 0 : t.full.levels
         }
-          , M = e => t => e.game.room.levels[t]
-          , D = e => e.auth.authenticated && e.auth.username && e.auth.playerAvatar && !e.game.room.worldId
-          , j = e => !e.game.room.worldId
-          , U = e => e.game.worlds
-          , $ = e => e.game.room.mapId
-          , V = e => e.game.room.roomType
-          , B = e => e.game.room.worldId
-          , F = e => e.game.room.templateName
-          , q = e => e.game.urlDisclaimer
-          , G = e => e.game.showSkills
-          , z = e => e.game.showSettings
-          , Y = (0,
+        ], e => t => (0,
+        o.aG)(e, t))
+          , j = e => t => e.game.room.levels[t]
+          , U = e => e.auth.authenticated && e.auth.username && e.auth.playerAvatar && !e.game.room.worldId
+          , $ = e => !e.game.room.worldId
+          , V = e => e.game.worlds
+          , B = e => e.game.room.mapId
+          , F = e => e.game.room.roomType
+          , q = e => e.game.room.worldId
+          , G = e => e.game.room.templateName
+          , z = e => e.game.urlDisclaimer
+          , Y = e => e.game.showSkills
+          , H = e => e.game.showSettings
+          , Z = (0,
         r.P1)([e => e.game.farmDetails, e => e.mapEditor.roomSettings], (e, t) => ({
             ...e,
             farmName: t.name,
@@ -20443,9 +20473,9 @@
             guild: t.guild,
             labels: t.labels
         }))
-          , H = e => e.game.sidePanel.isActive
-          , Z = e => e.game.farmUpgradePanel.isActive
-          , W = e => e.game.realmrefresh
+          , W = e => e.game.sidePanel.isActive
+          , J = e => e.game.farmUpgradePanel.isActive
+          , K = e => e.game.realmrefresh
     },
     72936: function(e, t, n) {
         "use strict";
@@ -20717,16 +20747,16 @@
                 return S
             },
             Ei: function() {
-                return D
+                return j
             },
             Er: function() {
                 return P
             },
             LB: function() {
-                return L
+                return M
             },
             Mp: function() {
-                return B
+                return F
             },
             Mt: function() {
                 return x
@@ -20744,16 +20774,19 @@
                 return O
             },
             T: function() {
-                return M
+                return D
             },
             TI: function() {
-                return U
+                return $
             },
             Vb: function() {
                 return N
             },
             Y7: function() {
                 return A
+            },
+            ZA: function() {
+                return C
             },
             _0: function() {
                 return k
@@ -20771,13 +20804,13 @@
                 return g
             },
             lD: function() {
-                return C
+                return L
             },
             pT: function() {
                 return w
             },
             pW: function() {
-                return V
+                return B
             },
             r5: function() {
                 return _
@@ -20789,10 +20822,10 @@
                 return b
             },
             xp: function() {
-                return $
+                return V
             },
             zl: function() {
-                return F
+                return q
             }
         });
         var r = n(66741)
@@ -21057,35 +21090,39 @@
         }
         let x = e => {
             var t;
-            let n = j(e);
+            let n = U(e);
             return T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.editFarmConfig, n)
         }
           , k = e => {
             var t;
-            let n = j(e);
+            let n = U(e);
             return T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.editMapMembers, n)
         }
           , N = e => {
             var t;
-            let n = j(e);
+            let n = U(e);
             return T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.build, n)
         }
-          , C = e => {
-            var t;
-            let n = j(e);
-            return T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.remove, n)
+          , C = (e, t) => {
+            var n;
+            return null == e || null === (n = e.useTargets) || void 0 === n || !n.types.includes("mapLabels") || !e.useTargets.mapLabels || e.useTargets.mapLabels.every(e => t.includes(e))
         }
           , L = e => {
             var t;
-            let n = j(e);
-            return !!n && 0 !== n.length && (!!n.includes("OWNER") || T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.surplusAccess, n))
+            let n = U(e);
+            return T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.remove, n)
         }
           , M = e => {
             var t;
-            let n = j(e);
-            return !!n && 0 !== n.length && (!!n.includes("OWNER") || T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.storageAccess, n))
+            let n = U(e);
+            return !!n && 0 !== n.length && (!!n.includes("OWNER") || T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.surplusAccess, n))
         }
           , D = e => {
+            var t;
+            let n = U(e);
+            return !!n && 0 !== n.length && (!!n.includes("OWNER") || T(null === (t = e.mapEditor.roomSettings.permissions) || void 0 === t ? void 0 : t.storageAccess, n))
+        }
+          , j = e => {
             var t, n, r;
             if (!s()(e.mapEditor.roomSettings.ownerAddress)) {
                 let t = !!(null === (r = e.game.player) || void 0 === r ? void 0 : r.full.cryptoWallets.find(t => {
@@ -21098,11 +21135,11 @@
             }
             return !!((null === (t = e.game.room) || void 0 === t ? void 0 : t.mapId) && (null === (n = e.game.player) || void 0 === n ? void 0 : n.full.farms) && e.game.player.full.farms.includes(e.game.room.mapId))
         }
-          , j = e => {
+          , U = e => {
             var t, n, r;
             if (null === (t = e.game.player) || void 0 === t ? void 0 : t.full.godmode)
                 return ["GOD", "OWNER", "MANAGER", "ANY"];
-            if (D(e))
+            if (j(e))
                 return ["OWNER", "MANAGER", "ANY"];
             if (e.mapEditor.roomSettings.members && e.mapEditor.roomSettings.members.length > 0) {
                 let t = null === (r = e.game.player) || void 0 === r ? void 0 : null === (n = r.core.mid) || void 0 === n ? void 0 : n.toLowerCase()
@@ -21116,20 +21153,20 @@
             }
             return ["ANY"]
         }
-          , U = e => {
+          , $ = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "object" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.object : void 0
         }
-          , $ = e => {
+          , V = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "tile" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.tile : void 0
         }
-          , V = e => {
+          , B = e => {
             var t, n;
             return (null === (t = e.mapEditor.selectedItem) || void 0 === t ? void 0 : t.type) === "entity" ? null === (n = e.mapEditor.selectedItem) || void 0 === n ? void 0 : n.entity : void 0
         }
-          , B = e => e.mapEditor.roomSettings
-          , F = e => e.mapEditor.roomSettings.restrictions
+          , F = e => e.mapEditor.roomSettings
+          , q = e => e.mapEditor.roomSettings.restrictions
     },
     71936: function(e, t, n) {
         "use strict";
@@ -22004,34 +22041,35 @@
         var R = n(60943)
           , I = n(96808)
           , T = n(96721)
-          , x = n(16497);
-        let k = 0;
+          , x = n(16497)
+          , k = n(11941);
+        let N = 0;
 		window.lemonGOC = l.rV.gameObjectClicked;
 		window.lemonN = n;
         l.rV.gameObjectClicked.subscribe(e => {
 		if(window.logGOC) console.log(e)
-            var t, n, r, i, o, a;
-            let s = Date.now();
-            if (s - k < 150)
+            var t, n, r, i, o, a, s;
+            let u = Date.now();
+            if (u - N < 150)
                 return;
-            k = s;
-            let u = ea.getState()
-              , c = (0,
-            d.pT)(u)
+            N = u;
+            let c = ea.getState()
               , h = (0,
-            R.NS)(u);
-            if (c || (null == h ? void 0 : h.isOpen))
+            d.pT)(c)
+              , p = (0,
+            R.NS)(c);
+            if (h || (null == p ? void 0 : p.isOpen))
                 return;
-            let {selfPlayer: p, world: v} = e;
-            if (!p)
+            let {selfPlayer: v, world: y} = e;
+            if (!v)
                 return;
-            let y = (0,
+            let E = (0,
             m.iy)(e)
-              , E = g.l.getInstance()
-              , _ = null === (t = E.currentPlayer) || void 0 === t ? void 0 : t.full.pet
-              , w = 90;
-            if (_ && _.happiness > 50 && (null !== (r = null === (n = _.traits) || void 0 === n ? void 0 : n.Speed) && void 0 !== r ? r : 0) > 1 && (w += 32 + (_.traits.Speed - 1)),
-            y > w * w) {
+              , _ = g.l.getInstance()
+              , w = null === (t = _.currentPlayer) || void 0 === t ? void 0 : t.full.pet
+              , O = 90;
+            if (w && w.happiness > 50 && (null !== (r = null === (n = w.traits) || void 0 === n ? void 0 : n.Speed) && void 0 !== r ? r : 0) > 1 && (O += 32 + (w.traits.Speed - 1)),
+            E > O * O) {
                 ea.dispatch((0,
                 f.io)({
                     mouse: e.mouse,
@@ -22039,14 +22077,29 @@
                 }));
                 return
             }
-            e.animation && (null === (i = E.scene) || void 0 === i || i.playOneTimeAnimation(e.animation));
-            let O = (0,
-            R.xM)(u)
-              , A = (0,
-            R.B6)(u);
-            if (A && !(null == h ? void 0 : h.isOpen)) {
-                if ((null === (o = A.onUse) || void 0 === o ? void 0 : o.types.includes("move")) && (0,
-                I.ZP)(A, e.key, e.type || e.entityType, e.cropState, e.mid)) {
+            e.animation && (null === (i = _.scene) || void 0 === i || i.playOneTimeAnimation(e.animation));
+            let A = (0,
+            R.xM)(c)
+              , S = (0,
+            R.B6)(c);
+            if (S && !(null == p ? void 0 : p.isOpen)) {
+                if ((null === (o = S.onUse) || void 0 === o ? void 0 : o.types.includes("move")) && (0,
+                I.ZP)(S, e.key, e.type || e.entityType, e.cropState, e.mid)) {
+                    if (!(0,
+                    d.ZA)(S, g.l.getInstance().mapLabels) || !(0,
+                    d.Vb)(c)) {
+                        l.rV.playSound.emit("snd_ui_error");
+                        let e = "cannot-move-this";
+                        es.set(k.W_, [{
+                            source: "item",
+                            icon: null === (a = b.Z.getGameItem(S.id)) || void 0 === a ? void 0 : a.image,
+                            text: {
+                                id: e
+                            },
+                            deduplicationKey: e
+                        }]);
+                        return
+                    }
                     let t = e.useType || "unknown"
                       , n = "object" === t ? b.Z.getGameObject(e.key) : b.Z.getGameEntity(e.key);
                     if (n && void 0 !== e.entityState) {
@@ -22070,10 +22123,10 @@
                     })
                 } else
                     "npc" !== e.entityType || (0,
-                    I.ZP)(A, e.npcId, "npc") ? l.ZP.emitEventNow(l.qM.PLAYER_USED_ITEM, {
+                    I.ZP)(S, e.npcId, "npc") ? l.ZP.emitEventNow(l.qM.PLAYER_USED_ITEM, {
                         item: {
-                            id: A.id,
-                            inventorySlot: O.slot
+                            id: S.id,
+                            inventorySlot: A.slot
                         },
                         target: {
                             id: e.targetId,
@@ -22100,10 +22153,10 @@
             }
             if ("storage" === e.entityType) {
                 let t = e.targetId
-                  , n = E.getEntityByUniqueId(t);
+                  , n = _.getEntityByUniqueId(t);
                 if (n) {
                     let e = b.Z.getGameEntity(n.entity);
-                    ((null == e ? void 0 : null === (a = e.storage) || void 0 === a ? void 0 : a.transient) || (0,
+                    ((null == e ? void 0 : null === (s = e.storage) || void 0 === s ? void 0 : s.transient) || (0,
                     d.T)(ea.getState())) && l.ZP.emitEventNow(l.fb.PLAYER_OPEN_STORAGE, {
                         storageId: t
                     })
@@ -22115,7 +22168,7 @@
                     mid: e.targetId,
                     entity: e.entityId,
                     impact: "click",
-                    inputs: [null == v ? void 0 : v.x, null == v ? void 0 : v.y]
+                    inputs: [null == y ? void 0 : y.x, null == y ? void 0 : y.y]
                 });
                 return
             }
@@ -22156,15 +22209,15 @@
                 })) : console.log("nothing to do", e))
         }
         );
-        var N = n(27361)
-          , C = n.n(N);
-        let L = 0;
+        var C = n(27361)
+          , L = n.n(C);
+        let M = 0;
         (0,
         s.H)("game/PLAYER_CLICKED", (e, t) => {
             let n = Date.now();
-            if (n - L < 150)
+            if (n - M < 150)
                 return;
-            L = n;
+            M = n;
             let r = t.getState()
               , i = (0,
             d.pT)(r)
@@ -22178,17 +22231,17 @@
                 if (t) {
                     var a, s, u, c, f;
                     let r = (null === (a = t.onUse) || void 0 === a ? void 0 : a.placeEntity) || (null === (s = t.onUse) || void 0 === s ? void 0 : s.placeObject)
-                      , i = C()(e, "context.tempNode.isBuildAreaFree", !1);
+                      , i = L()(e, "context.tempNode.isBuildAreaFree", !1);
                     if (r && !i)
                         return;
                     let o = {
                         type: "ground",
-                        x: C()(e, "context.tempNode.position.x") || C()(e, "world.x"),
-                        y: C()(e, "context.tempNode.position.y") || C()(e, "world.y")
+                        x: L()(e, "context.tempNode.position.x") || L()(e, "world.x"),
+                        y: L()(e, "context.tempNode.position.y") || L()(e, "world.y")
                     };
                     if (null == t ? void 0 : null === (u = t.onUse) || void 0 === u ? void 0 : u.types.includes("move")) {
-                        if (o.type = C()(e, "context.tempNode.type"),
-                        o.mid = C()(e, "context.tempNode.mid"),
+                        if (o.type = L()(e, "context.tempNode.type"),
+                        o.mid = L()(e, "context.tempNode.mid"),
                         !o.type || !o.mid || !i)
                             return;
                         l.rV.attachToCursor.emit({
@@ -22200,7 +22253,7 @@
                     } else if ((null === (c = t.onUse) || void 0 === c ? void 0 : c.types.includes("placeTile")) || (null === (f = t.onUse) || void 0 === f ? void 0 : f.types.includes("removeTile"))) {
                         if (!i)
                             return;
-                        o.tiles = C()(e, "context.tiles")
+                        o.tiles = L()(e, "context.tiles")
                     }
                     l.ZP.emitEventNow(l.qM.PLAYER_USED_ITEM, {
                         item: {
@@ -22217,8 +22270,8 @@
             }
         }
         );
-        var M = n(36968)
-          , D = n.n(M);
+        var D = n(36968)
+          , j = n.n(D);
         (0,
         s.H)(d.r5.type, (e, t) => {
             switch (e.path) {
@@ -22229,7 +22282,7 @@
                         d.zl)(t.getState())
                     }
                 };
-                D()(n, e.path, e.value),
+                j()(n, e.path, e.value),
                 l.ZP.emitEventNow(l.qM.ROOM_RESTRICTIONS, {
                     ...n.restrictions
                 });
@@ -22295,11 +22348,11 @@
             }
         }
         );
-        var j = n(28274)
-          , U = n(53660)
-          , $ = n(71936)
-          , V = n(31006);
-        function B() {
+        var U = n(28274)
+          , $ = n(53660)
+          , V = n(71936)
+          , B = n(31006);
+        function F() {
             if (navigator.serviceWorker && "PushManager"in window)
                 return navigator.serviceWorker.register("/workers/push-worker.js?v=1").then(function(e) {
                     return o = e
@@ -22308,19 +22361,19 @@
                 }
                 )
         }
-        async function F() {
-            return await B(),
+        async function q() {
+            return await F(),
             o && "denied" !== Notification.permission
         }
-        async function q() {
-            if (await B(),
+        async function G() {
+            if (await F(),
             !o)
                 return !1;
             let e = await o.pushManager.getSubscription();
             return !(!e || e.expirationTime && Date.now() > e.expirationTime)
         }
-        async function G() {
-            if (await B(),
+        async function z() {
+            if (await F(),
             !o)
                 return;
             await new Promise(function(e, t) {
@@ -22354,12 +22407,12 @@
                 e
             })
         }
-        async function z() {
-            return !await q() && !!await F()
+        async function Y() {
+            return !await G() && !!await q()
         }
-        var Y = n(30908);
-        let H = "craft:"
-          , Z = !1;
+        var H = n(30908);
+        let Z = "craft:"
+          , W = !1;
         (0,
         s.H)("game/PRESENT_UI", (e, t) => {
             var n, r, i, o, a, s, h, p, m, v, y;
@@ -22368,7 +22421,7 @@
             if (w || (w = [e.param]),
             E.includes("marketplace-") && "marketplace-listings" !== E) {
                 t.dispatch((0,
-                $.j4)({
+                V.j4)({
                     initialCategory: E.split("marketplace-")[1]
                 }));
                 return
@@ -22382,7 +22435,7 @@
             case "farmPicker":
             case "plotDialog":
                 t.dispatch((0,
-                U.Vu)());
+                $.Vu)());
                 break;
             case "portalConfig":
                 t.dispatch((0,
@@ -22408,13 +22461,13 @@
                 t.dispatch((0,
                 R.aq)()),
                 t.dispatch((0,
-                $.j4)({}));
+                V.j4)({}));
                 break;
             case "marketplace-listings":
                 t.dispatch((0,
                 R.aq)()),
                 t.dispatch((0,
-                $.ft)());
+                V.ft)());
                 break;
             case "portalConfigTenant":
                 t.dispatch((0,
@@ -22524,7 +22577,7 @@
                 break;
             case "closeCrafting":
                 t.dispatch((0,
-                j.F0)());
+                U.F0)());
                 break;
             case "closeStore":
                 t.dispatch((0,
@@ -22534,22 +22587,22 @@
                 t.dispatch((0,
                 R.aq)()),
                 t.dispatch((0,
-                V.e4)());
+                B.e4)());
                 break;
             case "closeMailbox":
                 t.dispatch((0,
-                V.I_)());
+                B.I_)());
                 break;
             case "webpush":
-                if (Z)
+                if (W)
                     break;
-                z().then(e => {
+                Y().then(e => {
                     e && t.dispatch((0,
                     u.VG)({
                         prompt: null == w ? void 0 : w[0],
                         yesno: !0,
                         callback: e => {
-                            "yes" === e ? G().then(e => {
+                            "yes" === e ? z().then(e => {
                                 if (e) {
                                     let t = JSON.parse(JSON.stringify(e));
                                     l.ZP.emitEventNow(l.Yi.PUSH_SUBSCRIBE, {
@@ -22566,20 +22619,20 @@
                             ).catch(e => {
                                 console.log(e)
                             }
-                            ) : "no" === e && (Z = !0)
+                            ) : "no" === e && (W = !0)
                         }
                     }))
                 }
                 );
                 break;
             default:
-                if (E.startsWith(H) || Y.Skills.includes(E)) {
-                    let e = E.replace(H, "")
+                if (E.startsWith(Z) || H.Skills.includes(E)) {
+                    let e = E.replace(Z, "")
                       , n = null !== (h = null == w ? void 0 : w[1]) && void 0 !== h ? h : "";
                     (null == n ? void 0 : n.startsWith("update:")) || t.dispatch((0,
                     R.aq)()),
                     t.dispatch((0,
-                    j.Uf)({
+                    U.Uf)({
                         source: null != _ ? _ : "",
                         craftType: e,
                         tableTier: null !== (p = null == w ? void 0 : w[0]) && void 0 !== p ? p : 1,
@@ -22602,8 +22655,7 @@
             (t !== n || r !== i) && l.rV.inventory.swapItems.emit(e)
         }
         );
-        var W = n(75268)
-          , J = n(11941)
+        var J = n(75268)
           , K = n(25904);
         (0,
         s.H)("game/".concat(l.fb.PLAYER_EXP_CHANGE), (e, t) => {
@@ -22615,7 +22667,7 @@
               , s = e.levels
               , l = []
               , u = o.quests;
-            !Y.Skills.every(e => {
+            !H.Skills.every(e => {
                 var t, n;
                 return ((null === (t = a[e]) || void 0 === t ? void 0 : t.level) || 0) === ((null === (n = s[e]) || void 0 === n ? void 0 : n.level) || 0)
             }
@@ -22623,7 +22675,7 @@
                 var t, n;
                 return null == e ? void 0 : null === (n = e.requirements) || void 0 === n ? void 0 : null === (t = n.levels) || void 0 === t ? void 0 : t.some(e => {
                     let {levelType: t, level: n} = e;
-                    return !!Y.Skills.includes(t) && n >= 0
+                    return !!H.Skills.includes(t) && n >= 0
                 }
                 )
             }
@@ -22673,7 +22725,7 @@
                 let t = e.craftable.requiredSkill;
                 l.push({
                     source: "achievement",
-                    icon: "".concat(W.fd).concat(t, ".png"),
+                    icon: "".concat(J.fd).concat(t, ".png"),
                     text: {
                         id: "notifications.globalAchievementUnlocked",
                         name: (0,
@@ -22683,7 +22735,7 @@
                 })
             }
             ),
-            l.length && es.set(J.W_, l))
+            l.length && es.set(k.W_, l))
         }
         ),
         n(69980),
@@ -22692,24 +22744,19 @@
             let {mid: n, item: r} = e;
             !n && r && function(e, t) {
                 if (e) {
-                    let f;
-                    let h = t && function(e) {
-                        var t;
-                        if (!(null == e ? void 0 : null === (t = e.useTargets) || void 0 === t ? void 0 : t.types.includes("mapLabels")) || !e.useTargets.mapLabels)
-                            return !0;
-                        let n = g.l.getInstance().mapLabels;
-                        return e.useTargets.mapLabels.every(e => n.includes(e))
-                    }(e);
-                    if (f = {
+                    let h;
+                    let p = t && (0,
+                    d.ZA)(e, g.l.getInstance().mapLabels);
+                    if (h = {
                         type: "item",
                         config: {
                             item: e
                         }
                     },
-                    h) {
-                        var n, r, i, o, a, s, u, c, d;
+                    p) {
+                        var n, r, i, o, a, s, u, c, f;
                         if (null == e ? void 0 : null === (n = e.onUse) || void 0 === n ? void 0 : n.placeObject)
-                            f = {
+                            h = {
                                 type: "object",
                                 config: {
                                     object: b.Z.getGameObject(null == e ? void 0 : null === (u = e.onUse) || void 0 === u ? void 0 : u.placeObject)
@@ -22718,35 +22765,35 @@
                             };
                         else if (null == e ? void 0 : null === (i = e.onUse) || void 0 === i ? void 0 : null === (r = i.placeEntity) || void 0 === r ? void 0 : r.entity) {
                             let t = b.Z.getGameEntity(e.onUse.placeEntity.entity);
-                            f = {
+                            h = {
                                 type: "entity",
                                 config: {
                                     entity: t
                                 },
                                 placing: !0
                             },
-                            (null == t ? void 0 : t.generic) && e.onUse.placeEntity.state && (f.config.entity.generic.defaultState = e.onUse.placeEntity.state)
+                            (null == t ? void 0 : t.generic) && e.onUse.placeEntity.state && (h.config.entity.generic.defaultState = e.onUse.placeEntity.state)
                         } else
-                            (null === (a = e.onUse) || void 0 === a ? void 0 : null === (o = a.placeTile) || void 0 === o ? void 0 : o.tileset) ? f = {
+                            (null === (a = e.onUse) || void 0 === a ? void 0 : null === (o = a.placeTile) || void 0 === o ? void 0 : o.tileset) ? h = {
                                 type: "tile",
                                 config: {
                                     tile: {
-                                        tilesetId: null === (d = e.onUse) || void 0 === d ? void 0 : null === (c = d.placeTile) || void 0 === c ? void 0 : c.tileset
+                                        tilesetId: null === (f = e.onUse) || void 0 === f ? void 0 : null === (c = f.placeTile) || void 0 === c ? void 0 : c.tileset
                                     }
                                 }
-                            } : (null === (s = e.onUse) || void 0 === s ? void 0 : s.types.includes("removeTile")) && (f = {
+                            } : (null === (s = e.onUse) || void 0 === s ? void 0 : s.types.includes("removeTile")) && (h = {
                                 type: "tile",
                                 config: {
                                     tile: {}
                                 }
                             })
                     }
-                    let p = (0,
+                    let m = (0,
                     I.hD)(e);
                     l.rV.attachToCursor.emit({
-                        ...f,
-                        editingWithoutPermissions: p && !h,
-                        removing: p
+                        ...h,
+                        editingWithoutPermissions: m && !p,
+                        removing: m
                     })
                 }
             }(r, !e.ctrl && (0,
@@ -22816,16 +22863,16 @@
                 auth: h.Co,
                 game: f.ZP,
                 ui: u.ZP,
-                mailbox: V.ZP,
+                mailbox: B.ZP,
                 generalStore: c.ZP,
-                marketplace: $.ZP,
+                marketplace: V.ZP,
                 chat: en.ZP,
-                plot: U.ZP,
+                plot: $.ZP,
                 report: er.ZP,
                 storage: R.ZP,
                 trade: ei.ZP,
                 mapEditor: d.ZP,
-                crafting: j.ZP
+                crafting: U.ZP
             },
             middleware: e => e().concat(e => t => n => {
                 if (n.type === h.Kx.type)
